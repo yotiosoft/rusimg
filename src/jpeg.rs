@@ -35,12 +35,12 @@ impl JpegImage {
 
     pub fn save(&self, path: &str) -> Result<(), String> {
         let mut file = std::fs::File::create(path).map_err(|_| "Failed to create file".to_string())?;
-        file.write_all(&self.compress()?).map_err(|_| "Failed to write file".to_string())?;
+        file.write_all(&self.image).map_err(|_| "Failed to write file".to_string())?;
 
         Ok(())
     }
 
-    pub fn compress(&self) -> Result<Vec<u8>, String> {
+    pub fn compress(&self) -> Result<(), String> {
         let mut compress = Compress::new(ColorSpace::JCS_RGB);
         compress.set_scan_optimization_mode(ScanMode::AllComponentsTogether);
         compress.set_size(self.width, self.height);
@@ -49,6 +49,8 @@ impl JpegImage {
         compress.write_scanlines(&self.image);
         compress.finish_compress();
 
-        compress.data_to_vec().map_err(|_| "Failed to compress jpeg image".to_string())
+        self.image = compress.data_to_vec().map_err(|_| "Failed to compress jpeg image".to_string())?;
+
+        Ok(())
     }
 }

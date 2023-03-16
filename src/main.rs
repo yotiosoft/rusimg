@@ -11,24 +11,74 @@ pub enum Extension {
     Png,
 }
 
-struct Img {
-    extension: Extension,
+struct ImgData {
     jpeg: Option<jpeg::JpegImage>,
     png: Option<png::PngImage>,
 }
 
-fn get_extension(path: &str) -> Result<compress::Extension, String> {
+struct Img {
+    extension: Extension,
+    data: ImgData,
+}
+
+fn get_extension(path: &str) -> Result<Extension, String> {
     match Path::new(path).extension().and_then(|s| s.to_str()) {
-        Some("jpg") | Some("jpeg") => Ok(compress::Extension::Jpeg),
-        Some("png") => Ok(compress::Extension::Png),
+        Some("jpg") | Some("jpeg") => Ok(Extension::Jpeg),
+        Some("png") => Ok(Extension::Png),
         _ => Err("Unsupported file extension".to_string()),
     }
 }
 
-fn get_extension_string(extension: &compress::Extension) -> String {
+fn get_extension_string(extension: &Extension) -> String {
     match extension {
-        compress::Extension::Jpeg => "jpg".to_string(),
-        compress::Extension::Png => "png".to_string(),
+        Extension::Jpeg => "jpg".to_string(),
+        Extension::Png => "png".to_string(),
+    }
+}
+
+fn open_image(path: &str) -> Result<ImgData, String> {
+    match get_extension(&path) {
+        Ok(Extension::Jpeg) => {
+            let jpeg = jpeg::JpegImage::open(&path).map_err(|e| e.to_string())?;
+            Ok(ImgData {
+                jpeg: Some(jpeg),
+                png: None,
+            })
+        },
+        Ok(Extension::Png) => {
+            let png = png::PngImage::open(&path).map_err(|e| e.to_string())?;
+            Ok(ImgData {
+                jpeg: None,
+                png: Some(png),
+            })
+        },
+        Err(e) => Err(e),
+    }
+}
+
+fn compress(data: ImgData, extension: &Extension) -> Result<(), String> {
+    match extension {
+        Extension::Jpeg => {
+            let jpeg = data.jpeg.unwrap();
+            jpeg.compress()
+        },
+        Extension::Png => {
+            let png = data.png.unwrap();
+            png.compress()
+        },
+    }
+}
+
+fn save_image(path: &str, data: ImgData, extension: &Extension) -> Result<(), String> {
+    match extension {
+        Extension::Jpeg => {
+            let jpeg = data.jpeg.unwrap();
+            jpeg.save(&path)
+        },
+        Extension::Png => {
+            let png = data.png.unwrap();
+            png.save(&path)
+        },
     }
 }
 
@@ -37,19 +87,14 @@ fn main() -> Result<(), String> {
     let image = open_image(&args.souce_path)?;
 
     // 圧縮
-    let compressed_img = compress::compress(image.data, image.width, image.height, &image.extension).map_err(|e| e.to_string())?;
+    compress(image.data);
 
     // 出力
     let output_path = match args.destination_path {
         Some(path) => path,
         None => "output".to_string() + "." + &get_extension_string(&image.extension),
     };
-    output_image(&output_path, Img {
-        width: image.width,
-        height: image.height,
-        data: compressed_img,
-        extension: image.extension,
-    })?;
+    save_image(&output_path, image)?;
 
     Ok(())
 }
