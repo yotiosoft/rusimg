@@ -8,5 +8,6 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.1.8", features = ["derive"] }
 image = "0.24.5"
+imagequant = "4.1.1"
 mozjpeg = "0.9.4"
 oxipng = "8.0.0"
