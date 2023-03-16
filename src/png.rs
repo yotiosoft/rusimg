@@ -1,7 +1,6 @@
 extern crate oxipng;
-use oxipng::Deflaters;
 
-use std::io::{Read, Write};
+use std::{io::{Read, Write}, path::PathBuf, str::FromStr};
 
 pub struct PngImage {
     pub image: Vec<u8>,
@@ -45,13 +44,12 @@ impl PngImage {
 
     pub fn compress(&mut self) -> Result<(), String> {
         println!("compressing png image...");
-        let mut options = oxipng::Options::default();
-        if let Deflaters::Libdeflater { compression } = &mut options.deflate {
-            *compression = 5;
-        }
-        match oxipng::optimize_from_memory(&self.raw_image, &options) {
+        //match oxipng::optimize_from_memory(&self.raw_image, &oxipng::Options::default()) {
+        let input = PathBuf::from_str("/Users/ytani/Desktop/sc/png.png").unwrap();
+        let output = PathBuf::from_str("output.png").unwrap();
+        match oxipng::optimize(&oxipng::InFile::Path(input), &oxipng::OutFile::Path(Some(output)), &oxipng::Options::default()) {
             Ok(data) => {
-                self.image = data;
+                //self.image = data;
                 Ok(())
             },
             Err(e) => match e {
