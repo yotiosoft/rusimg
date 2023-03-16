@@ -1,6 +1,7 @@
 extern crate oxipng;
+use oxipng::Interlacing;
 
-use std::{io::{Read, Write}, path::PathBuf, str::FromStr};
+use std::io::{Read, Write};
 
 pub struct PngImage {
     pub image: Vec<u8>,
@@ -44,12 +45,11 @@ impl PngImage {
 
     pub fn compress(&mut self) -> Result<(), String> {
         println!("compressing png image...");
-        //match oxipng::optimize_from_memory(&self.raw_image, &oxipng::Options::default()) {
-        let input = PathBuf::from_str("/Users/ytani/Desktop/sc/png.png").unwrap();
-        let output = PathBuf::from_str("output.png").unwrap();
-        match oxipng::optimize(&oxipng::InFile::Path(input), &oxipng::OutFile::Path(Some(output)), &oxipng::Options::default()) {
+        let mut options = oxipng::Options::default();
+        options.interlace = Some(Interlacing::Adam7);
+        match oxipng::optimize_from_memory(&self.raw_image, &options) {
             Ok(data) => {
-                //self.image = data;
+                self.image = data;
                 Ok(())
             },
             Err(e) => match e {

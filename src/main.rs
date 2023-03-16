@@ -117,7 +117,7 @@ fn main() -> Result<(), String> {
         Some(path) => path,
         None => "output".to_string() + "." + &get_extension_string(&image.extension),
     };
-    //save_image(&output_path, &mut image.data, &image.extension)?;
+    save_image(&output_path, &mut image.data, &image.extension)?;
 
     Ok(())
 }
