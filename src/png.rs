@@ -49,7 +49,7 @@ impl PngImage {
         if let Deflaters::Libdeflater { compression } = &mut options.deflate {
             *compression = 5;
         }
-        match oxipng::optimize_from_memory(&self.raw_image, &oxipng::Options::default()) {
+        match oxipng::optimize_from_memory(&self.raw_image, &options) {
             Ok(data) => {
                 self.image = data;
                 Ok(())
