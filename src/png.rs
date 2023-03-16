@@ -1,4 +1,5 @@
-extern crate imagequant;
+extern crate oxipng;
+use oxipng::Deflaters;
 
 use std::io::{Read, Write};
 
@@ -43,15 +44,27 @@ impl PngImage {
     }
 
     pub fn compress(&mut self) -> Result<(), String> {
-        let mut liq = imagequant::new();
-        liq.set_speed(5).map_err(|_| "Failed to set speed".to_string())?;
-        liq.set_quality(70, 99).map_err(|_| "Failed to set quality".to_string())?;
-
-        // Describe the image
-
-        let mut res = match liq.quantize(&self.raw_image, self.width, self.height, 0.0) {
-            Ok(res) => res,
-            Err(_) => return Err("Failed to quantize image".to_string()),
-        };
+        println!("compressing png image...");
+        let mut options = oxipng::Options::default();
+        if let Deflaters::Libdeflater { compression } = &mut options.deflate {
+            *compression = 5;
+        }
+        match oxipng::optimize_from_memory(&self.raw_image, &oxipng::Options::default()) {
+            Ok(data) => {
+                self.image = data;
+                Ok(())
+            },
+            Err(e) => match e {
+                oxipng::PngError::DeflatedDataTooLong(s) => Err(format!("deflated data too long: {}", s)),
+                oxipng::PngError::TimedOut => Err("timed out".to_string()),
+                oxipng::PngError::NotPNG => Err("not png".to_string()),
+                oxipng::PngError::APNGNotSupported => Err("apng not supported".to_string()),
+                oxipng::PngError::InvalidData => Err("invalid data".to_string()),
+                oxipng::PngError::TruncatedData => Err("truncated data".to_string()),
+                oxipng::PngError::ChunkMissing(s) => Err(format!("chunk missing: {}", s)),
+                oxipng::PngError::Other(s) => Err(format!("other: {}", s)),
+                _ => Err("unknown error".to_string()),
+            }
+        }
     }
 }
