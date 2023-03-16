@@ -44,10 +44,7 @@ impl PngImage {
     }
 
     pub fn compress(&mut self) -> Result<(), String> {
-        println!("compressing png image...");
-        let mut options = oxipng::Options::default();
-        options.interlace = Some(Interlacing::Adam7);
-        match oxipng::optimize_from_memory(&self.raw_image, &options) {
+        match oxipng::optimize_from_memory(&self.raw_image, &oxipng::Options::default()) {
             Ok(data) => {
                 self.image = data;
                 Ok(())
