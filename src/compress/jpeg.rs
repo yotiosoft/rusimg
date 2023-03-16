@@ -1,3 +1,4 @@
+extern crate mozjpeg;
 use mozjpeg::{Compress, ColorSpace, ScanMode};
 
 pub fn compress(image: Vec<u8>, width: usize, height: usize) -> Result<Vec<u8>, String> {
@@ -9,5 +10,5 @@ pub fn compress(image: Vec<u8>, width: usize, height: usize) -> Result<Vec<u8>, 
     compress.write_scanlines(&image);
     compress.finish_compress();
 
-    compress.data_to_vec().map_err(|_| "Failed to compress image".to_string())
+    compress.data_to_vec().map_err(|_| "Failed to compress jpeg image".to_string())
 }
