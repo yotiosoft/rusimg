@@ -1,7 +1,9 @@
 extern crate mozjpeg;
 use mozjpeg::{Compress, ColorSpace, ScanMode};
 
-struct JpegImage {
+use std::io::{Read, Write};
+
+pub struct JpegImage {
     pub image: Vec<u8>,
     pub width: usize,
     pub height: usize,
@@ -14,6 +16,28 @@ impl JpegImage {
             width,
             height,
         }
+    }
+
+    pub fn open(path: &str) -> Result<Self, String> {
+        let mut raw_data = std::fs::File::open(path).map_err(|_| "Failed to open file".to_string())?;
+        let mut buf = Vec::new();
+        raw_data.read_to_end(&mut buf).map_err(|_| "Failed to read file".to_string())?;
+
+        let image = image::load_from_memory(&buf).map_err(|_| "Failed to open image".to_string())?;
+        let (width, height) = (image.width() as usize, image.height() as usize);
+
+        Ok(Self {
+            image: image.into_bytes(),
+            width,
+            height,
+        })
+    }
+
+    pub fn save(&self, path: &str) -> Result<(), String> {
+        let mut file = std::fs::File::create(path).map_err(|_| "Failed to create file".to_string())?;
+        file.write_all(&self.compress()?).map_err(|_| "Failed to write file".to_string())?;
+
+        Ok(())
     }
 
     pub fn compress(&self) -> Result<Vec<u8>, String> {

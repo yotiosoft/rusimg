@@ -3,38 +3,18 @@ use std::io::{BufWriter, Write, Read};
 use std::path::Path;
 
 mod parse;
-mod compress;
+mod jpeg;
+mod png;
+
+pub enum Extension {
+    Jpeg,
+    Png,
+}
 
 struct Img {
-    width: usize,
-    height: usize,
-    data: Vec<u8>,
-    extension: compress::Extension,
-}
-
-fn open_image(path: &str) -> Result<Img, String> {
-    let mut raw_data = File::open(path).map_err(|_| "Failed to open file".to_string())?;
-    let mut buf = Vec::new();
-    raw_data.read_to_end(&mut buf).map_err(|_| "Failed to read file".to_string())?;
-
-    let image = image::load_from_memory(&buf).map_err(|_| "Failed to open image".to_string())?;
-    let (width, height) = (image.width() as usize, image.height() as usize);
-    
-    let externsion = get_extension(path)?;
-
-    Ok(Img {
-        width: width as usize,
-        height: height as usize,
-        data: image.into_bytes(),
-        extension: externsion,
-    })
-}
-
-fn output_image(path: &str, image: Img) -> Result<(), String> {
-    let mut file = BufWriter::new(std::fs::File::create(path).map_err(|_| "Failed to create file".to_string())?);
-    file.write_all(&image.data).map_err(|_| "Failed to write file".to_string())?;
-
-    Ok(())
+    extension: Extension,
+    jpeg: Option<jpeg::JpegImage>,
+    png: Option<png::PngImage>,
 }
 
 fn get_extension(path: &str) -> Result<compress::Extension, String> {
