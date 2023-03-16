@@ -1,5 +1,5 @@
-use image;
-use std::io::{BufWriter, Write};
+use std::fs::File;
+use std::io::{BufWriter, Write, Read};
 use std::path::Path;
 
 mod parse;
@@ -13,7 +13,11 @@ struct Img {
 }
 
 fn open_image(path: &str) -> Result<Img, String> {
-    let image = image::open(path).map_err(|_| "Failed to open image".to_string())?;
+    let mut raw_data = File::open(path).map_err(|_| "Failed to open file".to_string())?;
+    let mut buf = Vec::new();
+    raw_data.read_to_end(&mut buf).map_err(|_| "Failed to read file".to_string())?;
+
+    let image = image::load_from_memory(&buf).map_err(|_| "Failed to open image".to_string())?;
     let (width, height) = (image.width() as usize, image.height() as usize);
     
     let externsion = get_extension(path)?;
@@ -21,7 +25,7 @@ fn open_image(path: &str) -> Result<Img, String> {
     Ok(Img {
         width: width as usize,
         height: height as usize,
-        data: image.to_rgb8().into_raw(),
+        data: buf,
         extension: externsion,
     })
 }

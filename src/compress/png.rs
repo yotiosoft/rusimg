@@ -1,10 +1,10 @@
 extern crate oxipng;
 
 pub fn compress(image: Vec<u8>) -> Result<Vec<u8>, String> {
-    match oxipng::optimize_from_memory(&image, &oxipng::Options::default()) {
+    match oxipng::optimize_from_memory(&image as &[u8], &oxipng::Options::default()) {
         Ok(data) => Ok(data),
         Err(e) => match e {
-            oxipng::PngError::DeflatedDataTooLong(s) => Err(format!("defaulted data too long: {}", s)),
+            oxipng::PngError::DeflatedDataTooLong(s) => Err(format!("deflated data too long: {}", s)),
             oxipng::PngError::TimedOut => Err("timed out".to_string()),
             oxipng::PngError::NotPNG => Err("not png".to_string()),
             oxipng::PngError::APNGNotSupported => Err("apng not supported".to_string()),
