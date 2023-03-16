@@ -40,7 +40,7 @@ impl JpegImage {
         Ok(())
     }
 
-    pub fn compress(&self) -> Result<(), String> {
+    pub fn compress(&mut self) -> Result<(), String> {
         let mut compress = Compress::new(ColorSpace::JCS_RGB);
         compress.set_scan_optimization_mode(ScanMode::AllComponentsTogether);
         compress.set_size(self.width, self.height);

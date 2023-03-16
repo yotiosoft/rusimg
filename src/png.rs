@@ -39,7 +39,7 @@ impl PngImage {
         Ok(())
     }
 
-    pub fn compress(&self) -> Result<(), String> {
+    pub fn compress(&mut self) -> Result<(), String> {
         println!("compressing png image...");
         match oxipng::optimize_from_memory(&self.image, &oxipng::Options::default()) {
             Ok(data) => {

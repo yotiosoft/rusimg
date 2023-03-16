@@ -1,5 +1,3 @@
-use std::fs::File;
-use std::io::{BufWriter, Write, Read};
 use std::path::Path;
 
 mod parse;
@@ -36,65 +34,90 @@ fn get_extension_string(extension: &Extension) -> String {
     }
 }
 
-fn open_image(path: &str) -> Result<ImgData, String> {
+fn open_image(path: &str) -> Result<Img, String> {
     match get_extension(&path) {
         Ok(Extension::Jpeg) => {
             let jpeg = jpeg::JpegImage::open(&path).map_err(|e| e.to_string())?;
-            Ok(ImgData {
-                jpeg: Some(jpeg),
-                png: None,
+            Ok(Img {
+                extension: Extension::Jpeg,
+                data: ImgData {
+                    jpeg: Some(jpeg),
+                    png: None,
+                },
             })
         },
         Ok(Extension::Png) => {
             let png = png::PngImage::open(&path).map_err(|e| e.to_string())?;
-            Ok(ImgData {
-                jpeg: None,
-                png: Some(png),
+            Ok(Img {
+                extension: Extension::Png,
+                data: ImgData {
+                    jpeg: None,
+                    png: Some(png),
+                },
             })
         },
         Err(e) => Err(e),
     }
 }
 
-fn compress(data: ImgData, extension: &Extension) -> Result<(), String> {
+fn compress(data: &mut ImgData, extension: &Extension) -> Result<(), String> {
     match extension {
         Extension::Jpeg => {
-            let jpeg = data.jpeg.unwrap();
-            jpeg.compress()
+            match &mut data.jpeg {
+                Some(jpeg) => {
+                    jpeg.compress()
+                },
+                None => return Err("Failed to save jpeg image".to_string()),
+            }
         },
         Extension::Png => {
-            let png = data.png.unwrap();
-            png.compress()
+            match &mut data.png {
+                Some(png) => {
+                    png.compress()
+                },
+                None => return Err("Failed to save png image".to_string()),
+            }
         },
     }
 }
 
-fn save_image(path: &str, data: ImgData, extension: &Extension) -> Result<(), String> {
+fn save_image(path: &str, data: &mut ImgData, extension: &Extension) -> Result<(), String> {
     match extension {
         Extension::Jpeg => {
-            let jpeg = data.jpeg.unwrap();
-            jpeg.save(&path)
+            match data.jpeg {
+                Some(ref jpeg) => {
+                    jpeg.save(&path)
+                },
+                None => return Err("Failed to save jpeg image".to_string()),
+            }
         },
         Extension::Png => {
-            let png = data.png.unwrap();
-            png.save(&path)
+            match data.png {
+                Some(ref png) => {
+                    png.save(&path)
+                },
+                None => return Err("Failed to save png image".to_string()),
+            }
         },
     }
 }
 
 fn main() -> Result<(), String> {
     let args = parse::parser();
-    let image = open_image(&args.souce_path)?;
+    let mut image = open_image(&args.souce_path)?;
 
     // 圧縮
-    compress(image.data);
+    match compress(&mut image.data, &image.extension) {
+        Ok(_) => (),
+        Err(e) => return Err(e),
+    }
 
     // 出力
     let output_path = match args.destination_path {
         Some(path) => path,
         None => "output".to_string() + "." + &get_extension_string(&image.extension),
     };
-    save_image(&output_path, image)?;
+    save_image(&output_path, &mut image.data, &image.extension)?;
 
     Ok(())
 }
