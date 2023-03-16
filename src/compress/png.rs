@@ -1,6 +1,7 @@
 extern crate oxipng;
 
 pub fn compress(image: Vec<u8>) -> Result<Vec<u8>, String> {
+    println!("compressing png image...");
     match oxipng::optimize_from_memory(&image as &[u8], &oxipng::Options::default()) {
         Ok(data) => Ok(data),
         Err(e) => match e {

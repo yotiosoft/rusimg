@@ -25,7 +25,7 @@ fn open_image(path: &str) -> Result<Img, String> {
     Ok(Img {
         width: width as usize,
         height: height as usize,
-        data: buf,
+        data: image.into_bytes(),
         extension: externsion,
     })
 }
