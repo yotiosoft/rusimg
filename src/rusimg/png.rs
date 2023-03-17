@@ -7,7 +7,6 @@ use image::DynamicImage;
 use crate::rusimg::Rusimg;
 
 pub struct PngImage {
-    pub image_into_bytes: Vec<u8>,
     pub binary_data: Vec<u8>,
     pub image: DynamicImage,
     pub width: usize,
@@ -23,7 +22,6 @@ impl Rusimg for PngImage {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         Ok(Self {
-            image_into_bytes: image.clone().into_bytes(),
             binary_data: Vec::new(),
             image,
             width,
@@ -45,7 +43,6 @@ impl Rusimg for PngImage {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         Ok(Self {
-            image_into_bytes: image.clone().into_bytes(),
             binary_data: buf,
             image,
             width,
@@ -65,7 +62,8 @@ impl Rusimg for PngImage {
             let path = format!("{}.{}", self.filepath_input, "png");
             (std::fs::File::create(&path).map_err(|_| "Failed to create file".to_string())?, path)
         };
-        file.write_all(&self.image_into_bytes).map_err(|_| "Failed to write file".to_string())?;
+        let image_bytes = self.image.clone().into_bytes();
+        file.write_all(&image_bytes).map_err(|_| "Failed to write file".to_string())?;
 
         self.metadata_output = Some(file.metadata().map_err(|_| "Failed to get metadata".to_string())?);
         self.filepath_output = Some(save_path);
@@ -76,7 +74,7 @@ impl Rusimg for PngImage {
     fn compress(&mut self) -> Result<(), String> {
         match oxipng::optimize_from_memory(&self.binary_data, &oxipng::Options::default()) {
             Ok(data) => {
-                self.image_into_bytes = data;
+                self.image = image::load_from_memory(&data).map_err(|_| "Failed to open image".to_string())?;
                 Ok(())
             },
             Err(e) => match e {

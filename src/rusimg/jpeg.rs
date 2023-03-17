@@ -9,7 +9,6 @@ use std::path::Path;
 use crate::rusimg::Rusimg;
 
 pub struct JpegImage {
-    pub image_into_bytes: Vec<u8>,
     pub image: DynamicImage,
     pub width: usize,
     pub height: usize,
@@ -25,7 +24,6 @@ impl Rusimg for JpegImage {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         Ok(Self {
-            image_into_bytes: image.clone().into_bytes(),
             image,
             width,
             height,
@@ -49,7 +47,6 @@ impl Rusimg for JpegImage {
         let extension_str = Path::new(path).extension().and_then(|s| s.to_str()).unwrap_or("").to_string();
 
         Ok(Self {
-            image_into_bytes: image.clone().into_bytes(),
             image,
             width,
             height,
@@ -69,7 +66,8 @@ impl Rusimg for JpegImage {
             let path = format!("{}.{}", self.filepath_input, self.extension_str);
             (std::fs::File::create(&path).map_err(|_| "Failed to create file".to_string())?, path)
         };
-        file.write_all(&self.image_into_bytes).map_err(|_| "Failed to write file".to_string())?;
+        let image_bytes = self.image.clone().into_bytes();
+        file.write_all(&image_bytes).map_err(|_| "Failed to write file".to_string())?;
 
         self.metadata_output = Some(file.metadata().map_err(|_| "Failed to get metadata".to_string())?);
         self.filepath_output = Some(save_path);
@@ -78,15 +76,17 @@ impl Rusimg for JpegImage {
     }
 
     fn compress(&mut self) -> Result<(), String> {
+        let image_bytes = self.image.clone().into_bytes();
+
         let mut compress = Compress::new(ColorSpace::JCS_RGB);
         compress.set_scan_optimization_mode(ScanMode::AllComponentsTogether);
         compress.set_size(self.width, self.height);
         compress.set_mem_dest();
         compress.start_compress();
-        compress.write_scanlines(&self.image_into_bytes);
+        compress.write_scanlines(&image_bytes);
         compress.finish_compress();
 
-        self.image_into_bytes = compress.data_to_vec().map_err(|_| "Failed to compress jpeg image".to_string())?;
+        self.image = image::load_from_memory(&compress.data_to_vec().unwrap()).map_err(|_| "Failed to compress jpeg image".to_string())?;
 
         Ok(())
     }
