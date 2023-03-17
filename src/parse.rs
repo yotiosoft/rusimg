@@ -17,17 +17,6 @@ pub struct ArgStruct {
 #[derive(clap::Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Source file path
-    source: String,
-
-    /// Destination file path
-    #[arg(short, long)]
-    destination: Option<String>,
-
-    /// Destination file extension
-    #[arg(short, long)]
-    extension: Option<String>,
-
     /// Subcommands
     #[clap(subcommand)]
     subcmds: Option<SubCommands>,
@@ -64,18 +53,10 @@ pub fn parser() -> ArgStruct {
     let args = Args::parse();
     let mut arg_struct = ArgStruct {
         execution_mode: ExecutionMode::None,
-        souce_path: args.source,
+        souce_path: String::new(),
         destination_path: None,
         destination_extension: None,
     };
-
-    if let Some(destination) = args.destination {
-        arg_struct.destination_path = Some(destination);
-    }
-
-    if let Some(extension) = args.extension {
-        arg_struct.destination_extension = Some(extension);
-    }
 
     // Subcommands
     if let Some(subcmds) = args.subcmds {

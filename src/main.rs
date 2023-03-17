@@ -27,9 +27,9 @@ fn get_extension(path: &str) -> Result<Extension, String> {
         Some("jpg") | Some("jpeg") => Ok(Extension::Jpeg),
         Some("png") => Ok(Extension::Png),
         _ => {
-            if path.contains(".jpg") || path.contains(".jpeg") {
+            if path.ends_with("jpg") || path.ends_with("jpeg") {
                 Ok(Extension::Jpeg)
-            } else if path.contains(".png") {
+            } else if path.ends_with("png") {
                 Ok(Extension::Png)
             } else {
                 Err("Unsupported file extension".to_string())
@@ -90,15 +90,22 @@ fn convert(data: &mut ImgData, source_extension: &Extension, destination_extensi
         Extension::Jpeg => {
             match &mut data.jpeg {
                 Some(jpeg) => {
-                    let dynamic_image = jpeg.image;
-                    let png = png::PngImage::new(dynamic_image, jpeg.filepath_input.clone(), jpeg.metadata_input.clone())?;
-                    Ok(Img {
-                        extension: Extension::Png,
-                        data: ImgData {
-                            jpeg: None,
-                            png: Some(png),
+                    let dynamic_image = jpeg.image.clone();
+                    match destination_extension {
+                        Extension::Jpeg => {
+                            Err("Source and destination extensions are the same".to_string())
                         },
-                    })
+                        Extension::Png => {
+                            let png = png::PngImage::new(dynamic_image, jpeg.filepath_input.clone(), jpeg.metadata_input.clone())?;
+                            Ok(Img {
+                                extension: Extension::Png,
+                                data: ImgData {
+                                    jpeg: None,
+                                    png: Some(png),
+                                },
+                            })
+                        },
+                    }
                 },
                 None => return Err("Failed to save jpeg image".to_string()),
             }
@@ -106,15 +113,22 @@ fn convert(data: &mut ImgData, source_extension: &Extension, destination_extensi
         Extension::Png => {
             match &mut data.png {
                 Some(png) => {
-                    let dynamic_image = png.image;
-                    let jpeg = jpeg::JpegImage::new(dynamic_image, png.filepath_input.clone(), png.metadata_input.clone())?;
-                    Ok(Img {
-                        extension: Extension::Jpeg,
-                        data: ImgData {
-                            jpeg: Some(jpeg),
-                            png: None,
+                    let dynamic_image = png.image.clone();
+                    match destination_extension {
+                        Extension::Jpeg => {
+                            let jpeg = jpeg::JpegImage::new(dynamic_image, png.filepath_input.clone(), png.metadata_input.clone())?;
+                            Ok(Img {
+                                extension: Extension::Jpeg,
+                                data: ImgData {
+                                    jpeg: Some(jpeg),
+                                    png: None,
+                                },
+                            })
                         },
-                    })
+                        Extension::Png => {
+                            Err("Source and destination extensions are the same".to_string())
+                        },
+                    }
                 },
                 None => return Err("Failed to save png image".to_string()),
             }
