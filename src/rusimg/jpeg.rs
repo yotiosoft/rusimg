@@ -21,7 +21,7 @@ pub struct JpegImage {
 }
 
 impl Rusimg for JpegImage {
-    fn new(&mut self, image: DynamicImage) -> Result<Self, String> {
+    fn new(&mut self, image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         Ok(Self {
@@ -30,9 +30,9 @@ impl Rusimg for JpegImage {
             width,
             height,
             extension_str: "jpg".to_string(),
-            metadata_input: Metadata::default(),
+            metadata_input: source_metadata,
             metadata_output: None,
-            filepath_input: "".to_string(),
+            filepath_input: source_path,
             filepath_output: None,
         })
     }
