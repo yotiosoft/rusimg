@@ -1,8 +1,11 @@
 use std::path::Path;
 
 mod parse;
-mod jpeg;
-mod png;
+mod rusimg;
+
+use rusimg::jpeg;
+use rusimg::png;
+use rusimg::Rusimg;
 
 pub enum Extension {
     Jpeg,

@@ -5,6 +5,8 @@ use std::fs::Metadata;
 use std::io::{Read, Write};
 use std::path::Path;
 
+use crate::rusimg::Rusimg;
+
 pub struct JpegImage {
     pub image: Vec<u8>,
     pub width: usize,
@@ -16,8 +18,8 @@ pub struct JpegImage {
     pub filepath_output: Option<String>,
 }
 
-impl JpegImage {
-    pub fn open(path: &str) -> Result<Self, String> {
+impl Rusimg for JpegImage {
+    fn open(path: &str) -> Result<Self, String> {
         let mut raw_data = std::fs::File::open(path).map_err(|_| "Failed to open file".to_string())?;
         let mut buf = Vec::new();
         raw_data.read_to_end(&mut buf).map_err(|_| "Failed to read file".to_string())?;
@@ -40,7 +42,7 @@ impl JpegImage {
         })
     }
 
-    pub fn save(&mut self, path: &Option<String>) -> Result<(), String> {
+    fn save(&mut self, path: &Option<String>) -> Result<(), String> {
         let (mut file, save_path) = if let Some(path) = path {
             (std::fs::File::create(path).map_err(|_| "Failed to create file".to_string())?, path.to_string())
         }
@@ -56,7 +58,7 @@ impl JpegImage {
         Ok(())
     }
 
-    pub fn compress(&mut self) -> Result<(), String> {
+    fn compress(&mut self) -> Result<(), String> {
         let mut compress = Compress::new(ColorSpace::JCS_RGB);
         compress.set_scan_optimization_mode(ScanMode::AllComponentsTogether);
         compress.set_size(self.width, self.height);
