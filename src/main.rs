@@ -26,7 +26,15 @@ fn get_extension(path: &str) -> Result<Extension, String> {
     match Path::new(path).extension().and_then(|s| s.to_str()) {
         Some("jpg") | Some("jpeg") => Ok(Extension::Jpeg),
         Some("png") => Ok(Extension::Png),
-        _ => Err("Unsupported file extension".to_string()),
+        _ => {
+            if path.contains(".jpg") || path.contains(".jpeg") {
+                Ok(Extension::Jpeg)
+            } else if path.contains(".png") {
+                Ok(Extension::Png)
+            } else {
+                Err("Unsupported file extension".to_string())
+            }
+        },
     }
 }
 
@@ -77,6 +85,43 @@ fn compress(data: &mut ImgData, extension: &Extension) -> Result<(), String> {
     }
 }
 
+fn convert(data: &mut ImgData, source_extension: &Extension, destination_extension: &Extension) -> Result<Img, String> {
+    match source_extension {
+        Extension::Jpeg => {
+            match &mut data.jpeg {
+                Some(jpeg) => {
+                    let dynamic_image = jpeg.image;
+                    let png = png::PngImage::new(dynamic_image, jpeg.filepath_input.clone(), jpeg.metadata_input.clone())?;
+                    Ok(Img {
+                        extension: Extension::Png,
+                        data: ImgData {
+                            jpeg: None,
+                            png: Some(png),
+                        },
+                    })
+                },
+                None => return Err("Failed to save jpeg image".to_string()),
+            }
+        },
+        Extension::Png => {
+            match &mut data.png {
+                Some(png) => {
+                    let dynamic_image = png.image;
+                    let jpeg = jpeg::JpegImage::new(dynamic_image, png.filepath_input.clone(), png.metadata_input.clone())?;
+                    Ok(Img {
+                        extension: Extension::Jpeg,
+                        data: ImgData {
+                            jpeg: Some(jpeg),
+                            png: None,
+                        },
+                    })
+                },
+                None => return Err("Failed to save png image".to_string()),
+            }
+        },
+    }
+}
+
 fn save_print(before_path: &String, after_path: &String, before_size: u64, after_size: u64) {
     println!("{} -> {}", before_path, after_path);
     println!("{} -> {}", before_size, after_size);
@@ -118,10 +163,28 @@ fn main() -> Result<(), String> {
     let args = parse::parser();
     let mut image = open_image(&args.souce_path)?;
 
-    // 圧縮
-    match compress(&mut image.data, &image.extension) {
-        Ok(_) => (),
-        Err(e) => return Err(e),
+    // 各モードの処理
+    match args.execution_mode {
+        parse::ExecutionMode::Compress => {
+            // 圧縮
+            match compress(&mut image.data, &image.extension) {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            }
+        },
+        parse::ExecutionMode::Convert => {
+            // 変換
+            let extension = match args.destination_extension {
+                Some(extension) => get_extension(&extension)?,
+                None => return Err("Destination extension is not specified".to_string()),
+            };
+
+            match convert(&mut image.data, &image.extension, &extension) {
+                Ok(img) => image = img,
+                Err(e) => return Err(e),
+            }
+        },
+        _ => (),
     }
 
     // 出力

@@ -21,7 +21,7 @@ pub struct JpegImage {
 }
 
 impl Rusimg for JpegImage {
-    fn new(&mut self, image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> {
+    fn new(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         Ok(Self {
