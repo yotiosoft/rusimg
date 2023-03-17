@@ -1,5 +1,6 @@
 extern crate mozjpeg;
 use mozjpeg::{Compress, ColorSpace, ScanMode};
+use image::DynamicImage;
 
 use std::fs::Metadata;
 use std::io::{Read, Write};
@@ -8,7 +9,8 @@ use std::path::Path;
 use crate::rusimg::Rusimg;
 
 pub struct JpegImage {
-    pub image: Vec<u8>,
+    pub image_into_bytes: Vec<u8>,
+    pub image: DynamicImage,
     pub width: usize,
     pub height: usize,
     pub extension_str: String,
@@ -19,6 +21,22 @@ pub struct JpegImage {
 }
 
 impl Rusimg for JpegImage {
+    fn new(&mut self, image: DynamicImage) -> Result<Self, String> {
+        let (width, height) = (image.width() as usize, image.height() as usize);
+
+        Ok(Self {
+            image_into_bytes: image.clone().into_bytes(),
+            image,
+            width,
+            height,
+            extension_str: "jpg".to_string(),
+            metadata_input: Metadata::default(),
+            metadata_output: None,
+            filepath_input: "".to_string(),
+            filepath_output: None,
+        })
+    }
+
     fn open(path: &str) -> Result<Self, String> {
         let mut raw_data = std::fs::File::open(path).map_err(|_| "Failed to open file".to_string())?;
         let mut buf = Vec::new();
@@ -31,7 +49,8 @@ impl Rusimg for JpegImage {
         let extension_str = Path::new(path).extension().and_then(|s| s.to_str()).unwrap_or("").to_string();
 
         Ok(Self {
-            image: image.into_bytes(),
+            image_into_bytes: image.clone().into_bytes(),
+            image,
             width,
             height,
             extension_str,
@@ -50,7 +69,7 @@ impl Rusimg for JpegImage {
             let path = format!("{}.{}", self.filepath_input, self.extension_str);
             (std::fs::File::create(&path).map_err(|_| "Failed to create file".to_string())?, path)
         };
-        file.write_all(&self.image).map_err(|_| "Failed to write file".to_string())?;
+        file.write_all(&self.image_into_bytes).map_err(|_| "Failed to write file".to_string())?;
 
         self.metadata_output = Some(file.metadata().map_err(|_| "Failed to get metadata".to_string())?);
         self.filepath_output = Some(save_path);
@@ -64,10 +83,10 @@ impl Rusimg for JpegImage {
         compress.set_size(self.width, self.height);
         compress.set_mem_dest();
         compress.start_compress();
-        compress.write_scanlines(&self.image);
+        compress.write_scanlines(&self.image_into_bytes);
         compress.finish_compress();
 
-        self.image = compress.data_to_vec().map_err(|_| "Failed to compress jpeg image".to_string())?;
+        self.image_into_bytes = compress.data_to_vec().map_err(|_| "Failed to compress jpeg image".to_string())?;
 
         Ok(())
     }

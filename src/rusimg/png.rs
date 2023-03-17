@@ -2,12 +2,14 @@ extern crate oxipng;
 
 use std::io::{Read, Write};
 use std::fs::Metadata;
+use image::DynamicImage;
 
 use crate::rusimg::Rusimg;
 
 pub struct PngImage {
-    pub image: Vec<u8>,
-    pub raw_image: Vec<u8>,
+    pub image_into_bytes: Vec<u8>,
+    pub binary_data: Vec<u8>,
+    pub image: DynamicImage,
     pub width: usize,
     pub height: usize,
     pub metadata_input: Metadata,
@@ -17,6 +19,22 @@ pub struct PngImage {
 }
 
 impl Rusimg for PngImage {
+    fn new(&mut self, image: DynamicImage) -> Result<Self, String> {
+        let (width, height) = (image.width() as usize, image.height() as usize);
+
+        Ok(Self {
+            image_into_bytes: image.clone().into_bytes(),
+            binary_data: Vec::new(),
+            image,
+            width,
+            height,
+            metadata_input: Metadata::default(),
+            metadata_output: None,
+            filepath_input: "".to_string(),
+            filepath_output: None,
+        })
+    }
+    
     fn open(path: &str) -> Result<Self, String> {
         let mut file = std::fs::File::open(path).map_err(|_| "Failed to open file".to_string())?;
         let mut buf = Vec::new();
@@ -27,8 +45,9 @@ impl Rusimg for PngImage {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         Ok(Self {
-            image: image.into_bytes(),
-            raw_image: buf,
+            image_into_bytes: image.clone().into_bytes(),
+            binary_data: buf,
+            image,
             width,
             height,
             metadata_input,
@@ -46,7 +65,7 @@ impl Rusimg for PngImage {
             let path = format!("{}.{}", self.filepath_input, "png");
             (std::fs::File::create(&path).map_err(|_| "Failed to create file".to_string())?, path)
         };
-        file.write_all(&self.image).map_err(|_| "Failed to write file".to_string())?;
+        file.write_all(&self.image_into_bytes).map_err(|_| "Failed to write file".to_string())?;
 
         self.metadata_output = Some(file.metadata().map_err(|_| "Failed to get metadata".to_string())?);
         self.filepath_output = Some(save_path);
@@ -55,9 +74,9 @@ impl Rusimg for PngImage {
     }
 
     fn compress(&mut self) -> Result<(), String> {
-        match oxipng::optimize_from_memory(&self.raw_image, &oxipng::Options::default()) {
+        match oxipng::optimize_from_memory(&self.binary_data, &oxipng::Options::default()) {
             Ok(data) => {
-                self.image = data;
+                self.image_into_bytes = data;
                 Ok(())
             },
             Err(e) => match e {
