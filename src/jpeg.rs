@@ -1,6 +1,7 @@
 extern crate mozjpeg;
 use mozjpeg::{Compress, ColorSpace, ScanMode};
 
+use std::fs::Metadata;
 use std::io::{Read, Write};
 use std::path::Path;
 
@@ -9,22 +10,18 @@ pub struct JpegImage {
     pub width: usize,
     pub height: usize,
     pub extension_str: String,
+    pub metadata_input: Metadata,
+    pub metadata_output: Option<Metadata>,
+    pub filepath_input: String,
+    pub filepath_output: Option<String>,
 }
 
 impl JpegImage {
-    pub fn new(image: Vec<u8>, width: usize, height: usize, extension_str: String) -> Self {
-        Self {
-            image,
-            width,
-            height,
-            extension_str,
-        }
-    }
-
     pub fn open(path: &str) -> Result<Self, String> {
         let mut raw_data = std::fs::File::open(path).map_err(|_| "Failed to open file".to_string())?;
         let mut buf = Vec::new();
         raw_data.read_to_end(&mut buf).map_err(|_| "Failed to read file".to_string())?;
+        let metadata_input = raw_data.metadata().map_err(|_| "Failed to get metadata".to_string())?;
 
         let image = image::load_from_memory(&buf).map_err(|_| "Failed to open image".to_string())?;
         let (width, height) = (image.width() as usize, image.height() as usize);
@@ -36,17 +33,25 @@ impl JpegImage {
             width,
             height,
             extension_str,
+            metadata_input,
+            metadata_output: None,
+            filepath_input: path.to_string(),
+            filepath_output: None,
         })
     }
 
-    pub fn save(&self, path: &Option<String>) -> Result<(), String> {
-        let mut file = if let Some(path) = path {
-            std::fs::File::create(path).map_err(|_| "Failed to create file".to_string())?
+    pub fn save(&mut self, path: &Option<String>) -> Result<(), String> {
+        let (mut file, save_path) = if let Some(path) = path {
+            (std::fs::File::create(path).map_err(|_| "Failed to create file".to_string())?, path.to_string())
         }
         else {
-            std::fs::File::create(&format!("{}.{}", "output", self.extension_str)).map_err(|_| "Failed to create file".to_string())?
+            let path = format!("{}.{}", self.filepath_input, self.extension_str);
+            (std::fs::File::create(&path).map_err(|_| "Failed to create file".to_string())?, path)
         };
         file.write_all(&self.image).map_err(|_| "Failed to write file".to_string())?;
+
+        self.metadata_output = Some(file.metadata().map_err(|_| "Failed to get metadata".to_string())?);
+        self.filepath_output = Some(save_path);
 
         Ok(())
     }

@@ -74,20 +74,36 @@ fn compress(data: &mut ImgData, extension: &Extension) -> Result<(), String> {
     }
 }
 
+fn save_print(before_path: &String, after_path: &String, before_size: u64, after_size: u64) {
+    println!("{} -> {}", before_path, after_path);
+    println!("{} -> {}", before_size, after_size);
+    println!("{}%", (after_size as f64 / before_size as f64) * 100.0);
+}
+
 fn save_image(path: &Option<String>, data: &mut ImgData, extension: &Extension) -> Result<(), String> {
     match extension {
         Extension::Jpeg => {
             match data.jpeg {
-                Some(ref jpeg) => {
-                    jpeg.save(path)
+                Some(ref mut jpeg) => {
+                    jpeg.save(path)?;
+                    save_print(
+                        &jpeg.filepath_input, &jpeg.filepath_output.as_ref().unwrap(), 
+                        jpeg.metadata_input.len(), jpeg.metadata_output.as_ref().unwrap().len()
+                    );
+                    Ok(())
                 },
                 None => return Err("Failed to save jpeg image".to_string()),
             }
         },
         Extension::Png => {
             match data.png {
-                Some(ref png) => {
-                    png.save(path)
+                Some(ref mut png) => {
+                    png.save(path)?;
+                    save_print(
+                        &png.filepath_input, &png.filepath_output.as_ref().unwrap(), 
+                        png.metadata_input.len(), png.metadata_output.as_ref().unwrap().len()
+                    );
+                    Ok(())
                 },
                 None => return Err("Failed to save png image".to_string()),
             }
