@@ -1,5 +1,4 @@
 extern crate oxipng;
-use oxipng::Interlacing;
 
 use std::io::{Read, Write};
 
@@ -36,8 +35,13 @@ impl PngImage {
         })
     }
 
-    pub fn save(&self, path: &str) -> Result<(), String> {
-        let mut file = std::fs::File::create(path).map_err(|_| "Failed to create file".to_string())?;
+    pub fn save(&self, path: &Option<String>) -> Result<(), String> {
+        let mut file = if let Some(path) = path {
+            std::fs::File::create(path).map_err(|_| "Failed to create file".to_string())?
+        }
+        else {
+            std::fs::File::create(&format!("{}.{}", "output", "png")).map_err(|_| "Failed to create file".to_string())?
+        };
         file.write_all(&self.image).map_err(|_| "Failed to write file".to_string())?;
 
         Ok(())

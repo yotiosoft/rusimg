@@ -27,13 +27,6 @@ fn get_extension(path: &str) -> Result<Extension, String> {
     }
 }
 
-fn get_extension_string(extension: &Extension) -> String {
-    match extension {
-        Extension::Jpeg => "jpg".to_string(),
-        Extension::Png => "png".to_string(),
-    }
-}
-
 fn open_image(path: &str) -> Result<Img, String> {
     match get_extension(&path) {
         Ok(Extension::Jpeg) => {
@@ -81,12 +74,12 @@ fn compress(data: &mut ImgData, extension: &Extension) -> Result<(), String> {
     }
 }
 
-fn save_image(path: &str, data: &mut ImgData, extension: &Extension) -> Result<(), String> {
+fn save_image(path: &Option<String>, data: &mut ImgData, extension: &Extension) -> Result<(), String> {
     match extension {
         Extension::Jpeg => {
             match data.jpeg {
                 Some(ref jpeg) => {
-                    jpeg.save(&path)
+                    jpeg.save(path)
                 },
                 None => return Err("Failed to save jpeg image".to_string()),
             }
@@ -94,7 +87,7 @@ fn save_image(path: &str, data: &mut ImgData, extension: &Extension) -> Result<(
         Extension::Png => {
             match data.png {
                 Some(ref png) => {
-                    png.save(&path)
+                    png.save(path)
                 },
                 None => return Err("Failed to save png image".to_string()),
             }
@@ -114,8 +107,8 @@ fn main() -> Result<(), String> {
 
     // 出力
     let output_path = match args.destination_path {
-        Some(path) => path,
-        None => "output".to_string() + "." + &get_extension_string(&image.extension),
+        Some(path) => Some(path),
+        None => None,
     };
     save_image(&output_path, &mut image.data, &image.extension)?;
 
