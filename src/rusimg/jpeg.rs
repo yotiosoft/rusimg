@@ -24,8 +24,6 @@ impl Rusimg for JpegImage {
     fn new(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
-        println!("image: {:?}", image);
-
         Ok(Self {
             image,
             image_bytes: None,
