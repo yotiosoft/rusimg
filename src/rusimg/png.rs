@@ -7,10 +7,11 @@ use image::DynamicImage;
 use crate::rusimg::Rusimg;
 
 pub struct PngImage {
-    pub binary_data: Vec<u8>,
+    binary_data: Vec<u8>,
     pub image: DynamicImage,
-    pub width: usize,
-    pub height: usize,
+    image_bytes: Option<Vec<u8>>,
+    width: usize,
+    height: usize,
     pub metadata_input: Metadata,
     pub metadata_output: Option<Metadata>,
     pub filepath_input: String,
@@ -24,6 +25,7 @@ impl Rusimg for PngImage {
         Ok(Self {
             binary_data: Vec::new(),
             image,
+            image_bytes: None,
             width,
             height,
             metadata_input: source_metadata,
@@ -45,6 +47,7 @@ impl Rusimg for PngImage {
         Ok(Self {
             binary_data: buf,
             image,
+            image_bytes: None,
             width,
             height,
             metadata_input,
@@ -55,17 +58,25 @@ impl Rusimg for PngImage {
     }
 
     fn save(&mut self, path: &Option<String>) -> Result<(), String> {
-        let (mut file, save_path) = if let Some(path) = path {
-            (std::fs::File::create(path).map_err(|_| "Failed to create file".to_string())?, path.to_string())
+        let save_path = if let Some(path) = path {
+            path.to_string()
         }
         else {
-            let path = format!("{}.{}", self.filepath_input, "png");
-            (std::fs::File::create(&path).map_err(|_| "Failed to create file".to_string())?, path)
+            format!("{}.{}", self.filepath_input, "png")
         };
-        let image_bytes = self.image.clone().into_bytes();
-        file.write_all(&image_bytes).map_err(|_| "Failed to write file".to_string())?;
+        
+        // image_bytes == None の場合、DynamicImage を 保存
+        if self.image_bytes.is_none() {
+            self.image.save(&save_path).map_err(|_| "Failed to save image".to_string())?;
+            self.metadata_output = Some(std::fs::metadata(&save_path).map_err(|_| "Failed to get metadata".to_string())?);
+        }
+        // image_bytes != None の場合、oxipng で圧縮したバイナリデータを保存
+        else {
+            let mut file = std::fs::File::create(&save_path).map_err(|_| "Failed to create file".to_string())?;
+            file.write_all(&self.image_bytes.as_ref().unwrap()).map_err(|_| "Failed to write file".to_string())?;
+            self.metadata_output = Some(file.metadata().map_err(|_| "Failed to get metadata".to_string())?);
+        }
 
-        self.metadata_output = Some(file.metadata().map_err(|_| "Failed to get metadata".to_string())?);
         self.filepath_output = Some(save_path);
 
         Ok(())
@@ -74,7 +85,7 @@ impl Rusimg for PngImage {
     fn compress(&mut self) -> Result<(), String> {
         match oxipng::optimize_from_memory(&self.binary_data, &oxipng::Options::default()) {
             Ok(data) => {
-                self.image = image::load_from_memory(&data).map_err(|_| "Failed to open image".to_string())?;
+                self.image_bytes = Some(data);
                 Ok(())
             },
             Err(e) => match e {

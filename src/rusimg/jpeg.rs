@@ -10,9 +10,10 @@ use crate::rusimg::Rusimg;
 
 pub struct JpegImage {
     pub image: DynamicImage,
-    pub width: usize,
-    pub height: usize,
-    pub extension_str: String,
+    image_bytes: Option<Vec<u8>>,
+    width: usize,
+    height: usize,
+    extension_str: String,
     pub metadata_input: Metadata,
     pub metadata_output: Option<Metadata>,
     pub filepath_input: String,
@@ -23,8 +24,11 @@ impl Rusimg for JpegImage {
     fn new(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
+        println!("image: {:?}", image);
+
         Ok(Self {
             image,
+            image_bytes: None,
             width,
             height,
             extension_str: "jpg".to_string(),
@@ -48,6 +52,7 @@ impl Rusimg for JpegImage {
 
         Ok(Self {
             image,
+            image_bytes: None,
             width,
             height,
             extension_str,
@@ -59,17 +64,25 @@ impl Rusimg for JpegImage {
     }
 
     fn save(&mut self, path: &Option<String>) -> Result<(), String> {
-        let (mut file, save_path) = if let Some(path) = path {
-            (std::fs::File::create(path).map_err(|_| "Failed to create file".to_string())?, path.to_string())
+        let save_path = if let Some(path) = path {
+            path.to_string()
         }
         else {
-            let path = format!("{}.{}", self.filepath_input, self.extension_str);
-            (std::fs::File::create(&path).map_err(|_| "Failed to create file".to_string())?, path)
+            format!("{}.{}", self.filepath_input, self.extension_str)
         };
-        let image_bytes = self.image.clone().into_bytes();
-        file.write_all(&image_bytes).map_err(|_| "Failed to write file".to_string())?;
+        
+        // image_bytes == None の場合、DynamicImage を 保存
+        if self.image_bytes.is_none() {
+            self.image.save(&save_path).map_err(|_| "Failed to save image".to_string())?;
+            self.metadata_output = Some(std::fs::metadata(&save_path).map_err(|_| "Failed to get metadata".to_string())?);
+        }
+        // image_bytes != None の場合、oxipng で圧縮したバイナリデータを保存
+        else {
+            let mut file = std::fs::File::create(&save_path).map_err(|_| "Failed to create file".to_string())?;
+            file.write_all(&self.image_bytes.as_ref().unwrap()).map_err(|_| "Failed to write file".to_string())?;
+            self.metadata_output = Some(file.metadata().map_err(|_| "Failed to get metadata".to_string())?);
+        }
 
-        self.metadata_output = Some(file.metadata().map_err(|_| "Failed to get metadata".to_string())?);
         self.filepath_output = Some(save_path);
 
         Ok(())
@@ -86,7 +99,7 @@ impl Rusimg for JpegImage {
         compress.write_scanlines(&image_bytes);
         compress.finish_compress();
 
-        self.image = image::load_from_memory(&compress.data_to_vec().unwrap()).map_err(|_| "Failed to compress jpeg image".to_string())?;
+        self.image_bytes = Some(compress.data_to_vec().map_err(|_| "Failed to compress image".to_string())?);
 
         Ok(())
     }
