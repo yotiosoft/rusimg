@@ -72,9 +72,8 @@ impl Rusimg for WebpImage {
         
         // image_bytes == None の場合、DynamicImage を 保存
         if self.image_bytes.is_none() {
-            let img_vec = self.image.to_rgba8().to_vec();
-            let webp_encoder = webp::Encoder::from_rgba(&img_vec, self.width as u32, self.height as u32);
-            let webp_vec = webp_encoder.encode(100.0).to_vec();
+            let encoded_webp = webp::Encoder::from_image(&self.image).map_err(|e| format!("Failed to encode webp: {}", e))?.encode(75.0);
+            let webp_vec = encoded_webp.to_vec();
 
             let mut file = std::fs::File::create(&save_path).map_err(|_| "Failed to create file".to_string())?;
             file.write_all(&webp_vec).map_err(|_| "Failed to write file".to_string())?;
