@@ -3,18 +3,21 @@ use std::path::Path;
 mod parse;
 mod rusimg;
 
+use rusimg::Rusimg;
 use rusimg::jpeg;
 use rusimg::png;
-use rusimg::Rusimg;
+use rusimg::webp;
 
 pub enum Extension {
     Jpeg,
     Png,
+    Webp,
 }
 
 struct ImgData {
     jpeg: Option<jpeg::JpegImage>,
     png: Option<png::PngImage>,
+    webp: Option<webp::WebpImage>,
 }
 
 struct Img {
@@ -26,11 +29,14 @@ fn get_extension(path: &str) -> Result<Extension, String> {
     match Path::new(path).extension().and_then(|s| s.to_str()) {
         Some("jpg") | Some("jpeg") => Ok(Extension::Jpeg),
         Some("png") => Ok(Extension::Png),
+        Some("webp") => Ok(Extension::Webp),
         _ => {
             if path.ends_with("jpg") || path.ends_with("jpeg") {
                 Ok(Extension::Jpeg)
             } else if path.ends_with("png") {
                 Ok(Extension::Png)
+            } else if path.ends_with("webp") {
+                Ok(Extension::Webp)
             } else {
                 Err("Unsupported file extension".to_string())
             }
@@ -47,6 +53,7 @@ fn open_image(path: &str) -> Result<Img, String> {
                 data: ImgData {
                     jpeg: Some(jpeg),
                     png: None,
+                    webp: None,
                 },
             })
         },
@@ -57,6 +64,18 @@ fn open_image(path: &str) -> Result<Img, String> {
                 data: ImgData {
                     jpeg: None,
                     png: Some(png),
+                    webp: None,
+                },
+            })
+        },
+        Ok(Extension::Webp) => {
+            let webp = webp::WebpImage::open(&path).map_err(|e| e.to_string())?;
+            Ok(Img {
+                extension: Extension::Webp,
+                data: ImgData {
+                    jpeg: None,
+                    png: None,
+                    webp: Some(webp),
                 },
             })
         },
@@ -82,6 +101,14 @@ fn compress(data: &mut ImgData, extension: &Extension) -> Result<(), String> {
                 None => return Err("Failed to save png image".to_string()),
             }
         },
+        Extension::Webp => {
+            match &mut data.webp {
+                Some(webp) => {
+                    webp.compress()
+                },
+                None => return Err("Failed to save webp image".to_string()),
+            }
+        },
     }
 }
 
@@ -102,6 +129,18 @@ fn convert(data: &mut ImgData, source_extension: &Extension, destination_extensi
                                 data: ImgData {
                                     jpeg: None,
                                     png: Some(png),
+                                    webp: None,
+                                },
+                            })
+                        },
+                        Extension::Webp => {
+                            let webp = webp::WebpImage::new(dynamic_image, jpeg.filepath_input.clone(), jpeg.metadata_input.clone())?;
+                            Ok(Img {
+                                extension: Extension::Webp,
+                                data: ImgData {
+                                    jpeg: None,
+                                    webp: Some(webp),
+                                    png: None,
                                 },
                             })
                         },
@@ -122,15 +161,62 @@ fn convert(data: &mut ImgData, source_extension: &Extension, destination_extensi
                                 data: ImgData {
                                     jpeg: Some(jpeg),
                                     png: None,
+                                    webp: None,
                                 },
                             })
                         },
                         Extension::Png => {
                             Err("Source and destination extensions are the same".to_string())
                         },
+                        Extension::Webp => {
+                            let webp = webp::WebpImage::new(dynamic_image, png.filepath_input.clone(), png.metadata_input.clone())?;
+                            Ok(Img {
+                                extension: Extension::Webp,
+                                data: ImgData {
+                                    jpeg: None,
+                                    webp: Some(webp),
+                                    png: None,
+                                },
+                            })
+                        },
                     }
                 },
                 None => return Err("Failed to save png image".to_string()),
+            }
+        },
+        Extension::Webp => {
+            match &mut data.webp {
+                Some(webp) => {
+                    let dynamic_image = webp.image.clone();
+                    match destination_extension {
+                        Extension::Jpeg => {
+                            let jpeg = jpeg::JpegImage::new(dynamic_image, webp.filepath_input.clone(), webp.metadata_input.clone())?;
+                            Ok(Img {
+                                extension: Extension::Jpeg,
+                                data: ImgData {
+                                    jpeg: Some(jpeg),
+                                    png: None,
+                                    webp: None,
+                                },
+                            })
+                        },
+                        Extension::Png => {
+                            let png = png::PngImage::new(dynamic_image, webp.filepath_input.clone(), webp.metadata_input.clone())?;
+                            Ok(Img {
+                                extension: Extension::Png,
+                                data: ImgData {
+                                    jpeg: None,
+                                    png: Some(png),
+                                    webp: None,
+                                },
+                            })
+                        },
+                        Extension::Webp => {
+                            Err("Source and destination extensions are the same".to_string())
+                        },
+                    }
+                },
+                None => return Err("Failed to save webp image".to_string()),
             }
         },
     }
@@ -168,6 +254,19 @@ fn save_image(path: &Option<String>, data: &mut ImgData, extension: &Extension) 
                     Ok(())
                 },
                 None => return Err("Failed to save png image".to_string()),
+            }
+        },
+        Extension::Webp => {
+            match data.webp {
+                Some(ref mut webp) => {
+                    webp.save(path)?;
+                    save_print(
+                        &webp.filepath_input, &webp.filepath_output.as_ref().unwrap(), 
+                        webp.metadata_input.len(), webp.metadata_output.as_ref().unwrap().len()
+                    );
+                    Ok(())
+                },
+                None => return Err("Failed to save webp image".to_string()),
             }
         },
     }

@@ -1,5 +1,6 @@
 pub mod jpeg;
 pub mod png;
+pub mod webp;
 
 use image::DynamicImage;
 use std::fs::Metadata;
