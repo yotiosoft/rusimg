@@ -139,8 +139,8 @@ fn convert(data: &mut ImgData, source_extension: &Extension, destination_extensi
                                 extension: Extension::Webp,
                                 data: ImgData {
                                     jpeg: None,
-                                    webp: Some(webp),
                                     png: None,
+                                    webp: Some(webp),
                                 },
                             })
                         },
@@ -174,8 +174,8 @@ fn convert(data: &mut ImgData, source_extension: &Extension, destination_extensi
                                 extension: Extension::Webp,
                                 data: ImgData {
                                     jpeg: None,
-                                    webp: Some(webp),
                                     png: None,
+                                    webp: Some(webp),
                                 },
                             })
                         },
@@ -286,12 +286,12 @@ fn main() -> Result<(), String> {
             }
         },
         parse::ExecutionMode::Convert => {
-            // 変換
             let extension = match args.destination_extension {
                 Some(extension) => get_extension(&extension)?,
                 None => return Err("Destination extension is not specified".to_string()),
             };
 
+            // 変換
             match convert(&mut image.data, &image.extension, &extension) {
                 Ok(img) => image = img,
                 Err(e) => return Err(e),
