@@ -72,28 +72,7 @@ impl Rusimg for WebpImage {
         else {
             format!("{}.{}", self.filepath_input, self.extension_str)
         };
-
-        let img = image::open("d:\\git\\blog\\assets\\img\\post\\2023-03-18\\PXL_20230305_212909597.jpg").unwrap();
-        let (w, h) = img.dimensions();
-        // Optionally, resize the existing photo and convert back into DynamicImage
-        let size_factor = 1.0;
-        let img: DynamicImage = image::DynamicImage::ImageRgba8(imageops::resize(
-            &img,
-            (w as f64 * size_factor) as u32,
-            (h as f64 * size_factor) as u32,
-            image::imageops::FilterType::Triangle,
-        ));
-
-        // Create the WebP encoder for the above image
-        let encoder: Encoder = Encoder::from_image(&img).unwrap();
-        // Encode the image at a specified quality 0-100
-        let webp: WebPMemory = encoder.encode(90f32);
-        // Define and write the WebP-encoded file to a given path
-        let output_path = "d:\\git\\blog\\assets\\img\\post\\2023-03-18\\PXL_20230305_212909597.jpg.webp";
-        std::fs::write(&output_path, &*webp).unwrap();
-        self.metadata_output = Some(std::fs::metadata(&output_path).map_err(|_| "Failed to get metadata".to_string())?);
-        self.filepath_output = Some(save_path);
-       /* 
+       
         // image_bytes == None の場合、DynamicImage を 保存
         if self.image_bytes.is_none() {
             let encoded_webp = webp::Encoder::from_image(&self.image).map_err(|e| format!("Failed to encode webp: {}", e))?.encode(75.0);
@@ -111,7 +90,7 @@ impl Rusimg for WebpImage {
         }
 
         self.filepath_output = Some(save_path);
-*/
+
         Ok(())
     }
 
