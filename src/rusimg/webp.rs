@@ -72,8 +72,13 @@ impl Rusimg for WebpImage {
         
         // image_bytes == None の場合、DynamicImage を 保存
         if self.image_bytes.is_none() {
-            self.image.save(&save_path).map_err(|e| format!("Failed to save image: {}", e.to_string()))?;
-            self.metadata_output = Some(std::fs::metadata(&save_path).map_err(|_| "Failed to get metadata".to_string())?);
+            let img_vec = self.image.to_rgba8().to_vec();
+            let webp_encoder = webp::Encoder::from_rgba(&img_vec, self.width as u32, self.height as u32);
+            let webp_vec = webp_encoder.encode(100.0).to_vec();
+
+            let mut file = std::fs::File::create(&save_path).map_err(|_| "Failed to create file".to_string())?;
+            file.write_all(&webp_vec).map_err(|_| "Failed to write file".to_string())?;
+            self.metadata_output = Some(file.metadata().map_err(|_| "Failed to get metadata".to_string())?);
         }
         // image_bytes != None の場合、oxipng で圧縮したバイナリデータを保存
         else {
