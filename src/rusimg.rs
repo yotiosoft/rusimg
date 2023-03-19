@@ -7,7 +7,7 @@ use image::DynamicImage;
 use std::fs::Metadata;
 
 pub trait Rusimg {
-    fn new(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> where Self: Sized;
+    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> where Self: Sized;
     fn open(path: &str) -> Result<Self, String> where Self: Sized;
     fn save(&mut self, path: Option<&String>) -> Result<(), String>;
     fn compress(&mut self) -> Result<(), String>;
@@ -150,7 +150,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                             Ok(source_img.clone())
                         },
                         Extension::Webp => {
-                            let webp = webp::WebpImage::new(dynamic_image, jpeg.filepath_input.clone(), jpeg.metadata_input.clone())?;
+                            let webp = webp::WebpImage::import(dynamic_image, jpeg.filepath_input.clone(), jpeg.metadata_input.clone())?;
                             Ok(Img {
                                 extension: Extension::Webp,
                                 data: ImgData {
@@ -171,7 +171,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                     let dynamic_image = png.image.clone();
                     match destination_extension {
                         Extension::Jpeg => {
-                            let jpeg = jpeg::JpegImage::new(dynamic_image, png.filepath_input.clone(), png.metadata_input.clone())?;
+                            let jpeg = jpeg::JpegImage::import(dynamic_image, png.filepath_input.clone(), png.metadata_input.clone())?;
                             Ok(Img {
                                 extension: Extension::Jpeg,
                                 data: ImgData {
@@ -185,7 +185,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                             Ok(source_img.clone())
                         },
                         Extension::Webp => {
-                            let webp = webp::WebpImage::new(dynamic_image, png.filepath_input.clone(), png.metadata_input.clone())?;
+                            let webp = webp::WebpImage::import(dynamic_image, png.filepath_input.clone(), png.metadata_input.clone())?;
                             Ok(Img {
                                 extension: Extension::Webp,
                                 data: ImgData {
@@ -206,7 +206,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                     let dynamic_image = webp.image.clone();
                     match destination_extension {
                         Extension::Jpeg => {
-                            let jpeg = jpeg::JpegImage::new(dynamic_image, webp.filepath_input.clone(), webp.metadata_input.clone())?;
+                            let jpeg = jpeg::JpegImage::import(dynamic_image, webp.filepath_input.clone(), webp.metadata_input.clone())?;
                             Ok(Img {
                                 extension: Extension::Jpeg,
                                 data: ImgData {
@@ -217,7 +217,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                             })
                         },
                         Extension::Png => {
-                            let png = png::PngImage::new(dynamic_image, webp.filepath_input.clone(), webp.metadata_input.clone())?;
+                            let png = png::PngImage::import(dynamic_image, webp.filepath_input.clone(), webp.metadata_input.clone())?;
                             Ok(Img {
                                 extension: Extension::Png,
                                 data: ImgData {

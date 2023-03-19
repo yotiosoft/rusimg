@@ -13,6 +13,7 @@ pub struct PngImage {
     image_bytes: Option<Vec<u8>>,
     width: usize,
     height: usize,
+    operations_count: u32,
     pub metadata_input: Metadata,
     pub metadata_output: Option<Metadata>,
     pub filepath_input: String,
@@ -20,7 +21,7 @@ pub struct PngImage {
 }
 
 impl Rusimg for PngImage {
-    fn new(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> {
+    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         Ok(Self {
@@ -29,6 +30,7 @@ impl Rusimg for PngImage {
             image_bytes: None,
             width,
             height,
+            operations_count: 0,
             metadata_input: source_metadata,
             metadata_output: None,
             filepath_input: source_path,
@@ -51,6 +53,7 @@ impl Rusimg for PngImage {
             image_bytes: None,
             width,
             height,
+            operations_count: 0,
             metadata_input,
             metadata_output: None,
             filepath_input: path.to_string(),
@@ -82,6 +85,7 @@ impl Rusimg for PngImage {
         match oxipng::optimize_from_memory(&self.binary_data, &oxipng::Options::default()) {
             Ok(data) => {
                 self.image_bytes = Some(data);
+                self.operations_count += 1;
                 Ok(())
             },
             Err(e) => match e {

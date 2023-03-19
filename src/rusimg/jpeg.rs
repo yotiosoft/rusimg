@@ -14,6 +14,7 @@ pub struct JpegImage {
     image_bytes: Option<Vec<u8>>,
     width: usize,
     height: usize,
+    operations_count: u32,
     extension_str: String,
     pub metadata_input: Metadata,
     pub metadata_output: Option<Metadata>,
@@ -22,7 +23,7 @@ pub struct JpegImage {
 }
 
 impl Rusimg for JpegImage {
-    fn new(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> {
+    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         Ok(Self {
@@ -30,6 +31,7 @@ impl Rusimg for JpegImage {
             image_bytes: None,
             width,
             height,
+            operations_count: 0,
             extension_str: "jpg".to_string(),
             metadata_input: source_metadata,
             metadata_output: None,
@@ -54,6 +56,7 @@ impl Rusimg for JpegImage {
             image_bytes: None,
             width,
             height,
+            operations_count: 0,
             extension_str,
             metadata_input,
             metadata_output: None,
@@ -94,6 +97,8 @@ impl Rusimg for JpegImage {
         compress.finish_compress();
 
         self.image_bytes = Some(compress.data_to_vec().map_err(|_| "Failed to compress image".to_string())?);
+
+        self.operations_count += 1;
 
         Ok(())
     }
