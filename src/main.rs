@@ -54,7 +54,7 @@ fn main() -> Result<(), String> {
         match args.execution_mode {
             parse::ExecutionMode::Compress => {
                 // 圧縮
-                match rusimg::compress(&mut image.data, &image.extension) {
+                match rusimg::compress(&mut image.data, &image.extension, args.quality) {
                     Ok(_) => (),
                     Err(e) => return Err(e),
                 }
@@ -79,7 +79,7 @@ fn main() -> Result<(), String> {
             Some(path) => Some(path),
             None => None,
         };
-        let saved_filepath = rusimg::save_image(output_path, &mut image.data, &image.extension, args.quality)?;
+        let saved_filepath = rusimg::save_image(output_path, &mut image.data, &image.extension)?;
 
         // 元ファイルの削除 (optinal: -d)
         if args.delete && args.execution_mode == parse::ExecutionMode::Convert && image_file_path != saved_filepath {

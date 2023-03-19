@@ -34,6 +34,10 @@ enum SubCommands {
         /// Destination file path
         #[arg(short, long)]
         to: Option<String>,
+
+        /// Image quality
+        #[arg(short, long)]
+        quality: Option<f32>,
     },
 
     /// Image conversion
@@ -73,11 +77,14 @@ pub fn parser() -> ArgStruct {
     // Subcommands
     if let Some(subcmds) = args.subcmds {
         match subcmds {
-            SubCommands::Compress { source, to } => {
+            SubCommands::Compress { source, to, quality } => {
                 arg_struct.execution_mode = ExecutionMode::Compress;
                 arg_struct.souce_path = source;
                 if let Some(destination) = to {
                     arg_struct.destination_path = Some(destination);
+                }
+                if let Some(quality) = quality {
+                    arg_struct.quality = Some(quality);
                 }
             }
             SubCommands::Convert { source, to, extension, quality, delete, } => {

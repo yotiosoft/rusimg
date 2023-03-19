@@ -9,8 +9,8 @@ use std::fs::Metadata;
 pub trait Rusimg {
     fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> where Self: Sized;
     fn open(path: &str) -> Result<Self, String> where Self: Sized;
-    fn save(&mut self, path: Option<&String>, quality: Option<f32>) -> Result<(), String>;
-    fn compress(&mut self) -> Result<(), String>;
+    fn save(&mut self, path: Option<&String>) -> Result<(), String>;
+    fn compress(&mut self, quality: Option<f32>) -> Result<(), String>;
 
     fn save_filepath(source_filepath: &String, destination_filepath: Option<&String>, new_extension: &String) -> String {
         if let Some(path) = destination_filepath {
@@ -107,12 +107,12 @@ pub fn open_image(path: &str) -> Result<Img, String> {
     }
 }
 
-pub fn compress(data: &mut ImgData, extension: &Extension) -> Result<(), String> {
+pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>) -> Result<(), String> {
     match extension {
         Extension::Jpeg => {
             match &mut data.jpeg {
                 Some(jpeg) => {
-                    jpeg.compress()
+                    jpeg.compress(quality)
                 },
                 None => return Err("Failed to save jpeg image".to_string()),
             }
@@ -120,7 +120,7 @@ pub fn compress(data: &mut ImgData, extension: &Extension) -> Result<(), String>
         Extension::Png => {
             match &mut data.png {
                 Some(png) => {
-                    png.compress()
+                    png.compress(quality)
                 },
                 None => return Err("Failed to save png image".to_string()),
             }
@@ -128,7 +128,7 @@ pub fn compress(data: &mut ImgData, extension: &Extension) -> Result<(), String>
         Extension::Webp => {
             match &mut data.webp {
                 Some(webp) => {
-                    webp.compress()
+                    webp.compress(quality)
                 },
                 None => return Err("Failed to save webp image".to_string()),
             }
@@ -250,12 +250,12 @@ pub fn save_print(before_path: &String, after_path: &String, before_size: u64, a
     println!("{} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
 }
 
-pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extension, quality: Option<f32>) -> Result<String, String> {
+pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extension) -> Result<String, String> {
     match extension {
         Extension::Jpeg => {
             match data.jpeg {
                 Some(ref mut jpeg) => {
-                    jpeg.save(path, quality)?;
+                    jpeg.save(path)?;
                     save_print(
                         &jpeg.filepath_input, &jpeg.filepath_output.as_ref().unwrap(), 
                         jpeg.metadata_input.len(), jpeg.metadata_output.as_ref().unwrap().len()
@@ -268,7 +268,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
         Extension::Png => {
             match data.png {
                 Some(ref mut png) => {
-                    png.save(path, quality)?;
+                    png.save(path)?;
                     save_print(
                         &png.filepath_input, &png.filepath_output.as_ref().unwrap(), 
                         png.metadata_input.len(), png.metadata_output.as_ref().unwrap().len()
@@ -281,7 +281,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
         Extension::Webp => {
             match data.webp {
                 Some(ref mut webp) => {
-                    webp.save(path, quality)?;
+                    webp.save(path)?;
                     save_print(
                         &webp.filepath_input, &webp.filepath_output.as_ref().unwrap(), 
                         webp.metadata_input.len(), webp.metadata_output.as_ref().unwrap().len()

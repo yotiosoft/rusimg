@@ -61,7 +61,7 @@ impl Rusimg for PngImage {
         })
     }
 
-    fn save(&mut self, path: Option<&String>, quality: Option<f32>) -> Result<(), String> {
+    fn save(&mut self, path: Option<&String>) -> Result<(), String> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"png".to_string());
         
         // image_bytes == None の場合、DynamicImage を 保存
@@ -81,7 +81,7 @@ impl Rusimg for PngImage {
         Ok(())
     }
 
-    fn compress(&mut self) -> Result<(), String> {
+    fn compress(&mut self, quality: Option<f32>) -> Result<(), String> {
         match oxipng::optimize_from_memory(&self.binary_data, &oxipng::Options::default()) {
             Ok(data) => {
                 self.image_bytes = Some(data);

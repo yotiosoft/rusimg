@@ -16,6 +16,7 @@ pub struct WebpImage {
     width: usize,
     height: usize,
     operations_count: u32,
+    required_quality: Option<f32>,
     pub metadata_input: Metadata,
     pub metadata_output: Option<Metadata>,
     pub filepath_input: String,
@@ -32,6 +33,7 @@ impl Rusimg for WebpImage {
             width,
             height,
             operations_count: 0,
+            required_quality: None,
             metadata_input: source_metadata,
             metadata_output: None,
             filepath_input: source_path,
@@ -56,6 +58,7 @@ impl Rusimg for WebpImage {
                 width,
                 height,
                 operations_count: 0,
+                required_quality: None,
                 metadata_input,
                 metadata_output: None,
                 filepath_input: path.to_string(),
@@ -67,7 +70,7 @@ impl Rusimg for WebpImage {
         }
     }
 
-    fn save(&mut self, path: Option<&String>, quality: Option<f32>) -> Result<(), String> {
+    fn save(&mut self, path: Option<&String>) -> Result<(), String> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"webp".to_string());
 
         // 元が webp かつ操作回数が 0 なら encode しない
@@ -82,15 +85,15 @@ impl Rusimg for WebpImage {
             return Ok(());
         }
 
-        // quality : 元が webp なら 既定で 100.0, それ以外なら 75.0
-        let quality = if let Some(q) = quality {
-            q
+        // quality
+        let quality = if let Some(q) = self.required_quality {
+            q       // 指定されていればその値
         }
         else if source_is_webp {
-            100.0
+            100.0   // 元が webp なら 既定で 100.0
         }
         else {
-            75.0
+            75.0    // それ以外なら 75.0
         };
        
         // DynamicImage を 保存
@@ -105,8 +108,10 @@ impl Rusimg for WebpImage {
         Ok(())
     }
 
-    fn compress(&mut self) -> Result<(), String> {
+    fn compress(&mut self, quality: Option<f32>) -> Result<(), String> {
+        // webp の場合、圧縮は save() で行う
+        self.required_quality = quality;
         self.operations_count += 1;
-        Err("Sorry. Webp does not support compression yet.".to_string())
+        Ok(())
     }
 }

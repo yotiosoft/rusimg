@@ -65,7 +65,7 @@ impl Rusimg for JpegImage {
         })
     }
 
-    fn save(&mut self, path: Option<&String>, quality: Option<f32>) -> Result<(), String> {
+    fn save(&mut self, path: Option<&String>) -> Result<(), String> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &self.extension_str);
         
         // image_bytes == None の場合、DynamicImage を 保存
@@ -85,13 +85,16 @@ impl Rusimg for JpegImage {
         Ok(())
     }
 
-    fn compress(&mut self) -> Result<(), String> {
+    fn compress(&mut self, quality: Option<f32>) -> Result<(), String> {
+        let quality = quality.unwrap_or(75.0);  // default quality: 75.0
+
         let image_bytes = self.image.clone().into_bytes();
 
         let mut compress = Compress::new(ColorSpace::JCS_RGB);
         compress.set_scan_optimization_mode(ScanMode::AllComponentsTogether);
         compress.set_size(self.width, self.height);
         compress.set_mem_dest();
+        compress.set_quality(quality);
         compress.start_compress();
         compress.write_scanlines(&image_bytes);
         compress.finish_compress();
