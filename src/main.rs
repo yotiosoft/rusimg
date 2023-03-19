@@ -45,7 +45,7 @@ fn main() -> Result<(), String> {
     };
 
     for image_file in image_files {
-        println!("Processing {}...", &image_file);
+        println!("[Processing: {}]", &Path::new(&image_file).file_name().unwrap().to_str().unwrap());
 
         // ファイルを開く
         let mut image = rusimg::open_image(&image_file)?;
