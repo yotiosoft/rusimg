@@ -70,12 +70,7 @@ impl Rusimg for WebpImage {
     }
 
     fn save(&mut self, path: Option<&String>) -> Result<(), String> {
-        let save_path = if let Some(path) = path {
-            path.to_string()
-        }
-        else {
-            format!("{}.{}", self.filepath_input, self.extension_str)
-        };
+        let save_path = Self::save_filepath(&self.filepath_input, path, &"webp".to_string());
        
         // image_bytes == None の場合、DynamicImage を 保存
         if self.image_bytes.is_none() {

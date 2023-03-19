@@ -11,6 +11,15 @@ pub trait Rusimg {
     fn open(path: &str) -> Result<Self, String> where Self: Sized;
     fn save(&mut self, path: Option<&String>) -> Result<(), String>;
     fn compress(&mut self) -> Result<(), String>;
+
+    fn save_filepath(source_filepath: &String, destination_filepath: Option<&String>, new_extension: &String) -> String {
+        if let Some(path) = destination_filepath {
+            path.to_string()
+        }
+        else {
+            Path::new(&source_filepath).with_extension(new_extension).to_str().unwrap().to_string()
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
