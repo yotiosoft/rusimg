@@ -84,7 +84,7 @@ impl Rusimg for WebpImage {
             file.write_all(&encoded_webp.as_bytes()).map_err(|_| "Failed to write file".to_string())?;
             self.metadata_output = Some(file.metadata().map_err(|_| "Failed to get metadata".to_string())?);
         }
-        // image_bytes != None の場合、oxipng で圧縮したバイナリデータを保存
+        // image_bytes != None の場合、圧縮したバイナリデータを保存
         else {
             let mut file = std::fs::File::create(&save_path).map_err(|_| "Failed to create file".to_string())?;
             file.write_all(&self.image_bytes.as_ref().unwrap()).map_err(|_| "Failed to write file".to_string())?;
