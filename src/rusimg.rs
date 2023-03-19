@@ -14,7 +14,13 @@ pub trait Rusimg {
 
     fn save_filepath(source_filepath: &String, destination_filepath: Option<&String>, new_extension: &String) -> String {
         if let Some(path) = destination_filepath {
-            path.to_string()
+            if Path::new(path).is_dir() {
+                let filename = Path::new(&source_filepath).file_name().unwrap().to_str().unwrap();
+                Path::new(path).join(filename).with_extension(new_extension).to_str().unwrap().to_string()
+            }
+            else {
+                path.to_string()
+            }
         }
         else {
             Path::new(&source_filepath).with_extension(new_extension).to_str().unwrap().to_string()

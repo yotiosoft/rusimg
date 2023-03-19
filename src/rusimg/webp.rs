@@ -90,21 +90,13 @@ impl Rusimg for WebpImage {
             75.0
         };
        
-        // image_bytes == None の場合、DynamicImage を 保存
-        if self.image_bytes.is_none() {
-            let encoded_webp = webp::Encoder::from_image(&self.image).map_err(|e| format!("Failed to encode webp: {}", e))?.encode(quality);
+        // DynamicImage を 保存
+        let encoded_webp = webp::Encoder::from_image(&self.image).map_err(|e| format!("Failed to encode webp: {}", e))?.encode(quality);
 
-            let mut file = std::fs::File::create(&save_path).map_err(|_| "Failed to create file".to_string())?;
-            file.write_all(&encoded_webp.as_bytes()).map_err(|_| "Failed to write file".to_string())?;
-            self.metadata_output = Some(file.metadata().map_err(|_| "Failed to get metadata".to_string())?);
-        }
-        // image_bytes != None の場合、圧縮したバイナリデータを保存
-        else {
-            let mut file = std::fs::File::create(&save_path).map_err(|_| "Failed to create file".to_string())?;
-            file.write_all(&self.image_bytes.as_ref().unwrap()).map_err(|_| "Failed to write file".to_string())?;
-            self.metadata_output = Some(file.metadata().map_err(|_| "Failed to get metadata".to_string())?);
-        }
+        let mut file = std::fs::File::create(&save_path).map_err(|_| "Failed to create file".to_string())?;
+        file.write_all(&encoded_webp.as_bytes()).map_err(|_| "Failed to write file".to_string())?;
 
+        self.metadata_output = Some(file.metadata().map_err(|_| "Failed to get metadata".to_string())?);
         self.filepath_output = Some(save_path);
 
         Ok(())
