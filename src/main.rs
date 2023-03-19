@@ -1,5 +1,38 @@
+use std::path::Path;
+use std::env;
+use std::fs;
+
 mod parse;
 mod rusimg;
+
+fn get_files_in_dir(dir_path: String) -> Result<Vec<String>, String> {
+    let mut files = fs::read_dir(&dir_path).expect("cannot read directory");
+    let mut ret = Vec::new();
+
+    while let Some(file) = files.next() {
+        let dir_entry = file;
+        match dir_entry {
+            Ok(dir_entry) => {
+                let path = dir_entry.path();
+                if path.is_dir() {
+                    let mut files = get_files_in_dir(path.into_os_string().into_string().expect("cannot convert file name"))?;
+                    ret.append(&mut files);
+                }
+                else {
+                    let file_name = dir_entry.file_name().into_string().expect("cannot convert file name");
+                    if rusimg::get_extension(&file_name).is_ok() {
+                        ret.push(file_name);
+                    }
+                }
+            },
+            Err(e) => {
+                println!("cannot read a directory entry: {}", e.to_string());
+                continue;
+            },
+        }
+    }
+    Ok(ret)
+}
 
 fn main() -> Result<(), String> {
     let args = parse::parser();
