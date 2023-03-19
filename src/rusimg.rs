@@ -9,7 +9,7 @@ use std::fs::Metadata;
 pub trait Rusimg {
     fn new(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> where Self: Sized;
     fn open(path: &str) -> Result<Self, String> where Self: Sized;
-    fn save(&mut self, path: &Option<String>) -> Result<(), String>;
+    fn save(&mut self, path: Option<&String>) -> Result<(), String>;
     fn compress(&mut self) -> Result<(), String>;
 }
 
@@ -232,7 +232,7 @@ pub fn save_print(before_path: &String, after_path: &String, before_size: u64, a
     println!("{} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
 }
 
-pub fn save_image(path: &Option<String>, data: &mut ImgData, extension: &Extension) -> Result<(), String> {
+pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extension) -> Result<(), String> {
     match extension {
         Extension::Jpeg => {
             match data.jpeg {

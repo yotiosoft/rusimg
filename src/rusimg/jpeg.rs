@@ -61,7 +61,7 @@ impl Rusimg for JpegImage {
         })
     }
 
-    fn save(&mut self, path: &Option<String>) -> Result<(), String> {
+    fn save(&mut self, path: Option<&String>) -> Result<(), String> {
         let save_path = if let Some(path) = path {
             path.to_string()
         }
