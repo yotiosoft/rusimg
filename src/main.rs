@@ -20,7 +20,7 @@ fn get_files_in_dir(dir_path: &String) -> Result<Vec<String>, String> {
                 else {
                     let file_name = dir_entry.file_name().into_string().expect("cannot convert file name");
                     if rusimg::get_extension(&file_name).is_ok() {
-                        ret.push(file_name);
+                        ret.push(Path::new(&dir_path).join(&file_name).to_str().expect("cannot convert file name").to_string());
                     }
                 }
             },
