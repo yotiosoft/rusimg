@@ -229,8 +229,7 @@ pub fn convert(data: &mut ImgData, source_extension: &Extension, destination_ext
 
 pub fn save_print(before_path: &String, after_path: &String, before_size: u64, after_size: u64) {
     println!("{} -> {}", before_path, after_path);
-    println!("{} -> {}", before_size, after_size);
-    println!("{}%", (after_size as f64 / before_size as f64) * 100.0);
+    println!("{} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
 }
 
 pub fn save_image(path: &Option<String>, data: &mut ImgData, extension: &Extension) -> Result<(), String> {
