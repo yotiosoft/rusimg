@@ -82,7 +82,32 @@ impl Rusimg for PngImage {
     }
 
     fn compress(&mut self, quality: Option<f32>) -> Result<(), String> {
-        match oxipng::optimize_from_memory(&self.binary_data, &oxipng::Options::default()) {
+        // quality の値に応じて level を設定
+        let level = if let Some(q) = quality {
+            if q <= 17.0 {
+                0
+            }
+            else if q > 17.0 && q <= 34.0 {
+                1
+            }
+            else if q > 34.0 && q <= 51.0 {
+                2
+            }
+            else if q > 51.0 && q <= 68.0 {
+                3
+            }
+            else if q > 68.0 && q <= 85.0 {
+                4
+            }
+            else {
+                5
+            }
+        }
+        else {
+            5
+        };
+
+        match oxipng::optimize_from_memory(&self.binary_data, &oxipng::Options::from_preset(level)) {
             Ok(data) => {
                 self.image_bytes = Some(data);
                 self.operations_count += 1;
