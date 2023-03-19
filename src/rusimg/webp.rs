@@ -1,9 +1,6 @@
 extern crate image;
 extern crate webp;
 
-use image::*;
-use webp::*;
-
 use image::{DynamicImage, EncodableLayout};
 
 use std::fs::Metadata;
@@ -47,22 +44,28 @@ impl Rusimg for WebpImage {
         raw_data.read_to_end(&mut buf).map_err(|_| "Failed to read file".to_string())?;
         let metadata_input = raw_data.metadata().map_err(|_| "Failed to get metadata".to_string())?;
 
-        let image = image::load_from_memory(&buf).map_err(|_| "Failed to open image".to_string())?;
-        let (width, height) = (image.width() as usize, image.height() as usize);
+        let webp_decoder = webp::Decoder::new(&buf).decode();
+        if let Some(webp_decoder) = webp_decoder {
+            let image = webp_decoder.to_image();
+            let (width, height) = (image.width() as usize, image.height() as usize);
 
-        let extension_str = Path::new(path).extension().and_then(|s| s.to_str()).unwrap_or("").to_string();
+            let extension_str = Path::new(path).extension().and_then(|s| s.to_str()).unwrap_or("").to_string();
 
-        Ok(Self {
-            image,
-            image_bytes: None,
-            width,
-            height,
-            extension_str,
-            metadata_input,
-            metadata_output: None,
-            filepath_input: path.to_string(),
-            filepath_output: None,
-        })
+            Ok(Self {
+                image,
+                image_bytes: None,
+                width,
+                height,
+                extension_str,
+                metadata_input,
+                metadata_output: None,
+                filepath_input: path.to_string(),
+                filepath_output: None,
+            })
+        }
+        else {
+            return Err("Failed to decode webp".to_string());
+        }
     }
 
     fn save(&mut self, path: &Option<String>) -> Result<(), String> {
