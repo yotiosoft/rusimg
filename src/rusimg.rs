@@ -249,7 +249,7 @@ pub fn save_print(before_path: &String, after_path: &String, before_size: u64, a
     println!("{} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
 }
 
-pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extension, quality: Option<f32>) -> Result<(), String> {
+pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extension, quality: Option<f32>) -> Result<String, String> {
     match extension {
         Extension::Jpeg => {
             match data.jpeg {
@@ -259,7 +259,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                         &jpeg.filepath_input, &jpeg.filepath_output.as_ref().unwrap(), 
                         jpeg.metadata_input.len(), jpeg.metadata_output.as_ref().unwrap().len()
                     );
-                    Ok(())
+                    Ok(jpeg.filepath_output.as_deref().unwrap().to_string())
                 },
                 None => return Err("Failed to save jpeg image".to_string()),
             }
@@ -272,7 +272,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                         &png.filepath_input, &png.filepath_output.as_ref().unwrap(), 
                         png.metadata_input.len(), png.metadata_output.as_ref().unwrap().len()
                     );
-                    Ok(())
+                    Ok(png.filepath_output.as_deref().unwrap().to_string())
                 },
                 None => return Err("Failed to save png image".to_string()),
             }
@@ -285,7 +285,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                         &webp.filepath_input, &webp.filepath_output.as_ref().unwrap(), 
                         webp.metadata_input.len(), webp.metadata_output.as_ref().unwrap().len()
                     );
-                    Ok(())
+                    Ok(webp.filepath_output.as_deref().unwrap().to_string())
                 },
                 None => return Err("Failed to save webp image".to_string()),
             }

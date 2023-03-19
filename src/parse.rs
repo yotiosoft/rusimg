@@ -13,6 +13,7 @@ pub struct ArgStruct {
     pub destination_path: Option<String>,
     pub destination_extension: Option<String>,
     pub quality: Option<f32>,
+    pub delete: bool,
 }
 
 #[derive(clap::Parser, Debug)]
@@ -32,7 +33,7 @@ enum SubCommands {
 
         /// Destination file path
         #[arg(short, long)]
-        destination: Option<String>,
+        to: Option<String>,
     },
 
     /// Image conversion
@@ -42,7 +43,7 @@ enum SubCommands {
 
         /// Destination file path
         #[arg(short, long)]
-        destination: Option<String>,
+        to: Option<String>,
 
         /// Destination file extension
         #[arg(short, long)]
@@ -51,6 +52,10 @@ enum SubCommands {
         /// Image quality
         #[arg(short, long)]
         quality: Option<f32>,
+
+        /// Delete source file
+        #[arg(short, long)]
+        delete: bool,
     },
 }
 
@@ -62,28 +67,30 @@ pub fn parser() -> ArgStruct {
         destination_path: None,
         destination_extension: None,
         quality: None,
+        delete: false,
     };
 
     // Subcommands
     if let Some(subcmds) = args.subcmds {
         match subcmds {
-            SubCommands::Compress { source, destination } => {
+            SubCommands::Compress { source, to } => {
                 arg_struct.execution_mode = ExecutionMode::Compress;
                 arg_struct.souce_path = source;
-                if let Some(destination) = destination {
+                if let Some(destination) = to {
                     arg_struct.destination_path = Some(destination);
                 }
             }
-            SubCommands::Convert { source, destination, extension, quality, } => {
+            SubCommands::Convert { source, to, extension, quality, delete, } => {
                 arg_struct.execution_mode = ExecutionMode::Convert;
                 arg_struct.souce_path = source;
-                if let Some(destination) = destination {
+                if let Some(destination) = to {
                     arg_struct.destination_path = Some(destination);
                 }
                 arg_struct.destination_extension = Some(extension);
                 if let Some(quality) = quality {
                     arg_struct.quality = Some(quality);
                 }
+                arg_struct.delete = delete;
             }
         }
     }

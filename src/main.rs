@@ -44,11 +44,11 @@ fn main() -> Result<(), String> {
         vec![args.souce_path]
     };
 
-    for image_file in image_files {
-        println!("[Processing: {}]", &Path::new(&image_file).file_name().unwrap().to_str().unwrap());
+    for image_file_path in image_files {
+        println!("[Processing: {}]", &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
 
         // ファイルを開く
-        let mut image = rusimg::open_image(&image_file)?;
+        let mut image = rusimg::open_image(&image_file_path)?;
 
         // 各モードの処理
         match args.execution_mode {
@@ -79,7 +79,15 @@ fn main() -> Result<(), String> {
             Some(path) => Some(path),
             None => None,
         };
-        rusimg::save_image(output_path, &mut image.data, &image.extension, args.quality)?;
+        let saved_filepath = rusimg::save_image(output_path, &mut image.data, &image.extension, args.quality)?;
+
+        // 元ファイルの削除 (optinal: -d)
+        if args.delete && args.execution_mode == parse::ExecutionMode::Convert && image_file_path != saved_filepath {
+            match fs::remove_file(&image_file_path) {
+                Ok(_) => (),
+                Err(e) => return Err(e.to_string()),
+            }
+        }
 
         println!("Done.");
     }
