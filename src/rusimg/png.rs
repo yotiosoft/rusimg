@@ -6,6 +6,7 @@ use image::DynamicImage;
 
 use crate::rusimg::Rusimg;
 
+#[derive(Debug, Clone)]
 pub struct PngImage {
     binary_data: Vec<u8>,
     pub image: DynamicImage,

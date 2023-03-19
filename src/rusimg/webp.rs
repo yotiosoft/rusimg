@@ -9,6 +9,7 @@ use std::path::Path;
 
 use crate::rusimg::Rusimg;
 
+#[derive(Debug, Clone)]
 pub struct WebpImage {
     pub image: DynamicImage,
     image_bytes: Option<Vec<u8>>,

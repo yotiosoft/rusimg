@@ -8,6 +8,7 @@ use std::path::Path;
 
 use crate::rusimg::Rusimg;
 
+#[derive(Debug, Clone)]
 pub struct JpegImage {
     pub image: DynamicImage,
     image_bytes: Option<Vec<u8>>,

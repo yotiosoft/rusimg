@@ -13,18 +13,21 @@ pub trait Rusimg {
     fn compress(&mut self) -> Result<(), String>;
 }
 
+#[derive(Debug, Clone)]
 pub enum Extension {
     Jpeg,
     Png,
     Webp,
 }
 
+#[derive(Debug, Clone)]
 pub struct ImgData {
     jpeg: Option<jpeg::JpegImage>,
     png: Option<png::PngImage>,
     webp: Option<webp::WebpImage>,
 }
 
+#[derive(Debug, Clone)]
 pub struct Img {
     pub extension: Extension,
     pub data: ImgData,
@@ -117,26 +120,25 @@ pub fn compress(data: &mut ImgData, extension: &Extension) -> Result<(), String>
     }
 }
 
-pub fn convert(data: &mut ImgData, source_extension: &Extension, destination_extension: &Extension) -> Result<Img, String> {
-    match source_extension {
+pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Result<Img, String> {
+    match source_img.extension {
         Extension::Jpeg => {
-            match &mut data.jpeg {
+            match &source_img.data.jpeg {
                 Some(jpeg) => {
                     let dynamic_image = jpeg.image.clone();
                     match destination_extension {
                         Extension::Jpeg => {
-                            Err("Source and destination extensions are the same".to_string())
-                        },
-                        Extension::Png => {
-                            let png = png::PngImage::new(dynamic_image, jpeg.filepath_input.clone(), jpeg.metadata_input.clone())?;
                             Ok(Img {
-                                extension: Extension::Png,
+                                extension: Extension::Jpeg,
                                 data: ImgData {
-                                    jpeg: None,
-                                    png: Some(png),
+                                    jpeg: Some(jpeg.clone()),
+                                    png: None,
                                     webp: None,
                                 },
                             })
+                        },
+                        Extension::Png => {
+                            Ok(source_img.clone())
                         },
                         Extension::Webp => {
                             let webp = webp::WebpImage::new(dynamic_image, jpeg.filepath_input.clone(), jpeg.metadata_input.clone())?;
@@ -155,7 +157,7 @@ pub fn convert(data: &mut ImgData, source_extension: &Extension, destination_ext
             }
         },
         Extension::Png => {
-            match &mut data.png {
+            match &source_img.data.png {
                 Some(png) => {
                     let dynamic_image = png.image.clone();
                     match destination_extension {
@@ -171,7 +173,7 @@ pub fn convert(data: &mut ImgData, source_extension: &Extension, destination_ext
                             })
                         },
                         Extension::Png => {
-                            Err("Source and destination extensions are the same".to_string())
+                            Ok(source_img.clone())
                         },
                         Extension::Webp => {
                             let webp = webp::WebpImage::new(dynamic_image, png.filepath_input.clone(), png.metadata_input.clone())?;
@@ -190,7 +192,7 @@ pub fn convert(data: &mut ImgData, source_extension: &Extension, destination_ext
             }
         },
         Extension::Webp => {
-            match &mut data.webp {
+            match &source_img.data.webp {
                 Some(webp) => {
                     let dynamic_image = webp.image.clone();
                     match destination_extension {
@@ -217,7 +219,7 @@ pub fn convert(data: &mut ImgData, source_extension: &Extension, destination_ext
                             })
                         },
                         Extension::Webp => {
-                            Err("Source and destination extensions are the same".to_string())
+                            Ok(source_img.clone())
                         },
                     }
                 },
