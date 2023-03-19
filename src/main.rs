@@ -79,7 +79,7 @@ fn main() -> Result<(), String> {
             Some(path) => Some(path),
             None => None,
         };
-        rusimg::save_image(output_path, &mut image.data, &image.extension)?;
+        rusimg::save_image(output_path, &mut image.data, &image.extension, args.quality)?;
 
         println!("Done.");
     }

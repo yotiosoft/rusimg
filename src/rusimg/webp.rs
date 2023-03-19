@@ -67,7 +67,7 @@ impl Rusimg for WebpImage {
         }
     }
 
-    fn save(&mut self, path: Option<&String>) -> Result<(), String> {
+    fn save(&mut self, path: Option<&String>, quality: Option<f32>) -> Result<(), String> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"webp".to_string());
 
         // 元が webp かつ操作回数が 0 なら encode しない
@@ -83,7 +83,10 @@ impl Rusimg for WebpImage {
         }
 
         // quality : 元が webp なら 既定で 100.0, それ以外なら 75.0
-        let quality = if source_is_webp {
+        let quality = if let Some(q) = quality {
+            q
+        }
+        else if source_is_webp {
             100.0
         }
         else {

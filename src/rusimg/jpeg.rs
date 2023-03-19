@@ -65,7 +65,7 @@ impl Rusimg for JpegImage {
         })
     }
 
-    fn save(&mut self, path: Option<&String>) -> Result<(), String> {
+    fn save(&mut self, path: Option<&String>, quality: Option<f32>) -> Result<(), String> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &self.extension_str);
         
         // image_bytes == None の場合、DynamicImage を 保存

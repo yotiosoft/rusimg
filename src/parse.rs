@@ -12,6 +12,7 @@ pub struct ArgStruct {
     pub souce_path: String,
     pub destination_path: Option<String>,
     pub destination_extension: Option<String>,
+    pub quality: Option<f32>,
 }
 
 #[derive(clap::Parser, Debug)]
@@ -46,6 +47,10 @@ enum SubCommands {
         /// Destination file extension
         #[arg(short, long)]
         extension: String,
+
+        /// Image quality
+        #[arg(short, long)]
+        quality: Option<f32>,
     },
 }
 
@@ -56,6 +61,7 @@ pub fn parser() -> ArgStruct {
         souce_path: String::new(),
         destination_path: None,
         destination_extension: None,
+        quality: None,
     };
 
     // Subcommands
@@ -68,13 +74,16 @@ pub fn parser() -> ArgStruct {
                     arg_struct.destination_path = Some(destination);
                 }
             }
-            SubCommands::Convert { source, destination, extension, } => {
+            SubCommands::Convert { source, destination, extension, quality, } => {
                 arg_struct.execution_mode = ExecutionMode::Convert;
                 arg_struct.souce_path = source;
                 if let Some(destination) = destination {
                     arg_struct.destination_path = Some(destination);
                 }
                 arg_struct.destination_extension = Some(extension);
+                if let Some(quality) = quality {
+                    arg_struct.quality = Some(quality);
+                }
             }
         }
     }
