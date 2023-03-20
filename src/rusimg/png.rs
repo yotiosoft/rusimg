@@ -89,26 +89,26 @@ impl Rusimg for PngImage {
         // quality の値に応じて level を設定
         let level = if let Some(q) = quality {
             if q <= 17.0 {
-                0
-            }
-            else if q > 17.0 && q <= 34.0 {
                 1
             }
-            else if q > 34.0 && q <= 51.0 {
+            else if q > 17.0 && q <= 34.0 {
                 2
             }
-            else if q > 51.0 && q <= 68.0 {
+            else if q > 34.0 && q <= 51.0 {
                 3
             }
-            else if q > 68.0 && q <= 85.0 {
+            else if q > 51.0 && q <= 68.0 {
                 4
             }
-            else {
+            else if q > 68.0 && q <= 85.0 {
                 5
+            }
+            else {
+                6
             }
         }
         else {
-            5
+            4       // default
         };
 
         match oxipng::optimize_from_memory(&self.binary_data, &oxipng::Options::from_preset(level)) {
