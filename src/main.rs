@@ -50,28 +50,24 @@ fn main() -> Result<(), String> {
         // ファイルを開く
         let mut image = rusimg::open_image(&image_file_path)?;
 
-        // 各モードの処理
-        match args.execution_mode {
-            parse::ExecutionMode::Compress => {
-                // 圧縮
-                match rusimg::compress(&mut image.data, &image.extension, args.quality) {
-                    Ok(_) => (),
-                    Err(e) => return Err(e),
-                }
-            },
-            parse::ExecutionMode::Convert => {
-                let extension = match args.destination_extension {
-                    Some(ref extension) => rusimg::get_extension(&extension)?,
-                    None => return Err("Destination extension is not specified".to_string()),
-                };
+        // --convert -> 変換
+        if let Some(ref c) = args.destination_extension {
+            let extension = rusimg::get_extension(&c)?;
 
-                // 変換
-                match rusimg::convert(&mut image, &extension) {
-                    Ok(img) => image = img,
-                    Err(e) => return Err(e),
-                }
-            },
-            _ => (),
+            // 変換
+            match rusimg::convert(&mut image, &extension) {
+                Ok(img) => image = img,
+                Err(e) => return Err(e),
+            }
+        }
+
+        // --quality -> 圧縮
+        if let Some(q) = args.quality {
+            // 圧縮
+            match rusimg::compress(&mut image.data, &image.extension, Some(q)) {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            }
         }
 
         // 出力
@@ -82,7 +78,7 @@ fn main() -> Result<(), String> {
         let saved_filepath = rusimg::save_image(output_path, &mut image.data, &image.extension)?;
 
         // 元ファイルの削除 (optinal: -d)
-        if args.delete && args.execution_mode == parse::ExecutionMode::Convert && image_file_path != saved_filepath {
+        if args.delete && image_file_path != saved_filepath {
             match fs::remove_file(&image_file_path) {
                 Ok(_) => (),
                 Err(e) => return Err(e.to_string()),
