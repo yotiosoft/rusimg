@@ -1,6 +1,6 @@
 extern crate oxipng;
 
-use std::io::{Read, Write};
+use std::io::{Read, Write, Cursor};
 use std::fs::Metadata;
 use image::DynamicImage;
 
@@ -24,8 +24,12 @@ impl Rusimg for PngImage {
     fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
+        let mut new_binary_data = Vec::new();
+        image.write_to(&mut Cursor::new(&mut new_binary_data), image::ImageOutputFormat::Png)
+            .map_err(|e| format!("Failed to write image: {}", e))?;
+
         Ok(Self {
-            binary_data: Vec::new(),
+            binary_data: new_binary_data,
             image,
             image_bytes: None,
             width,

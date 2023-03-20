@@ -49,11 +49,11 @@ pub struct Img {
 }
 
 pub fn get_extension(path: &str) -> Result<Extension, String> {
-    let lowercase_path = Path::new(path).extension().and_then(|s| s.to_str()).unwrap().to_string();
-    match lowercase_path.to_ascii_lowercase().as_str() {
-        "jpg" | "jpeg" => Ok(Extension::Jpeg),
-        "png" => Ok(Extension::Png),
-        "webp" => Ok(Extension::Webp),
+    let path = path.to_ascii_lowercase();
+    match Path::new(&path).extension().and_then(|s| s.to_str()) {
+        Some("jpg") | Some("jpeg") => Ok(Extension::Jpeg),
+        Some("png") => Ok(Extension::Png),
+        Some("webp") => Ok(Extension::Webp),
         _ => {
             if path.ends_with("jpg") || path.ends_with("jpeg") {
                 Ok(Extension::Jpeg)
