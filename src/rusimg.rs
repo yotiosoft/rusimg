@@ -1,3 +1,4 @@
+mod bmp;
 mod jpeg;
 mod png;
 mod webp;
@@ -30,6 +31,7 @@ pub trait Rusimg {
 
 #[derive(Debug, Clone)]
 pub enum Extension {
+    Bmp,
     Jpeg,
     Png,
     Webp,
@@ -37,6 +39,7 @@ pub enum Extension {
 
 #[derive(Debug, Clone)]
 pub struct ImgData {
+    bmp: Option<bmp::BmpImage>,
     jpeg: Option<jpeg::JpegImage>,
     png: Option<png::PngImage>,
     webp: Option<webp::WebpImage>,
@@ -51,11 +54,14 @@ pub struct Img {
 pub fn get_extension(path: &str) -> Result<Extension, String> {
     let path = path.to_ascii_lowercase();
     match Path::new(&path).extension().and_then(|s| s.to_str()) {
+        Some("bmp") => Ok(Extension::Bmp),
         Some("jpg") | Some("jpeg") => Ok(Extension::Jpeg),
         Some("png") => Ok(Extension::Png),
         Some("webp") => Ok(Extension::Webp),
         _ => {
-            if path.ends_with("jpg") || path.ends_with("jpeg") {
+            if path.ends_with("bmp") {
+                Ok(Extension::Bmp)
+            } else if path.ends_with("jpg") || path.ends_with("jpeg") {
                 Ok(Extension::Jpeg)
             } else if path.ends_with("png") {
                 Ok(Extension::Png)
@@ -70,11 +76,24 @@ pub fn get_extension(path: &str) -> Result<Extension, String> {
 
 pub fn open_image(path: &str) -> Result<Img, String> {
     match get_extension(&path) {
+        Ok(Extension::Bmp) => {
+            let bmp = bmp::BmpImage::open(&path).map_err(|e| e.to_string())?;
+            Ok(Img {
+                extension: Extension::Bmp,
+                data: ImgData {
+                    bmp: Some(bmp),
+                    jpeg: None,
+                    png: None,
+                    webp: None,
+                },
+            })
+        },
         Ok(Extension::Jpeg) => {
             let jpeg = jpeg::JpegImage::open(&path).map_err(|e| e.to_string())?;
             Ok(Img {
                 extension: Extension::Jpeg,
                 data: ImgData {
+                    bmp: None,
                     jpeg: Some(jpeg),
                     png: None,
                     webp: None,
@@ -86,6 +105,7 @@ pub fn open_image(path: &str) -> Result<Img, String> {
             Ok(Img {
                 extension: Extension::Png,
                 data: ImgData {
+                    bmp: None,
                     jpeg: None,
                     png: Some(png),
                     webp: None,
@@ -97,6 +117,7 @@ pub fn open_image(path: &str) -> Result<Img, String> {
             Ok(Img {
                 extension: Extension::Webp,
                 data: ImgData {
+                    bmp: None,
                     jpeg: None,
                     png: None,
                     webp: Some(webp),
@@ -109,6 +130,14 @@ pub fn open_image(path: &str) -> Result<Img, String> {
 
 pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>) -> Result<(), String> {
     match extension {
+        Extension::Bmp => {
+            match &mut data.bmp {
+                Some(bmp) => {
+                    bmp.compress(quality)
+                },
+                None => return Err("Failed to save bmp image".to_string()),
+            }
+        },
         Extension::Jpeg => {
             match &mut data.jpeg {
                 Some(jpeg) => {
@@ -138,29 +167,93 @@ pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>)
 
 pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Result<Img, String> {
     match source_img.extension {
+        Extension::Bmp => {
+            match &source_img.data.bmp {
+                Some(bmp) => {
+                    let dynamic_image = bmp.image.clone();
+                    match destination_extension {
+                        Extension::Bmp => {
+                            Ok(source_img.clone())
+                        },
+                        Extension::Jpeg => {
+                            let jpeg = jpeg::JpegImage::import(dynamic_image, bmp.filepath_input.clone(), bmp.metadata_input.clone())?;
+                            Ok(Img {
+                                extension: Extension::Jpeg,
+                                data: ImgData {
+                                    bmp: None,
+                                    jpeg: Some(jpeg),
+                                    png: None,
+                                    webp: None,
+                                },
+                            })
+                        }
+                        Extension::Png => {
+                            let png = png::PngImage::import(dynamic_image, bmp.filepath_input.clone(), bmp.metadata_input.clone())?;
+                            Ok(Img {
+                                extension: Extension::Png,
+                                data: ImgData {
+                                    bmp: None,
+                                    jpeg: None,
+                                    png: Some(png),
+                                    webp: None,
+                                },
+                            })
+                        },
+                        Extension::Webp => {
+                            let webp = webp::WebpImage::import(dynamic_image, bmp.filepath_input.clone(), bmp.metadata_input.clone())?;
+                            Ok(Img {
+                                extension: Extension::Webp,
+                                data: ImgData {
+                                    bmp: None,
+                                    jpeg: None,
+                                    png: None,
+                                    webp: Some(webp),
+                                },
+                            })
+                        },
+                    }
+                },
+                None => return Err("Failed to save jpeg image".to_string()),
+            }
+        },
         Extension::Jpeg => {
             match &source_img.data.jpeg {
                 Some(jpeg) => {
                     let dynamic_image = jpeg.image.clone();
                     match destination_extension {
-                        Extension::Jpeg => {
+                        Extension::Bmp => {
+                            let bmp = bmp::BmpImage::import(dynamic_image, jpeg.filepath_input.clone(), jpeg.metadata_input.clone())?;
                             Ok(Img {
-                                extension: Extension::Jpeg,
+                                extension: Extension::Bmp,
                                 data: ImgData {
-                                    jpeg: Some(jpeg.clone()),
+                                    bmp: Some(bmp),
+                                    jpeg: None,
                                     png: None,
                                     webp: None,
                                 },
                             })
                         },
-                        Extension::Png => {
+                        Extension::Jpeg => {
                             Ok(source_img.clone())
+                        },
+                        Extension::Png => {
+                            let png = png::PngImage::import(dynamic_image, jpeg.filepath_input.clone(), jpeg.metadata_input.clone())?;
+                            Ok(Img {
+                                extension: Extension::Png,
+                                data: ImgData {
+                                    bmp: None,
+                                    jpeg: None,
+                                    png: Some(png),
+                                    webp: None,
+                                },
+                            })
                         },
                         Extension::Webp => {
                             let webp = webp::WebpImage::import(dynamic_image, jpeg.filepath_input.clone(), jpeg.metadata_input.clone())?;
                             Ok(Img {
                                 extension: Extension::Webp,
                                 data: ImgData {
+                                    bmp: None,
                                     jpeg: None,
                                     png: None,
                                     webp: Some(webp),
@@ -177,11 +270,24 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                 Some(png) => {
                     let dynamic_image = png.image.clone();
                     match destination_extension {
+                        Extension::Bmp => {
+                            let bmp = bmp::BmpImage::import(dynamic_image, png.filepath_input.clone(), png.metadata_input.clone())?;
+                            Ok(Img {
+                                extension: Extension::Bmp,
+                                data: ImgData {
+                                    bmp: Some(bmp),
+                                    jpeg: None,
+                                    png: None,
+                                    webp: None,
+                                },
+                            })
+                        },
                         Extension::Jpeg => {
                             let jpeg = jpeg::JpegImage::import(dynamic_image, png.filepath_input.clone(), png.metadata_input.clone())?;
                             Ok(Img {
                                 extension: Extension::Jpeg,
                                 data: ImgData {
+                                    bmp: None,
                                     jpeg: Some(jpeg),
                                     png: None,
                                     webp: None,
@@ -196,6 +302,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                             Ok(Img {
                                 extension: Extension::Webp,
                                 data: ImgData {
+                                    bmp: None,
                                     jpeg: None,
                                     png: None,
                                     webp: Some(webp),
@@ -212,11 +319,24 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                 Some(webp) => {
                     let dynamic_image = webp.image.clone();
                     match destination_extension {
+                        Extension::Bmp => {
+                            let bmp = bmp::BmpImage::import(dynamic_image, webp.filepath_input.clone(), webp.metadata_input.clone())?;
+                            Ok(Img {
+                                extension: Extension::Bmp,
+                                data: ImgData {
+                                    bmp: Some(bmp),
+                                    jpeg: None,
+                                    png: None,
+                                    webp: None,
+                                },
+                            })
+                        },
                         Extension::Jpeg => {
                             let jpeg = jpeg::JpegImage::import(dynamic_image, webp.filepath_input.clone(), webp.metadata_input.clone())?;
                             Ok(Img {
                                 extension: Extension::Jpeg,
                                 data: ImgData {
+                                    bmp: None,
                                     jpeg: Some(jpeg),
                                     png: None,
                                     webp: None,
@@ -228,6 +348,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                             Ok(Img {
                                 extension: Extension::Png,
                                 data: ImgData {
+                                    bmp: None,
                                     jpeg: None,
                                     png: Some(png),
                                     webp: None,
@@ -252,6 +373,19 @@ pub fn save_print(before_path: &String, after_path: &String, before_size: u64, a
 
 pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extension) -> Result<String, String> {
     match extension {
+        Extension::Bmp => {
+            match data.bmp {
+                Some(ref mut bmp) => {
+                    bmp.save(path)?;
+                    save_print(
+                        &bmp.filepath_input, &bmp.filepath_output.as_ref().unwrap(), 
+                        bmp.metadata_input.len(), bmp.metadata_output.as_ref().unwrap().len()
+                    );
+                    Ok(bmp.filepath_output.as_deref().unwrap().to_string())
+                },
+                None => return Err("Failed to save bmp image".to_string()),
+            }
+        },
         Extension::Jpeg => {
             match data.jpeg {
                 Some(ref mut jpeg) => {
