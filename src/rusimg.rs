@@ -12,7 +12,7 @@ pub trait Rusimg {
     fn open(path: &str) -> Result<Self, String> where Self: Sized;
     fn save(&mut self, path: Option<&String>) -> Result<(), String>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), String>;
-    fn resize(&mut self, width: u32, height: u32) -> Result<(), String>;
+    fn resize(&mut self, resize_ratio: u8) -> Result<(), String>;
 
     fn save_filepath(source_filepath: &String, destination_filepath: Option<&String>, new_extension: &String) -> String {
         if let Some(path) = destination_filepath {
@@ -129,12 +129,12 @@ pub fn open_image(path: &str) -> Result<Img, String> {
     }
 }
 
-pub fn resize(source_image: &mut Img, width: u32, height: u32) -> Result<(), String> {
+pub fn resize(source_image: &mut Img, resize_ratio: u8) -> Result<(), String> {
     match source_image.extension {
         Extension::Bmp => {
             match &mut source_image.data.bmp {
                 Some(bmp) => {
-                    bmp.resize(width, height)
+                    bmp.resize(resize_ratio)
                 },
                 None => return Err("Failed to save bmp image".to_string()),
             }
@@ -142,7 +142,7 @@ pub fn resize(source_image: &mut Img, width: u32, height: u32) -> Result<(), Str
         Extension::Jpeg => {
             match &mut source_image.data.jpeg {
                 Some(jpeg) => {
-                    jpeg.resize(width, height)
+                    jpeg.resize(resize_ratio)
                 },
                 None => return Err("Failed to save jpeg image".to_string()),
             }
@@ -150,7 +150,7 @@ pub fn resize(source_image: &mut Img, width: u32, height: u32) -> Result<(), Str
         Extension::Png => {
             match &mut source_image.data.png {
                 Some(png) => {
-                    png.resize(width, height)
+                    png.resize(resize_ratio)
                 },
                 None => return Err("Failed to save png image".to_string()),
             }
@@ -158,7 +158,7 @@ pub fn resize(source_image: &mut Img, width: u32, height: u32) -> Result<(), Str
         Extension::Webp => {
             match &mut source_image.data.webp {
                 Some(webp) => {
-                    webp.resize(width, height)
+                    webp.resize(resize_ratio)
                 },
                 None => return Err("Failed to save webp image".to_string()),
             }

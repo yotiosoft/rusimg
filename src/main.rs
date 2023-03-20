@@ -51,9 +51,9 @@ fn main() -> Result<(), String> {
         let mut image = rusimg::open_image(&image_file_path)?;
 
         // --resize -> リサイズ
-        if let Some((w, h)) = args.resize {
+        if let Some(resize) = args.resize {
             // リサイズ
-            match rusimg::resize(&mut image, w, h) {
+            match rusimg::resize(&mut image, resize) {
                 Ok(_) => (),
                 Err(e) => return Err(e),
             }

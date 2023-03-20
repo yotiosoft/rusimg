@@ -1,5 +1,4 @@
 use clap::Parser;
-use regex::Regex;
 
 pub struct ArgStruct {
     pub souce_path: String,
@@ -7,7 +6,7 @@ pub struct ArgStruct {
     pub destination_extension: Option<String>,
     pub quality: Option<f32>,
     pub delete: bool,
-    pub resize: Option<(u32, u32)>,
+    pub resize: Option<u8>,
 }
 
 #[derive(clap::Parser, Debug)]
@@ -26,7 +25,7 @@ struct Args {
 
     /// Resize image
     #[arg(short, long)]
-    resize: Option<String>,
+    resize: Option<u8>,
 
     /// Image quality
     #[arg(short, long)]
@@ -40,6 +39,7 @@ struct Args {
 pub fn parser() -> ArgStruct {
     let args = Args::parse();
 
+    /*
     let re = Regex::new(r"^\d*x\d*$").unwrap();
     let resize = if let Some(resize_str) = args.resize {
         if re.is_match(&resize_str) {
@@ -56,6 +56,7 @@ pub fn parser() -> ArgStruct {
     else {
         None
     };
+    */
     
     ArgStruct {
         souce_path: args.source,
@@ -63,6 +64,6 @@ pub fn parser() -> ArgStruct {
         destination_extension: args.convert,
         quality: args.quality,
         delete: args.delete,
-        resize: resize,
+        resize: args.resize,
     }
 }

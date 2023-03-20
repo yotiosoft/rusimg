@@ -131,10 +131,10 @@ impl Rusimg for PngImage {
         }
     }
 
-    fn resize(&mut self, width: u32, height: u32) -> Result<(), String> {
-        self.image = self.image.resize(width, height, image::imageops::FilterType::Lanczos3);
-        self.width = width as usize;
-        self.height = height as usize;
+    fn resize(&mut self, resize_ratio: u8) -> Result<(), String> {
+        self.width = (self.width as f32 * (resize_ratio as f32 / 100.0)) as usize;
+        self.height = (self.height as f32 * (resize_ratio as f32 / 100.0)) as usize;
+        self.image = self.image.resize(self.width as u32, self.height as u32, image::imageops::FilterType::Lanczos3);
 
         self.operations_count += 1;
         Ok(())
