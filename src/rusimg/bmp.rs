@@ -2,7 +2,6 @@ use image::DynamicImage;
 
 use std::fs::Metadata;
 use std::io::Read;
-use std::path::Path;
 
 use crate::rusimg::Rusimg;
 
@@ -41,8 +40,6 @@ impl Rusimg for BmpImage {
         let image = image::load_from_memory(&buf).map_err(|_| "Failed to open image".to_string())?;
         let (width, height) = (image.width() as usize, image.height() as usize);
 
-        let extension_str = Path::new(path).extension().and_then(|s| s.to_str()).unwrap_or("").to_string();
-
         Ok(Self {
             image,
             width,
@@ -64,7 +61,7 @@ impl Rusimg for BmpImage {
         Ok(())
     }
 
-    fn compress(&mut self, quality: Option<f32>) -> Result<(), String> {
+    fn compress(&mut self, _quality: Option<f32>) -> Result<(), String> {
         Err("BMP images cannot be compressed".to_string())
     }
 
