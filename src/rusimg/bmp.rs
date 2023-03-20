@@ -67,4 +67,12 @@ impl Rusimg for BmpImage {
     fn compress(&mut self, quality: Option<f32>) -> Result<(), String> {
         Err("BMP images cannot be compressed".to_string())
     }
+
+    fn resize(&mut self, width: u32, height: u32) -> Result<(), String> {
+        self.image = self.image.resize(width, height, image::imageops::FilterType::Lanczos3);
+        self.width = width as usize;
+        self.height = height as usize;
+
+        Ok(())
+    }
 }

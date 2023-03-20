@@ -50,6 +50,15 @@ fn main() -> Result<(), String> {
         // ファイルを開く
         let mut image = rusimg::open_image(&image_file_path)?;
 
+        // --resize -> リサイズ
+        if let Some((w, h)) = args.resize {
+            // リサイズ
+            match rusimg::resize(&mut image, w, h) {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            }
+        }
+
         // --convert -> 変換
         if let Some(ref c) = args.destination_extension {
             let extension = rusimg::get_extension(&c)?;

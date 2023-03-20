@@ -105,4 +105,13 @@ impl Rusimg for JpegImage {
 
         Ok(())
     }
+
+    fn resize(&mut self, width: u32, height: u32) -> Result<(), String> {
+        self.image = self.image.resize(width, height, image::imageops::FilterType::Lanczos3);
+        self.width = width as usize;
+        self.height = height as usize;
+
+        self.operations_count += 1;
+        Ok(())
+    }
 }
