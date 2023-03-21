@@ -115,6 +115,7 @@ impl Rusimg for PngImage {
             Ok(data) => {
                 self.image_bytes = Some(data);
                 self.operations_count += 1;
+                println!("Compress: Done.");
                 Ok(())
             },
             Err(e) => match e {
@@ -132,9 +133,15 @@ impl Rusimg for PngImage {
     }
 
     fn resize(&mut self, resize_ratio: u8) -> Result<(), String> {
-        self.width = (self.width as f32 * (resize_ratio as f32 / 100.0)) as usize;
-        self.height = (self.height as f32 * (resize_ratio as f32 / 100.0)) as usize;
-        self.image = self.image.resize(self.width as u32, self.height as u32, image::imageops::FilterType::Lanczos3);
+        let nwidth = (self.width as f32 * (resize_ratio as f32 / 100.0)) as usize;
+        let nheight = (self.height as f32 * (resize_ratio as f32 / 100.0)) as usize;
+
+        self.image = self.image.resize(nwidth as u32, nheight as u32, image::imageops::FilterType::Lanczos3);
+
+        println!("Resize: {}x{} -> {}x{}", self.width, self.height, nwidth, nheight);
+
+        self.width = nwidth;
+        self.height = nheight;
 
         self.operations_count += 1;
         Ok(())

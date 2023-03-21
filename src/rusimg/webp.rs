@@ -93,8 +93,11 @@ impl Rusimg for WebpImage {
             75.0    // 既定: 75.0
         };
        
-        // DynamicImage を 保存
+        // DynamicImage を （圧縮＆）保存
         let encoded_webp = webp::Encoder::from_image(&self.image).map_err(|e| format!("Failed to encode webp: {}", e))?.encode(quality);
+        if self.required_quality.is_some() {
+            println!("Compress: Done.");
+        }
 
         let mut file = std::fs::File::create(&save_path).map_err(|_| "Failed to create file".to_string())?;
         file.write_all(&encoded_webp.as_bytes()).map_err(|_| "Failed to write file".to_string())?;
@@ -113,9 +116,15 @@ impl Rusimg for WebpImage {
     }
 
     fn resize(&mut self, resize_ratio: u8) -> Result<(), String> {
-        self.width = (self.width as f32 * (resize_ratio as f32 / 100.0)) as usize;
-        self.height = (self.height as f32 * (resize_ratio as f32 / 100.0)) as usize;
-        self.image = self.image.resize(self.width as u32, self.height as u32, image::imageops::FilterType::Lanczos3);
+        let nwidth = (self.width as f32 * (resize_ratio as f32 / 100.0)) as usize;
+        let nheight = (self.height as f32 * (resize_ratio as f32 / 100.0)) as usize;
+
+        self.image = self.image.resize(nwidth as u32, nheight as u32, image::imageops::FilterType::Lanczos3);
+
+        println!("Resize: {}x{} -> {}x{}", self.width, self.height, nwidth, nheight);
+
+        self.width = nwidth;
+        self.height = nheight;
 
         self.operations_count += 1;
         Ok(())
