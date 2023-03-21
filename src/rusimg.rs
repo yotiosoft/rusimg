@@ -30,7 +30,7 @@ pub trait Rusimg {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Extension {
     Bmp,
     Jpeg,
@@ -405,8 +405,18 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
 }
 
 pub fn save_print(before_path: &String, after_path: &String, before_size: u64, after_size: u64) {
-    println!("{} -> {}", before_path, after_path);
-    println!("{} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
+    if before_path == after_path {
+        println!("Overwrite: {}", before_path);
+        println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
+    }
+    else if get_extension(before_path) != get_extension(after_path) {
+        println!("Convert: {} -> {}", before_path, after_path);
+        println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
+    }
+    else {
+        println!("Move: {} -> {}", before_path, after_path);
+        println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
+    }
 }
 
 pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extension) -> Result<String, String> {
