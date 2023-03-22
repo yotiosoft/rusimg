@@ -1,3 +1,5 @@
+extern crate viuer;
+
 use image::DynamicImage;
 
 use std::fs::Metadata;
@@ -75,6 +77,22 @@ impl Rusimg for BmpImage {
 
         self.width = nwidth;
         self.height = nheight;
+
+        Ok(())
+    }
+
+    fn view(&self) -> Result<(), String> {
+        let conf = viuer::Config {
+            // set offset
+            x: 0,
+            y: 25,
+            // set dimensions
+            width: Some(80),
+            height: Some(25),
+            ..Default::default()
+        };
+
+        viuer::print(&self.image, &conf).map_err(|e| format!("Failed to view image: {}", e.to_string()))?;
 
         Ok(())
     }

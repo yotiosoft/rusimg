@@ -94,6 +94,14 @@ fn main() -> Result<(), String> {
             }
         }
 
+        // 表示
+        if args.view {
+            match rusimg::view(&mut image) {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            }
+        }
+
         println!("Done.");
     }
 

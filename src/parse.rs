@@ -7,6 +7,7 @@ pub struct ArgStruct {
     pub quality: Option<f32>,
     pub delete: bool,
     pub resize: Option<u8>,
+    pub view: bool,
 }
 
 #[derive(clap::Parser, Debug)]
@@ -34,6 +35,10 @@ struct Args {
     /// Delete source file
     #[arg(short, long)]
     delete: bool,
+
+    /// View result
+    #[arg(short, long)]
+    view: bool,
 }
 
 pub fn parser() -> ArgStruct {
@@ -65,5 +70,6 @@ pub fn parser() -> ArgStruct {
         quality: args.quality,
         delete: args.delete,
         resize: args.resize,
+        view: args.view,
     }
 }

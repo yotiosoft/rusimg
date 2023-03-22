@@ -13,6 +13,7 @@ pub trait Rusimg {
     fn save(&mut self, path: Option<&String>) -> Result<(), String>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), String>;
     fn resize(&mut self, resize_ratio: u8) -> Result<(), String>;
+    fn view(&self) -> Result<(), String>;
 
     fn save_filepath(source_filepath: &String, destination_filepath: Option<&String>, new_extension: &String) -> String {
         if let Some(path) = destination_filepath {
@@ -471,6 +472,43 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                     Ok(webp.filepath_output.as_deref().unwrap().to_string())
                 },
                 None => return Err("Failed to save webp image".to_string()),
+            }
+        },
+    }
+}
+
+pub fn view(image: &mut Img) -> Result<(), String> {
+    match image.extension {
+        Extension::Bmp => {
+            match &mut image.data.bmp {
+                Some(bmp) => {
+                    bmp.view()
+                },
+                None => return Err("Failed to view bmp image".to_string()),
+            }
+        },
+        Extension::Jpeg => {
+            match &mut image.data.jpeg {
+                Some(jpeg) => {
+                    jpeg.view()
+                },
+                None => return Err("Failed to view jpeg image".to_string()),
+            }
+        },
+        Extension::Png => {
+            match &mut image.data.png {
+                Some(png) => {
+                    png.view()
+                },
+                None => return Err("Failed to view png image".to_string()),
+            }
+        },
+        Extension::Webp => {
+            match &mut image.data.webp {
+                Some(webp) => {
+                    webp.view()
+                },
+                None => return Err("Failed to view webp image".to_string()),
             }
         },
     }

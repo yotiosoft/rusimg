@@ -1,5 +1,6 @@
 extern crate image;
 extern crate webp;
+extern crate viuer;
 
 use image::{DynamicImage, EncodableLayout};
 
@@ -127,6 +128,25 @@ impl Rusimg for WebpImage {
         self.height = nheight;
 
         self.operations_count += 1;
+        Ok(())
+    }
+
+    fn view(&self) -> Result<(), String> {
+        let conf_width = Some((self.width as f64 / std::cmp::max(self.width, self.height) as f64 * 100 as f64) as u32);
+        let conf_height = Some((self.height as f64 / std::cmp::max(self.width, self.height) as f64 as f64 * 50 as f64) as u32);
+        println!("View: {}x{}", conf_width.unwrap(), conf_height.unwrap());
+        let conf = viuer::Config {
+            // set offset
+            x: 0,
+            y: 25,
+            // set dimensions
+            width: conf_width,
+            height: conf_height,    
+            ..Default::default()
+        };
+
+        viuer::print(&self.image, &conf).map_err(|e| format!("Failed to view image: {}", e.to_string()))?;
+
         Ok(())
     }
 }

@@ -1,4 +1,5 @@
 extern crate oxipng;
+extern crate viuer;
 
 use std::io::{Read, Write, Cursor};
 use std::fs::Metadata;
@@ -144,6 +145,22 @@ impl Rusimg for PngImage {
         self.height = nheight;
 
         self.operations_count += 1;
+        Ok(())
+    }
+
+    fn view(&self) -> Result<(), String> {
+        let conf = viuer::Config {
+            // set offset
+            x: 0,
+            y: 25,
+            // set dimensions
+            width: Some(80),
+            height: Some(25),
+            ..Default::default()
+        };
+
+        viuer::print(&self.image, &conf).map_err(|e| format!("Failed to view image: {}", e.to_string()))?;
+
         Ok(())
     }
 }
