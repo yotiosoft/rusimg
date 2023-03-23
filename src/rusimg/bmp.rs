@@ -80,16 +80,25 @@ impl Rusimg for BmpImage {
     }
 
     fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), String> {
-        if self.width > (trim_xy.0 + trim_wh.0) as usize || self.height > (trim_xy.1 + trim_wh.1) as usize {
-            return Err("Trim area is out of bounds".to_string());
+        let mut w = trim_wh.0;
+        let mut h = trim_wh.1;
+        if self.width < (trim_xy.0 + w) as usize || self.height < (trim_xy.1 + h) as usize {
+            if self.width > trim_xy.0 as usize || self.height > trim_xy.1 as usize {
+                w = std::cmp::min(self.width as u32, w);
+                h = std::cmp::min(self.height as u32, h);
+                println!("Required width or height is larger than image size. Corrected size: {}x{} -> {}x{}", trim_wh.0, trim_wh.1, w, h);
+            }
+            else {
+                return Err(format!("Trim: Invalid trim point: {}x{}", trim_xy.0, trim_xy.1));
+            }
         }
 
-        self.image = self.image.crop(trim_xy.0, trim_xy.1, trim_wh.0, trim_wh.1);
+        self.image = self.image.crop(trim_xy.0, trim_xy.1, w, h);
 
-        println!("Trim: {}x{} -> {}x{}", self.width, self.height, trim_wh.0, trim_wh.1);
+        println!("Trim: {}x{} -> {}x{}", self.width, self.height, w, h);
 
-        self.width = trim_wh.0 as usize;
-        self.height = trim_wh.1 as usize;
+        self.width = w as usize;
+        self.height = h as usize;
 
         Ok(())
     }
