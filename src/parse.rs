@@ -1,4 +1,5 @@
 use clap::Parser;
+use regex::Regex;
 
 pub struct ArgStruct {
     pub souce_path: String,
@@ -7,6 +8,8 @@ pub struct ArgStruct {
     pub quality: Option<f32>,
     pub delete: bool,
     pub resize: Option<u8>,
+    pub trim_xy: Option<(u32, u32)>,
+    pub trim_wh: Option<(u32, u32)>,
     pub grayscale: bool,
     pub view: bool,
 }
@@ -28,6 +31,10 @@ struct Args {
     /// Resize image
     #[arg(short, long)]
     resize: Option<u8>,
+
+    /// Trim image
+    #[arg(short, long)]
+    trim: Option<String>,
 
     /// Grayscale image
     #[arg(short, long)]
@@ -68,14 +75,33 @@ pub fn parser() -> ArgStruct {
     };
     */
     
-    ArgStruct {
+    let ret = ArgStruct {
         souce_path: args.source,
         destination_path: args.to,
         destination_extension: args.convert,
         quality: args.quality,
         delete: args.delete,
         resize: args.resize,
+        trim_xy: None,
+        trim_wh: None,
         grayscale: args.grayscale,
         view: args.view,
+    };
+
+    if args.trim.is_some() {
+        let re = Regex::new(r"^\d*x\d*\+\d*\+\d*$").unwrap();
+        let trim = args.trim.unwrap();
+        if re.is_match(&trim) {
+            let mut trim = trim.split("x");
+            let x = trim.next().unwrap().parse::<u32>().unwrap();
+            let y = trim.next().unwrap().parse::<u32>().unwrap();
+            ret.trim_xy = Some((x, y));
+        }
+        else {
+            println!("Invalid trim format. Please use 'WxH' (e.g.1920x1080).");
+            std::process::exit(1);
+        }
     }
+
+    ret
 }
