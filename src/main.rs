@@ -70,6 +70,12 @@ fn main() -> Result<(), String> {
             }
         }
 
+        // grayscale -> グレースケール
+        if args.grayscale {
+            // グレースケール
+            rusimg::grayscale(&mut image);
+        }
+
         // --quality -> 圧縮
         if let Some(q) = args.quality {
             // 圧縮

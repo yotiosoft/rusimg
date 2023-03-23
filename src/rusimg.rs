@@ -168,6 +168,43 @@ pub fn resize(source_image: &mut Img, resize_ratio: u8) -> Result<(), String> {
     }
 }
 
+pub fn grayscale(image: &mut Img) {
+    match image.extension {
+        Extension::Bmp => {
+            match &mut image.data.bmp {
+                Some(bmp) => {
+                    bmp.grayscale()
+                },
+                None => (),
+            }
+        },
+        Extension::Jpeg => {
+            match &mut image.data.jpeg {
+                Some(jpeg) => {
+                    jpeg.grayscale()
+                },
+                None => (),
+            }
+        },
+        Extension::Png => {
+            match &mut image.data.png {
+                Some(png) => {
+                    png.grayscale()
+                },
+                None => (),
+            }
+        },
+        Extension::Webp => {
+            match &mut image.data.webp {
+                Some(webp) => {
+                    webp.grayscale()
+                },
+                None => (),
+            }
+        },
+    }
+}
+
 pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>) -> Result<(), String> {
     match extension {
         Extension::Bmp => {

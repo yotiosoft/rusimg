@@ -7,6 +7,7 @@ pub struct ArgStruct {
     pub quality: Option<f32>,
     pub delete: bool,
     pub resize: Option<u8>,
+    pub grayscale: bool,
     pub view: bool,
 }
 
@@ -27,6 +28,10 @@ struct Args {
     /// Resize image
     #[arg(short, long)]
     resize: Option<u8>,
+
+    /// Grayscale image
+    #[arg(short, long)]
+    grayscale: bool,
 
     /// Image quality
     #[arg(short, long)]
@@ -70,6 +75,7 @@ pub fn parser() -> ArgStruct {
         quality: args.quality,
         delete: args.delete,
         resize: args.resize,
+        grayscale: args.grayscale,
         view: args.view,
     }
 }
