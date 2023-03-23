@@ -139,6 +139,7 @@ impl Rusimg for WebpImage {
         self.width = trim_wh.0 as usize;
         self.height = trim_wh.1 as usize;
 
+        self.operations_count += 1;
         Ok(())
     }
 
