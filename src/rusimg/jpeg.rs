@@ -1,6 +1,3 @@
-extern crate mozjpeg;
-extern crate viuer;
-
 use mozjpeg::{Compress, ColorSpace, ScanMode};
 use image::DynamicImage;
 

@@ -1,6 +1,3 @@
-extern crate oxipng;
-extern crate viuer;
-
 use std::io::{Read, Write, Cursor};
 use std::fs::Metadata;
 use image::DynamicImage;

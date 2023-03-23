@@ -1,7 +1,3 @@
-extern crate image;
-extern crate webp;
-extern crate viuer;
-
 use image::{DynamicImage, EncodableLayout};
 
 use std::fs::Metadata;

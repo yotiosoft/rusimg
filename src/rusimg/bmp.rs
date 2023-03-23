@@ -1,5 +1,3 @@
-extern crate viuer;
-
 use image::DynamicImage;
 
 use std::fs::Metadata;
