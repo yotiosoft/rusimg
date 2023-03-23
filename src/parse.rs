@@ -74,34 +74,39 @@ pub fn parser() -> ArgStruct {
         None
     };
     */
-    
-    let ret = ArgStruct {
-        souce_path: args.source,
-        destination_path: args.to,
-        destination_extension: args.convert,
-        quality: args.quality,
-        delete: args.delete,
-        resize: args.resize,
-        trim_xy: None,
-        trim_wh: None,
-        grayscale: args.grayscale,
-        view: args.view,
-    };
 
-    if args.trim.is_some() {
+    let (trim_xy, trim_wh) = if args.trim.is_some() {
         let re = Regex::new(r"^\d*x\d*\+\d*\+\d*$").unwrap();
         let trim = args.trim.unwrap();
         if re.is_match(&trim) {
-            let mut trim = trim.split("x");
-            let x = trim.next().unwrap().parse::<u32>().unwrap();
-            let y = trim.next().unwrap().parse::<u32>().unwrap();
-            ret.trim_xy = Some((x, y));
+            let mut trim = trim.split("+");
+            let mut trim_wh = trim.next().unwrap().split("+").collect::<Vec<&str>>();
+            let mut trim_xy = trim_wh[0].split("x").collect::<Vec<&str>>();
+            let x = trim_xy[0].parse::<u32>().unwrap();
+            let y = trim_xy[1].parse::<u32>().unwrap();
+            let w = trim_wh[1].parse::<u32>().unwrap();
+            let h = trim_wh[2].parse::<u32>().unwrap();
+            (Some((x, y)), Some((w, h)))
         }
         else {
             println!("Invalid trim format. Please use 'WxH' (e.g.1920x1080).");
             std::process::exit(1);
         }
     }
+    else {
+        (None, None)
+    };
 
-    ret
+    ArgStruct {
+        souce_path: args.source,
+        destination_path: args.to,
+        destination_extension: args.convert,
+        quality: args.quality,
+        delete: args.delete,
+        resize: args.resize,
+        trim_xy,
+        trim_wh,
+        grayscale: args.grayscale,
+        view: args.view,
+    }
 }
