@@ -8,8 +8,7 @@ pub struct ArgStruct {
     pub quality: Option<f32>,
     pub delete: bool,
     pub resize: Option<u8>,
-    pub trim_xy: Option<(u32, u32)>,
-    pub trim_wh: Option<(u32, u32)>,
+    pub trim: Option<((u32, u32), (u32, u32))>,
     pub grayscale: bool,
     pub view: bool,
 }
@@ -22,7 +21,7 @@ struct Args {
 
     /// Destination file path
     #[arg(short, long)]
-    to: Option<String>,
+    output: Option<String>,
 
     /// Destination file extension
     #[arg(short, long)]
@@ -75,18 +74,18 @@ pub fn parser() -> ArgStruct {
     };
     */
 
-    let (trim_xy, trim_wh) = if args.trim.is_some() {
+    let trim = if args.trim.is_some() {
         let re = Regex::new(r"^\d*x\d*\+\d*\+\d*$").unwrap();
         let trim = args.trim.unwrap();
         if re.is_match(&trim) {
-            let mut trim = trim.split("+");
-            let mut trim_wh = trim.next().unwrap().split("+").collect::<Vec<&str>>();
-            let mut trim_xy = trim_wh[0].split("x").collect::<Vec<&str>>();
+            let trim_wh = trim.split("+").collect::<Vec<&str>>();
+            let trim_xy = trim_wh[0].split("x").collect::<Vec<&str>>();
+            println!("{:?}", trim_wh); 
             let x = trim_xy[0].parse::<u32>().unwrap();
             let y = trim_xy[1].parse::<u32>().unwrap();
             let w = trim_wh[1].parse::<u32>().unwrap();
             let h = trim_wh[2].parse::<u32>().unwrap();
-            (Some((x, y)), Some((w, h)))
+            Some(((x, y), (w, h)))
         }
         else {
             println!("Invalid trim format. Please use 'WxH' (e.g.1920x1080).");
@@ -94,18 +93,17 @@ pub fn parser() -> ArgStruct {
         }
     }
     else {
-        (None, None)
+        None
     };
 
     ArgStruct {
         souce_path: args.source,
-        destination_path: args.to,
+        destination_path: args.output,
         destination_extension: args.convert,
         quality: args.quality,
         delete: args.delete,
         resize: args.resize,
-        trim_xy,
-        trim_wh,
+        trim,
         grayscale: args.grayscale,
         view: args.view,
     }

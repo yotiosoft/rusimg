@@ -50,6 +50,11 @@ fn main() -> Result<(), String> {
         // ファイルを開く
         let mut image = rusimg::open_image(&image_file_path)?;
 
+        // --trim -> トリミング
+        if let Some(trim) = args.trim {
+            println!("{}x{}+{}+{}", trim.0.0, trim.0.1, trim.1.0, trim.1.1);
+        }
+
         // --resize -> リサイズ
         if let Some(resize) = args.resize {
             // リサイズ
