@@ -134,7 +134,7 @@ impl Rusimg for JpegImage {
         let conf = viuer::Config {
             // set offset
             x: 0,
-            y: conf_height as i16,
+            y: 100,
             // set dimensions
             width: Some(conf_width as u32),
             height: Some(conf_height as u32),    

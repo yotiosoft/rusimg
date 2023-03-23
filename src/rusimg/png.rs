@@ -157,8 +157,7 @@ impl Rusimg for PngImage {
         let conf_height = self.height as f64 / std::cmp::max(self.width, self.height) as f64 as f64 * 50 as f64;
         let conf = viuer::Config {
             // set offset
-            x: 0,
-            y: conf_height as i16,
+            absolute_offset: false,
             // set dimensions
             width: Some(conf_width as u32),
             height: Some(conf_height as u32),    
