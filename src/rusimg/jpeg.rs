@@ -122,6 +122,10 @@ impl Rusimg for JpegImage {
     }
 
     fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), String> {
+        if self.width > (trim_xy.0 + trim_wh.0) as usize || self.height > (trim_xy.1 + trim_wh.1) as usize {
+            return Err("Trim area is out of bounds".to_string());
+        }
+        
         self.image = self.image.crop(trim_xy.0, trim_xy.1, trim_wh.0, trim_wh.1);
 
         println!("Trim: {}x{} -> {}x{}", self.width, self.height, trim_wh.0, trim_wh.1);
