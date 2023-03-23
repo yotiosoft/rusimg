@@ -52,7 +52,11 @@ fn main() -> Result<(), String> {
 
         // --trim -> トリミング
         if let Some(trim) = args.trim {
-            println!("{}x{}+{}+{}", trim.0.0, trim.0.1, trim.1.0, trim.1.1);
+            // トリミング
+            match rusimg::trim(&mut image, (trim.0.0, trim.0.1), (trim.1.0, trim.1.1)) {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            }
         }
 
         // --resize -> リサイズ

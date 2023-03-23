@@ -80,7 +80,6 @@ pub fn parser() -> ArgStruct {
         if re.is_match(&trim) {
             let trim_wh = trim.split("+").collect::<Vec<&str>>();
             let trim_xy = trim_wh[0].split("x").collect::<Vec<&str>>();
-            println!("{:?}", trim_wh); 
             let x = trim_xy[0].parse::<u32>().unwrap();
             let y = trim_xy[1].parse::<u32>().unwrap();
             let w = trim_wh[1].parse::<u32>().unwrap();

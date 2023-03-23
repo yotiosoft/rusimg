@@ -169,6 +169,43 @@ pub fn resize(source_image: &mut Img, resize_ratio: u8) -> Result<(), String> {
     }
 }
 
+pub fn trim(image: &mut Img, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), String> {
+    match image.extension {
+        Extension::Bmp => {
+            match &mut image.data.bmp {
+                Some(bmp) => {
+                    bmp.trim(trim_xy, trim_wh)
+                },
+                None => return Err("Failed to save bmp image".to_string()),
+            }
+        },
+        Extension::Jpeg => {
+            match &mut image.data.jpeg {
+                Some(jpeg) => {
+                    jpeg.trim(trim_xy, trim_wh)
+                },
+                None => return Err("Failed to save jpeg image".to_string()),
+            }
+        },
+        Extension::Png => {
+            match &mut image.data.png {
+                Some(png) => {
+                    png.trim(trim_xy, trim_wh)
+                },
+                None => return Err("Failed to save png image".to_string()),
+            }
+        },
+        Extension::Webp => {
+            match &mut image.data.webp {
+                Some(webp) => {
+                    webp.trim(trim_xy, trim_wh)
+                },
+                None => return Err("Failed to save webp image".to_string()),
+            }
+        },
+    }
+}
+
 pub fn grayscale(image: &mut Img) {
     match image.extension {
         Extension::Bmp => {
