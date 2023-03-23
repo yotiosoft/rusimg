@@ -148,6 +148,17 @@ impl Rusimg for PngImage {
         Ok(())
     }
 
+    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), String> {
+        self.image = self.image.crop(trim_xy.0, trim_xy.1, trim_wh.0, trim_wh.1);
+
+        println!("Trim: {}x{} -> {}x{}", self.width, self.height, trim_wh.0, trim_wh.1);
+
+        self.width = trim_wh.0 as usize;
+        self.height = trim_wh.1 as usize;
+
+        Ok(())
+    }
+
     fn grayscale(&mut self) {
         self.image = self.image.grayscale();
     }
