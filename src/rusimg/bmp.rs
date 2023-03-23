@@ -82,15 +82,15 @@ impl Rusimg for BmpImage {
     }
 
     fn view(&self) -> Result<(), String> {
-        let conf_width = Some((self.width as f64 / std::cmp::max(self.width, self.height) as f64 * 100 as f64) as u32);
-        let conf_height = Some((self.height as f64 / std::cmp::max(self.width, self.height) as f64 as f64 * 50 as f64) as u32);
+        let conf_width = self.width as f64 / std::cmp::max(self.width, self.height) as f64 * 100 as f64;
+        let conf_height = self.height as f64 / std::cmp::max(self.width, self.height) as f64 as f64 * 50 as f64;
         let conf = viuer::Config {
             // set offset
             x: 0,
-            y: 25,
+            y: conf_height as i16,
             // set dimensions
-            width: conf_width,
-            height: conf_height,    
+            width: Some(conf_width as u32),
+            height: Some(conf_height as u32),    
             ..Default::default()
         };
 
