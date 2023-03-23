@@ -13,6 +13,7 @@ pub trait Rusimg {
     fn save(&mut self, path: Option<&String>) -> Result<(), String>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), String>;
     fn resize(&mut self, resize_ratio: u8) -> Result<(), String>;
+    fn grayscale(&mut self);
     fn view(&self) -> Result<(), String>;
 
     fn save_filepath(source_filepath: &String, destination_filepath: Option<&String>, new_extension: &String) -> String {

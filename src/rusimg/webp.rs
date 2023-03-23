@@ -131,6 +131,10 @@ impl Rusimg for WebpImage {
         Ok(())
     }
 
+    fn grayscale(&mut self) {
+        self.image = self.image.grayscale();
+    }
+
     fn view(&self) -> Result<(), String> {
         let conf_width = self.width as f64 / std::cmp::max(self.width, self.height) as f64 * 100 as f64;
         let conf_height = self.height as f64 / std::cmp::max(self.width, self.height) as f64 as f64 * 50 as f64;
