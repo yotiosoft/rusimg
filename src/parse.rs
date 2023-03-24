@@ -16,18 +16,18 @@ pub struct ArgStruct {
 #[derive(clap::Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Source file path
+    /// Source file path (file name or directory path)
     source: String,
 
-    /// Destination file path
+    /// Destination file path (file name or directory path)
     #[arg(short, long)]
     output: Option<String>,
 
-    /// Destination file extension
+    /// Destination file extension (e.g. jpeg, png, webp, bmp)
     #[arg(short, long)]
     convert: Option<String>,
 
-    /// Resize image
+    /// Resize images in parcent (must be 0 < resize <= 100)
     #[arg(short, long)]
     resize: Option<u8>,
 
@@ -39,7 +39,7 @@ struct Args {
     #[arg(short, long)]
     grayscale: bool,
 
-    /// Image quality
+    /// Image quality (for compress, must be 0.0 <= q <= 100.0)
     #[arg(short, long)]
     quality: Option<f32>,
 
@@ -47,7 +47,7 @@ struct Args {
     #[arg(short, long)]
     delete: bool,
 
-    /// View result
+    /// View result in the comand line
     #[arg(short, long)]
     view: bool,
 }
