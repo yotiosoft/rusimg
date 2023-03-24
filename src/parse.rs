@@ -87,7 +87,7 @@ pub fn parser() -> ArgStruct {
             Some(((x, y), (w, h)))
         }
         else {
-            println!("Invalid trim format. Please use 'WxH' (e.g.1920x1080).");
+            println!("Invalid trim format. Please use 'XxY+W+H' (e.g.100x100+50x50).");
             std::process::exit(1);
         }
     }
