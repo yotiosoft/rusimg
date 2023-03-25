@@ -55,25 +55,6 @@ struct Args {
 pub fn parser() -> ArgStruct {
     let args = Args::parse();
 
-    /*
-    let re = Regex::new(r"^\d*x\d*$").unwrap();
-    let resize = if let Some(resize_str) = args.resize {
-        if re.is_match(&resize_str) {
-            let mut resize = resize_str.split("x");
-            let width = resize.next().unwrap().parse::<usize>().unwrap() as u32;
-            let height = resize.next().unwrap().parse::<usize>().unwrap() as u32;
-            Some((width, height))
-        }
-        else {
-            println!("Invalid resize format. Please use 'WxH' (e.g.1920x1080).");
-            std::process::exit(1);
-        }
-    }
-    else {
-        None
-    };
-    */
-
     let trim = if args.trim.is_some() {
         let re = Regex::new(r"^\d*x\d*\+\d*\+\d*$").unwrap();
         let trim = args.trim.unwrap();
