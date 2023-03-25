@@ -172,6 +172,8 @@ impl Rusimg for PngImage {
 
     fn grayscale(&mut self) {
         self.image = self.image.grayscale();
+        println!("Grayscale: Done.");
+        self.operations_count += 1;
     }
 
     fn view(&self) -> Result<(), String> {
