@@ -79,7 +79,7 @@ fn main() -> Result<(), String> {
             }
         }
 
-        // grayscale -> グレースケール
+        // --grayscale -> グレースケール
         if args.grayscale {
             // グレースケール
             rusimg::grayscale(&mut image);
@@ -101,7 +101,7 @@ fn main() -> Result<(), String> {
         };
         let saved_filepath = rusimg::save_image(output_path, &mut image.data, &image.extension)?;
 
-        // 元ファイルの削除 (optinal: -d)
+        // --delete -> 元ファイルの削除 (optinal)
         if args.delete && image_file_path != saved_filepath {
             match fs::remove_file(&image_file_path) {
                 Ok(_) => (),
@@ -119,6 +119,8 @@ fn main() -> Result<(), String> {
 
         println!("Done.");
     }
+
+    print!("All images are processed.");
 
     Ok(())
 }

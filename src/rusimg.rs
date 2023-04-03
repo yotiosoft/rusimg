@@ -7,18 +7,11 @@ use std::path::Path;
 use image::DynamicImage;
 use std::fs::Metadata;
 
-#[derive(Debug, Clone)]
-pub struct CommonImgStruct {
-    pub image: DynamicImage,
-    width: usize,
-    height: usize,
-    pub metadata_input: Metadata,
-    pub metadata_output: Option<Metadata>,
-    pub filepath_input: String,
-    pub filepath_output: Option<String>,
-}
-
-pub trait CommonRusimg {
+pub trait Rusimg {
+    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> where Self: Sized;
+    fn open(path: &str) -> Result<Self, String> where Self: Sized;
+    fn save(&mut self, path: Option<&String>) -> Result<(), String>;
+    fn compress(&mut self, quality: Option<f32>) -> Result<(), String>;
     fn resize(&mut self, resize_ratio: u8) -> Result<(), String>;
     fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), String>;
     fn grayscale(&mut self);
@@ -38,73 +31,6 @@ pub trait CommonRusimg {
             Path::new(&source_filepath).with_extension(new_extension).to_str().expect("Failed to convert path to string").to_string()
         }
     }
-}
-
-impl CommonRusimg for CommonImgStruct {
-    fn resize(&mut self, resize_ratio: u8) -> Result<(), String> {
-        let nwidth = (self.width as f32 * (resize_ratio as f32 / 100.0)) as usize;
-        let nheight = (self.height as f32 * (resize_ratio as f32 / 100.0)) as usize;
-        
-        self.image = self.image.resize(nwidth as u32, nheight as u32, image::imageops::FilterType::Lanczos3);
-
-        println!("Resize: {}x{} -> {}x{}", self.width, self.height, nwidth, nheight);
-
-        self.width = nwidth;
-        self.height = nheight;
-
-        Ok(())
-    }
-
-    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), String> {
-        let mut w = trim_wh.0;
-        let mut h = trim_wh.1;
-        if self.width < (trim_xy.0 + w) as usize || self.height < (trim_xy.1 + h) as usize {
-            if self.width > trim_xy.0 as usize && self.height > trim_xy.1 as usize {
-                w = if self.width < (trim_xy.0 + w) as usize { self.width as u32 - trim_xy.0 } else { trim_wh.0 };
-                h = if self.height < (trim_xy.1 + h) as usize { self.height as u32 - trim_xy.1 } else { trim_wh.1 };
-                println!("Required width or height is larger than image size. Corrected size: {}x{} -> {}x{}", trim_wh.0, trim_wh.1, w, h);
-            }
-            else {
-                return Err(format!("Trim: Invalid trim point: {}x{}", trim_xy.0, trim_xy.1));
-            }
-        }
-
-        self.image = self.image.crop(trim_xy.0, trim_xy.1, w, h);
-
-        println!("Trim: {}x{} -> {}x{}", self.width, self.height, w, h);
-
-        self.width = w as usize;
-        self.height = h as usize;
-
-        Ok(())
-    }
-
-    fn grayscale(&mut self) {
-        self.image = self.image.grayscale();
-        println!("Grayscale: Done.");
-    }
-
-    fn view(&self) -> Result<(), String> {
-        let conf_width = self.width as f64 / std::cmp::max(self.width, self.height) as f64 * 100 as f64;
-        let conf_height = self.height as f64 / std::cmp::max(self.width, self.height) as f64 as f64 * 50 as f64;
-        let conf = viuer::Config {
-            absolute_offset: false,
-            width: Some(conf_width as u32),
-            height: Some(conf_height as u32),    
-            ..Default::default()
-        };
-
-        viuer::print(&self.image, &conf).map_err(|e| format!("Failed to view image: {}", e.to_string()))?;
-
-        Ok(())
-    }
-}
-
-pub trait Rusimg {
-    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> where Self: Sized;
-    fn open(path: &str) -> Result<Self, String> where Self: Sized;
-    fn save(&mut self, path: Option<&String>) -> Result<(), String>;
-    fn compress(&mut self, quality: Option<f32>) -> Result<(), String>;
 }
 
 #[derive(Debug, Clone, PartialEq)]
