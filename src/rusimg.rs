@@ -33,19 +33,6 @@ pub trait Rusimg {
     }
 }
 
-pub struct ImgStruct {
-    pub image: DynamicImage,
-    image_bytes: Option<Vec<u8>>,
-    width: usize,
-    height: usize,
-    operations_count: u32,
-    extension_str: String,
-    pub metadata_input: Metadata,
-    pub metadata_output: Option<Metadata>,
-    pub filepath_input: String,
-    pub filepath_output: Option<String>,
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum Extension {
     Bmp,
