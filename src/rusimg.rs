@@ -4,8 +4,9 @@ mod png;
 mod webp;
 
 use std::path::Path;
-use image::DynamicImage;
 use std::fs::Metadata;
+use std::fmt;
+use image::DynamicImage;
 
 pub enum RusimgError {
     FailedToOpenFile,
@@ -19,6 +20,23 @@ pub enum RusimgError {
     FailedToConvertPathToString,
     FailedToGetExtension,
     InvalidTrimXY,
+}
+impl fmt::Display for RusimgError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            RusimgError::FailedToOpenFile => write!(f, "Failed to open file"),
+            RusimgError::FailedToReadFile => write!(f, "Failed to read file"),
+            RusimgError::FailedToGetMetadata => write!(f, "Failed to get metadata"),
+            RusimgError::FailedToOpenImage => write!(f, "Failed to open image"),
+            RusimgError::FailedToSaveImage => write!(f, "Failed to save image"),
+            RusimgError::FailedToCopyBinaryData(s) => write!(f, "Failed to copy binary data to memory: {}", s),
+            RusimgError::FailedToGetFilename => write!(f, "Failed to get filename"),
+            RusimgError::FailedToConvertFilenameToString => write!(f, "Failed to convert filename to string"),
+            RusimgError::FailedToConvertPathToString => write!(f, "Failed to convert path to string"),
+            RusimgError::FailedToGetExtension => write!(f, "Failed to get extension"),
+            RusimgError::InvalidTrimXY => write!(f, "Invalid trim XY"),
+        }
+    }
 }
 
 pub trait Rusimg {

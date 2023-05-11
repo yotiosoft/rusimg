@@ -75,7 +75,7 @@ fn main() -> Result<(), String> {
             // 変換
             match rusimg::convert(&mut image, &extension) {
                 Ok(img) => image = img,
-                Err(e) => return Err(e),
+                Err(e) => return Err(e.to_string()),
             }
         }
 
