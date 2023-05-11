@@ -294,7 +294,7 @@ pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>)
     }
 }
 
-pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Result<Img, String> {
+pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Result<Img, RusimgError> {
     match source_img.extension {
         Extension::Bmp => {
             match &source_img.data.bmp {
@@ -342,7 +342,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                         },
                     }
                 },
-                None => return Err("Failed to save jpeg image".to_string()),
+                None => return Err(RusimgError::FailedToSaveImage),
             }
         },
         Extension::Jpeg => {
@@ -391,7 +391,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                         },
                     }
                 },
-                None => return Err("Failed to save jpeg image".to_string()),
+                None => return Err(RusimgError::FailedToSaveImage),
             }
         },
         Extension::Png => {
@@ -440,7 +440,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                         },
                     }
                 },
-                None => return Err("Failed to save png image".to_string()),
+                None => return Err(RusimgError::FailedToSaveImage),
             }
         },
         Extension::Webp => {
@@ -489,7 +489,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                         },
                     }
                 },
-                None => return Err("Failed to save webp image".to_string()),
+                None => return Err(RusimgError::FailedToSaveImage),
             }
         },
     }
