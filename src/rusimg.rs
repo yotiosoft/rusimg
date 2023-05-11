@@ -13,6 +13,7 @@ pub enum RusimgError {
     FailedToGetMetadata,
     FailedToOpenImage,
     FailedToSaveImage,
+    FailedToCopyBinaryData(String),
     FailedToGetFilename,
     FailedToConvertFilenameToString,
     FailedToConvertPathToString,

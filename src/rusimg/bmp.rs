@@ -3,8 +3,8 @@ use image::DynamicImage;
 use std::fs::Metadata;
 use std::io::Read;
 
-use crate::rusimg::Rusimg;
 use crate::rusimg;
+use crate::rusimg::Rusimg;
 
 #[derive(Debug, Clone)]
 pub struct BmpImage {

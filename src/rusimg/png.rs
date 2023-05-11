@@ -2,8 +2,8 @@ use std::io::{Read, Write, Cursor};
 use std::fs::Metadata;
 use image::DynamicImage;
 
-use crate::rusimg::Rusimg;
 use crate::rusimg;
+use crate::rusimg::Rusimg;
 
 #[derive(Debug, Clone)]
 pub struct PngImage {
@@ -20,12 +20,12 @@ pub struct PngImage {
 }
 
 impl Rusimg for PngImage {
-    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> {
+    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, rusimg::RusimgError> {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         let mut new_binary_data = Vec::new();
         image.write_to(&mut Cursor::new(&mut new_binary_data), image::ImageOutputFormat::Png)
-            .map_err(|e| format!("Failed to write image: {}", e))?;
+            .map_err(|e| rusimg::RusimgError::FailedToCopyBinaryData(e.to_string()))?;
 
         Ok(Self {
             binary_data: new_binary_data,
