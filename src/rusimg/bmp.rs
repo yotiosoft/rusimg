@@ -4,6 +4,7 @@ use std::fs::Metadata;
 use std::io::Read;
 
 use crate::rusimg::Rusimg;
+use crate::rusimg;
 
 #[derive(Debug, Clone)]
 pub struct BmpImage {
@@ -17,7 +18,7 @@ pub struct BmpImage {
 }
 
 impl Rusimg for BmpImage {
-    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> {
+    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, rusimg::RusimgError> {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         Ok(Self {

@@ -21,7 +21,7 @@ pub enum RusimgError {
 }
 
 pub trait Rusimg {
-    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> where Self: Sized;
+    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
     fn open(path: &str) -> Result<Self, String> where Self: Sized;
     fn save(&mut self, path: Option<&String>) -> Result<(), String>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), String>;

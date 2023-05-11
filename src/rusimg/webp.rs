@@ -5,6 +5,7 @@ use std::io::{Read, Write};
 use std::path::Path;
 
 use crate::rusimg::Rusimg;
+use crate::rusimg;
 
 #[derive(Debug, Clone)]
 pub struct WebpImage {

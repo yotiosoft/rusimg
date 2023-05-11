@@ -3,6 +3,7 @@ use std::fs::Metadata;
 use image::DynamicImage;
 
 use crate::rusimg::Rusimg;
+use crate::rusimg;
 
 #[derive(Debug, Clone)]
 pub struct PngImage {
