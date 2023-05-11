@@ -7,6 +7,19 @@ use std::path::Path;
 use image::DynamicImage;
 use std::fs::Metadata;
 
+pub enum RusimgError {
+    FailedToOpenFile,
+    FailedToReadFile,
+    FailedToGetMetadata,
+    FailedToOpenImage,
+    FailedToSaveImage,
+    FailedToGetFilename,
+    FailedToConvertFilenameToString,
+    FailedToConvertPathToString,
+    FailedToGetExtension,
+    InvalidTrimXY,
+}
+
 pub trait Rusimg {
     fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, String> where Self: Sized;
     fn open(path: &str) -> Result<Self, String> where Self: Sized;
