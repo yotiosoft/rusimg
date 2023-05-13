@@ -3,7 +3,7 @@ use std::fs::Metadata;
 use image::DynamicImage;
 
 use crate::rusimg;
-use crate::rusimg::Rusimg;
+use super::RusimgError;
 
 #[derive(Debug, Clone)]
 pub struct PngImage {
@@ -20,7 +20,7 @@ pub struct PngImage {
 }
 
 impl Rusimg for PngImage {
-    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, rusimg::RusimgError> {
+    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, RusimgError> {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         let mut new_binary_data = Vec::new();

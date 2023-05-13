@@ -5,7 +5,7 @@ use std::io::{Read, Write};
 use std::path::Path;
 
 use crate::rusimg;
-use crate::rusimg::Rusimg;
+use super::RusimgError;
 
 #[derive(Debug, Clone)]
 pub struct WebpImage {
@@ -22,7 +22,7 @@ pub struct WebpImage {
 }
 
 impl Rusimg for WebpImage {
-    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self,rusimg::RusimgError> {
+    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, RusimgError> {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         Ok(Self {

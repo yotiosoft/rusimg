@@ -5,8 +5,8 @@ use std::fs::Metadata;
 use std::io::{Read, Write};
 use std::path::Path;
 
-use crate::rusimg;
 use crate::rusimg::Rusimg;
+use super::RusimgError;
 
 #[derive(Debug, Clone)]
 pub struct JpegImage {
@@ -23,7 +23,7 @@ pub struct JpegImage {
 }
 
 impl Rusimg for JpegImage {
-    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, rusimg::RusimgError> {
+    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, RusimgError> {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         Ok(Self {
@@ -40,7 +40,7 @@ impl Rusimg for JpegImage {
         })
     }
 
-    fn open(path: &str) -> Result<Self, String> {
+    fn open(path: &str) -> Result<Self, RusimgError> {
         let mut raw_data = std::fs::File::open(path).map_err(|_| "Failed to open file".to_string())?;
         let mut buf = Vec::new();
         raw_data.read_to_end(&mut buf).map_err(|_| "Failed to read file".to_string())?;
