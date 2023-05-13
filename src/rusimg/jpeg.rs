@@ -41,12 +41,12 @@ impl Rusimg for JpegImage {
     }
 
     fn open(path: &str) -> Result<Self, RusimgError> {
-        let mut raw_data = std::fs::File::open(path).map_err(|_| "Failed to open file".to_string())?;
+        let mut raw_data = std::fs::File::open(path).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
         let mut buf = Vec::new();
-        raw_data.read_to_end(&mut buf).map_err(|_| "Failed to read file".to_string())?;
-        let metadata_input = raw_data.metadata().map_err(|_| "Failed to get metadata".to_string())?;
+        raw_data.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
+        let metadata_input = raw_data.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
 
-        let image = image::load_from_memory(&buf).map_err(|_| "Failed to open image".to_string())?;
+        let image = image::load_from_memory(&buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         let extension_str = Path::new(path).extension().and_then(|s| s.to_str()).unwrap_or("").to_string();
