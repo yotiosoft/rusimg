@@ -9,13 +9,13 @@ use std::fmt;
 use image::DynamicImage;
 
 pub enum RusimgError {
-    FailedToOpenFile,
-    FailedToReadFile,
-    FailedToGetMetadata,
-    FailedToOpenImage,
-    FailedToSaveImage,
+    FailedToOpenFile(String),
+    FailedToReadFile(String),
+    FailedToGetMetadata(String),
+    FailedToOpenImage(String),
+    FailedToSaveImage(String),
     FailedToCopyBinaryData(String),
-    FailedToGetFilename,
+    FailedToGetFilename(String),
     FailedToConvertFilenameToString,
     FailedToConvertPathToString,
     FailedToGetExtension,
@@ -24,7 +24,7 @@ pub enum RusimgError {
 impl fmt::Display for RusimgError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            RusimgError::FailedToOpenFile => write!(f, "Failed to open file"),
+            RusimgError::FailedToOpenFile(s) => write!(f, "Failed to open file: {}", s),
             RusimgError::FailedToReadFile => write!(f, "Failed to read file"),
             RusimgError::FailedToGetMetadata => write!(f, "Failed to get metadata"),
             RusimgError::FailedToOpenImage => write!(f, "Failed to open image"),
@@ -41,7 +41,7 @@ impl fmt::Display for RusimgError {
 
 pub trait Rusimg {
     fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
-    fn open(path: &str) -> Result<Self, String> where Self: Sized;
+    fn open(path: &str) -> Result<Self, RusimgError> where Self: Sized;
     fn save(&mut self, path: Option<&String>) -> Result<(), String>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), String>;
     fn resize(&mut self, resize_ratio: u8) -> Result<(), String>;
