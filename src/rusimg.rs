@@ -25,12 +25,12 @@ impl fmt::Display for RusimgError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             RusimgError::FailedToOpenFile(s) => write!(f, "Failed to open file: {}", s),
-            RusimgError::FailedToReadFile => write!(f, "Failed to read file"),
-            RusimgError::FailedToGetMetadata => write!(f, "Failed to get metadata"),
-            RusimgError::FailedToOpenImage => write!(f, "Failed to open image"),
-            RusimgError::FailedToSaveImage => write!(f, "Failed to save image"),
+            RusimgError::FailedToReadFile(s) => write!(f, "Failed to read file: {}", s),
+            RusimgError::FailedToGetMetadata(s) => write!(f, "Failed to get metadata"),
+            RusimgError::FailedToOpenImage(s) => write!(f, "Failed to open image"),
+            RusimgError::FailedToSaveImage(s) => write!(f, "Failed to save image"),
             RusimgError::FailedToCopyBinaryData(s) => write!(f, "Failed to copy binary data to memory: {}", s),
-            RusimgError::FailedToGetFilename => write!(f, "Failed to get filename"),
+            RusimgError::FailedToGetFilename(s) => write!(f, "Failed to get filename"),
             RusimgError::FailedToConvertFilenameToString => write!(f, "Failed to convert filename to string"),
             RusimgError::FailedToConvertPathToString => write!(f, "Failed to convert path to string"),
             RusimgError::FailedToGetExtension => write!(f, "Failed to get extension"),
@@ -42,7 +42,7 @@ impl fmt::Display for RusimgError {
 pub trait Rusimg {
     fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
     fn open(path: &str) -> Result<Self, RusimgError> where Self: Sized;
-    fn save(&mut self, path: Option<&String>) -> Result<(), String>;
+    fn save(&mut self, path: Option<&String>) -> Result<(), RusimgError>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), String>;
     fn resize(&mut self, resize_ratio: u8) -> Result<(), String>;
     fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), String>;
