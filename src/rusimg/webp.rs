@@ -4,7 +4,7 @@ use std::fs::Metadata;
 use std::io::{Read, Write};
 use std::path::Path;
 
-use crate::rusimg;
+use crate::rusimg::Rusimg;
 use super::RusimgError;
 
 #[derive(Debug, Clone)]

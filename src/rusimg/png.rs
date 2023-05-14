@@ -2,7 +2,7 @@ use std::io::{Read, Write, Cursor};
 use std::fs::Metadata;
 use image::DynamicImage;
 
-use crate::rusimg;
+use crate::rusimg::Rusimg;
 use super::RusimgError;
 
 #[derive(Debug, Clone)]
@@ -64,7 +64,7 @@ impl Rusimg for PngImage {
         })
     }
 
-    fn save(&mut self, path: Option<&String>) -> Result<(), String> {
+    fn save(&mut self, path: Option<&String>) -> Result<(), RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"png".to_string());
         
         // image_bytes == None の場合、DynamicImage を 保存
