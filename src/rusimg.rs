@@ -26,6 +26,7 @@ pub enum RusimgError {
     FailedToConvertPathToString,
     FailedToGetExtension,
     InvalidTrimXY,
+    BMPImagesCannotBeCompressed,
 }
 impl fmt::Display for RusimgError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -47,6 +48,7 @@ impl fmt::Display for RusimgError {
             RusimgError::FailedToConvertPathToString => write!(f, "Failed to convert path to string"),
             RusimgError::FailedToGetExtension => write!(f, "Failed to get extension"),
             RusimgError::InvalidTrimXY => write!(f, "Invalid trim XY"),
+            RusimgError::BMPImagesCannotBeCompressed => write!(f, "BMP images cannot be compressed"),
         }
     }
 }
@@ -55,7 +57,7 @@ pub trait Rusimg {
     fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
     fn open(path: &str) -> Result<Self, RusimgError> where Self: Sized;
     fn save(&mut self, path: Option<&String>) -> Result<(), RusimgError>;
-    fn compress(&mut self, quality: Option<f32>) -> Result<(), String>;
+    fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError>;
     fn resize(&mut self, resize_ratio: u8) -> Result<(), String>;
     fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), String>;
     fn grayscale(&mut self);
