@@ -14,6 +14,7 @@ pub enum RusimgError {
     FailedToGetMetadata(String),
     FailedToOpenImage(String),
     FailedToSaveImage(String),
+    FailedToSaveImageInConvert,
     FailedToCopyBinaryData(String),
     FailedToGetFilename(String),
     FailedToCreateFile(String),
@@ -33,6 +34,7 @@ impl fmt::Display for RusimgError {
             RusimgError::FailedToGetMetadata(s) => write!(f, "Failed to get metadata: {}", s),
             RusimgError::FailedToOpenImage(s) => write!(f, "Failed to open image: {}", s),
             RusimgError::FailedToSaveImage(s) => write!(f, "Failed to save image: {}", s),
+            RusimgError::FailedToSaveImageInConvert => write!(f, "Failed to save image"),
             RusimgError::FailedToCopyBinaryData(s) => write!(f, "Failed to copy binary data to memory: {}", s),
             RusimgError::FailedToGetFilename(s) => write!(f, "Failed to get filename: {}", s),
             RusimgError::FailedToCreateFile(s) => write!(f, "Failed to create file: {}", s),
@@ -368,7 +370,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                         },
                     }
                 },
-                None => return Err(RusimgError::FailedToSaveImage),
+                None => return Err(RusimgError::FailedToSaveImageInConvert),
             }
         },
         Extension::Jpeg => {
@@ -417,7 +419,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                         },
                     }
                 },
-                None => return Err(RusimgError::FailedToSaveImage),
+                None => return Err(RusimgError::FailedToSaveImageInConvert),
             }
         },
         Extension::Png => {
@@ -466,7 +468,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                         },
                     }
                 },
-                None => return Err(RusimgError::FailedToSaveImage),
+                None => return Err(RusimgError::FailedToSaveImageInConvert),
             }
         },
         Extension::Webp => {
@@ -515,7 +517,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                         },
                     }
                 },
-                None => return Err(RusimgError::FailedToSaveImage),
+                None => return Err(RusimgError::FailedToSaveImageInConvert),
             }
         },
     }
