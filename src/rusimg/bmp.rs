@@ -52,11 +52,11 @@ impl Rusimg for BmpImage {
         })
     }
 
-    fn save(&mut self, path: Option<&String>) -> Result<(), String> {
+    fn save(&mut self, path: Option<&String>) -> Result<(), RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"bmp".to_string());
         
-        self.image.save(&save_path).map_err(|e| format!("Failed to save image: {}", e.to_string()))?;
-        self.metadata_output = Some(std::fs::metadata(&save_path).map_err(|_| "Failed to get metadata".to_string())?);
+        self.image.save(&save_path).map_err(|e| RusimgError::FailedToSaveImage(e.to_string()))?;
+        self.metadata_output = Some(std::fs::metadata(&save_path).map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
         self.filepath_output = Some(save_path);
 
         Ok(())
