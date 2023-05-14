@@ -99,7 +99,7 @@ fn main() -> Result<(), String> {
             Some(path) => Some(path),
             None => None,
         };
-        let saved_filepath = rusimg::save_image(output_path, &mut image.data, &image.extension)?;
+        let saved_filepath = rusimg::save_image(output_path, &mut image.data, &image.extension).map_err(|e| e.to_string())?;
 
         // --delete -> 元ファイルの削除 (optinal)
         if args.delete && image_file_path != saved_filepath {
