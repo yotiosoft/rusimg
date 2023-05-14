@@ -85,7 +85,7 @@ impl Rusimg for JpegImage {
         Ok(())
     }
 
-    fn compress(&mut self, quality: Option<f32>) -> Result<(), String> {
+    fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {
         let quality = quality.unwrap_or(75.0);  // default quality: 75.0
 
         let image_bytes = self.image.clone().into_bytes();
@@ -99,7 +99,7 @@ impl Rusimg for JpegImage {
         compress.write_scanlines(&image_bytes);
         compress.finish_compress();
 
-        self.image_bytes = Some(compress.data_to_vec().map_err(|_| "Failed to compress image".to_string())?);
+        self.image_bytes = Some(compress.data_to_vec().map_err(|e| RusimgError::FailedToCompressImage(None))?);
 
         println!("Compress: Done.");
         self.operations_count += 1;

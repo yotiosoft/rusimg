@@ -106,7 +106,7 @@ impl Rusimg for WebpImage {
         Ok(())
     }
 
-    fn compress(&mut self, quality: Option<f32>) -> Result<(), String> {
+    fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {
         // webp の場合、圧縮は save() で行う
         self.required_quality = quality;
         self.operations_count += 1;

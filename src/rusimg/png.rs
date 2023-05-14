@@ -84,7 +84,7 @@ impl Rusimg for PngImage {
         Ok(())
     }
 
-    fn compress(&mut self, quality: Option<f32>) -> Result<(), String> {
+    fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {
         // quality の値に応じて level を設定
         let level = if let Some(q) = quality {
             if q <= 17.0 {
@@ -117,16 +117,19 @@ impl Rusimg for PngImage {
                 println!("Compress: Done.");
                 Ok(())
             },
-            Err(e) => match e {
-                oxipng::PngError::DeflatedDataTooLong(s) => Err(format!("deflated data too long: {}", s)),
-                oxipng::PngError::TimedOut => Err("timed out".to_string()),
-                oxipng::PngError::NotPNG => Err("not png".to_string()),
-                oxipng::PngError::APNGNotSupported => Err("apng not supported".to_string()),
-                oxipng::PngError::InvalidData => Err("invalid data".to_string()),
-                oxipng::PngError::TruncatedData => Err("truncated data".to_string()),
-                oxipng::PngError::ChunkMissing(s) => Err(format!("chunk missing: {}", s)),
-                oxipng::PngError::Other(s) => Err(format!("other: {}", s)),
-                _ => Err("unknown error".to_string()),
+            Err(e) => {
+                let oxipng_err = match e {
+                    oxipng::PngError::DeflatedDataTooLong(s) => Err(format!("(oxipng) deflated data too long: {}", s)),
+                    oxipng::PngError::TimedOut => Err("(oxipng) timed out".to_string()),
+                    oxipng::PngError::NotPNG => Err("(oxipng) not png".to_string()),
+                    oxipng::PngError::APNGNotSupported => Err("(oxipng) apng not supported".to_string()),
+                    oxipng::PngError::InvalidData => Err("(oxipng) invalid data".to_string()),
+                    oxipng::PngError::TruncatedData => Err("(oxipng) truncated data".to_string()),
+                    oxipng::PngError::ChunkMissing(s) => Err(format!("(oxipng) chunk missing: {}", s)),
+                    oxipng::PngError::Other(s) => Err(format!("(oxipng) other: {}", s)),
+                    _ => Err("unknown error".to_string()),
+                };
+                Err(RusimgError::FailedToCompressImage(oxipng_err.unwrap()))
             }
         }
     }

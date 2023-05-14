@@ -22,6 +22,7 @@ pub enum RusimgError {
     FailedToWriteFIle(String),
     FailedToDecodeWebp,
     FailedToEncodeWebp(String),
+    FailedToCompressImage(Option<String>),
     FailedToConvertFilenameToString,
     FailedToConvertPathToString,
     FailedToGetExtension,
@@ -44,6 +45,14 @@ impl fmt::Display for RusimgError {
             RusimgError::FailedToWriteFIle(s) => write!(f, "Failed to write file: {}", s),
             RusimgError::FailedToDecodeWebp => write!(f, "Failed to decode webp"),
             RusimgError::FailedToEncodeWebp(s) => write!(f, "Failed to encode webp: {}", s),
+            RusimgError::FailedToCompressImage(s) => {
+                if let Some(s) = s {
+                    write!(f, "Failed to compress image: {}", s)
+                }
+                else {
+                    write!(f, "Failed to compress image")
+                }
+            }
             RusimgError::FailedToConvertFilenameToString => write!(f, "Failed to convert filename to string"),
             RusimgError::FailedToConvertPathToString => write!(f, "Failed to convert path to string"),
             RusimgError::FailedToGetExtension => write!(f, "Failed to get extension"),

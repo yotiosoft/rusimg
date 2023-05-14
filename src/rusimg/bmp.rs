@@ -62,8 +62,8 @@ impl Rusimg for BmpImage {
         Ok(())
     }
 
-    fn compress(&mut self, _quality: Option<f32>) -> Result<(), Rusimg> {
-        Err("BMP images cannot be compressed".to_string())
+    fn compress(&mut self, _quality: Option<f32>) -> Result<(), RusimgError> {
+        Err(RusimgError::BMPImagesCannotBeCompressed)
     }
 
     fn resize(&mut self, resize_ratio: u8) -> Result<(), String> {
