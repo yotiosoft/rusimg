@@ -39,11 +39,11 @@ impl Rusimg for WebpImage {
         })
     }
 
-    fn open(path: &str) -> Result<Self, String> {
-        let mut raw_data = std::fs::File::open(path).map_err(|_| "Failed to open file".to_string())?;
+    fn open(path: &str) -> Result<Self, RusimgError> {
+        let mut raw_data = std::fs::File::open(path).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
         let mut buf = Vec::new();
-        raw_data.read_to_end(&mut buf).map_err(|_| "Failed to read file".to_string())?;
-        let metadata_input = raw_data.metadata().map_err(|_| "Failed to get metadata".to_string())?;
+        raw_data.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
+        let metadata_input = raw_data.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
 
         let webp_decoder = webp::Decoder::new(&buf).decode();
         if let Some(webp_decoder) = webp_decoder {
@@ -64,7 +64,7 @@ impl Rusimg for WebpImage {
             })
         }
         else {
-            return Err("Failed to decode webp".to_string());
+            return Err(RusimgError::FailedToDecodeWebp);
         }
     }
 
