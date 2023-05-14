@@ -68,16 +68,16 @@ impl Rusimg for WebpImage {
         }
     }
 
-    fn save(&mut self, path: Option<&String>) -> Result<(), String> {
+    fn save(&mut self, path: Option<&String>) -> Result<(), RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"webp".to_string());
 
         // 元が webp かつ操作回数が 0 なら encode しない
         let source_is_webp = Path::new(&self.filepath_input).extension().and_then(|s| s.to_str()).unwrap_or("").to_string() == "webp";
         if source_is_webp && self.operations_count == 0 && self.image_bytes.is_some() {
-            let mut file = std::fs::File::create(&save_path).map_err(|_| "Failed to create file".to_string())?;
-            file.write_all(self.image_bytes.as_ref().unwrap()).map_err(|_| "Failed to write file".to_string())?;
+            let mut file = std::fs::File::create(&save_path).map_err(|e| RusimgError::FailedToCreateFile(e.to_string()))?;
+            file.write_all(self.image_bytes.as_ref().unwrap()).map_err(|e| RusimgError::FailedToWriteFIle(e.to_string()))?;
 
-            self.metadata_output = Some(file.metadata().map_err(|_| "Failed to get metadata".to_string())?);
+            self.metadata_output = Some(file.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
             self.filepath_output = Some(save_path);
 
             return Ok(());
@@ -92,15 +92,15 @@ impl Rusimg for WebpImage {
         };
        
         // DynamicImage を （圧縮＆）保存
-        let encoded_webp = webp::Encoder::from_image(&self.image).map_err(|e| format!("Failed to encode webp: {}", e))?.encode(quality);
+        let encoded_webp = webp::Encoder::from_image(&self.image).map_err(|e| RusimgError::FailedToEncodeWebp(e.to_string()))?.encode(quality);
         if self.required_quality.is_some() {
             println!("Compress: Done.");
         }
 
-        let mut file = std::fs::File::create(&save_path).map_err(|_| "Failed to create file".to_string())?;
-        file.write_all(&encoded_webp.as_bytes()).map_err(|_| "Failed to write file".to_string())?;
+        let mut file = std::fs::File::create(&save_path).map_err(|e| RusimgError::FailedToCreateFile(e.to_string()))?;
+        file.write_all(&encoded_webp.as_bytes()).map_err(|e| RusimgError::FailedToWriteFIle(e.to_string()))?;
 
-        self.metadata_output = Some(file.metadata().map_err(|_| "Failed to get metadata".to_string())?);
+        self.metadata_output = Some(file.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
         self.filepath_output = Some(save_path);
 
         Ok(())
