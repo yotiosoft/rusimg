@@ -25,7 +25,7 @@ impl Rusimg for PngImage {
 
         let mut new_binary_data = Vec::new();
         image.write_to(&mut Cursor::new(&mut new_binary_data), image::ImageOutputFormat::Png)
-            .map_err(|e| rusimg::RusimgError::FailedToCopyBinaryData(e.to_string()))?;
+            .map_err(|e| RusimgError::FailedToCopyBinaryData(e.to_string()))?;
 
         Ok(Self {
             binary_data: new_binary_data,
@@ -41,13 +41,13 @@ impl Rusimg for PngImage {
         })
     }
 
-    fn open(path: &str) -> Result<Self, String> {
-        let mut file = std::fs::File::open(path).map_err(|_| "Failed to open file".to_string())?;
+    fn open(path: &str) -> Result<Self, RusimgError> {
+        let mut file = std::fs::File::open(path).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
         let mut buf = Vec::new();
-        file.read_to_end(&mut buf).map_err(|_| "Failed to read file".to_string())?;
-        let metadata_input = file.metadata().map_err(|_| "Failed to get metadata".to_string())?;
+        file.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
+        let metadata_input = file.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
 
-        let image = image::load_from_memory(&buf).map_err(|_| "Failed to open image".to_string())?;
+        let image = image::load_from_memory(&buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         Ok(Self {
