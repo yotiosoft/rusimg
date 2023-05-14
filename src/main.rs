@@ -90,7 +90,7 @@ fn main() -> Result<(), String> {
             // 圧縮
             match rusimg::compress(&mut image.data, &image.extension, Some(q)) {
                 Ok(_) => (),
-                Err(e) => return Err(e),
+                Err(e) => return Err(e.to_string()),
             }
         }
 

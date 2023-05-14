@@ -298,14 +298,14 @@ pub fn grayscale(image: &mut Img) {
     }
 }
 
-pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>) -> Result<(), String> {
+pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>) -> Result<(), RusimgError> {
     match extension {
         Extension::Bmp => {
             match &mut data.bmp {
                 Some(bmp) => {
                     bmp.compress(quality)
                 },
-                None => return Err("Failed to save bmp image".to_string()),
+                None => return Err(RusimgError::FailedToSaveImageInSaving),
             }
         },
         Extension::Jpeg => {
@@ -313,7 +313,7 @@ pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>)
                 Some(jpeg) => {
                     jpeg.compress(quality)
                 },
-                None => return Err("Failed to save jpeg image".to_string()),
+                None => return Err(RusimgError::FailedToSaveImageInSaving),
             }
         },
         Extension::Png => {
@@ -321,7 +321,7 @@ pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>)
                 Some(png) => {
                     png.compress(quality)
                 },
-                None => return Err("Failed to save png image".to_string()),
+                None => return Err(RusimgError::FailedToSaveImageInSaving),
             }
         },
         Extension::Webp => {
@@ -329,7 +329,7 @@ pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>)
                 Some(webp) => {
                     webp.compress(quality)
                 },
-                None => return Err("Failed to save webp image".to_string()),
+                None => return Err(RusimgError::FailedToSaveImageInSaving),
             }
         },
     }
