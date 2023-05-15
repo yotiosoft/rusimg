@@ -67,7 +67,7 @@ pub trait Rusimg {
     fn open(path: &str) -> Result<Self, RusimgError> where Self: Sized;
     fn save(&mut self, path: Option<&String>) -> Result<(), RusimgError>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError>;
-    fn resize(&mut self, resize_ratio: u8) -> Result<(), String>;
+    fn resize(&mut self, resize_ratio: u8) -> Result<(), RusimgError>;
     fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), String>;
     fn grayscale(&mut self);
     fn view(&self) -> Result<(), String>;
