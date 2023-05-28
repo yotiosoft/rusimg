@@ -66,7 +66,7 @@ impl Rusimg for BmpImage {
         Err(RusimgError::BMPImagesCannotBeCompressed)
     }
 
-    fn resize(&mut self, resize_ratio: u8) -> Result<(), String> {
+    fn resize(&mut self, resize_ratio: u8) -> Result<(), RusimgError> {
         let nwidth = (self.width as f32 * (resize_ratio as f32 / 100.0)) as usize;
         let nheight = (self.height as f32 * (resize_ratio as f32 / 100.0)) as usize;
         
