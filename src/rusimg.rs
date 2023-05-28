@@ -67,12 +67,12 @@ pub trait Rusimg {
     fn open(path: &str) -> Result<Self, RusimgError> where Self: Sized;
     fn save(&mut self, path: Option<&String>) -> Result<(), RusimgError>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError>;
-    fn resize(&mut self, resize_ratio: u8) -> Result<(), String>;
-    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), String>;
+    fn resize(&mut self, resize_ratio: u8) -> Result<(), RusimgError>;
+    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), RusimgError>;
     fn grayscale(&mut self);
-    fn view(&self) -> Result<(), String>;
+    fn view(&self) -> Result<(), RusimgError>;
 
-    fn save_filepath(source_filepath: &String, destination_filepath: Option<&String>, new_extension: &String) -> String {
+    fn save_filepath(source_filepath: &String, destination_filepath: Option<&String>, new_extension: &String) -> RusimgError {
         if let Some(path) = destination_filepath {
             if Path::new(path).is_dir() {
                 let filename = Path::new(&source_filepath).file_name().expect("Failed to get filename").to_str().expect("Failed to convert filename to string");
