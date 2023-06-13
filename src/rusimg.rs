@@ -28,6 +28,7 @@ pub enum RusimgError {
     FailedToGetExtension,
     InvalidTrimXY,
     BMPImagesCannotBeCompressed,
+    UnsupportedFileExtension,
 }
 impl fmt::Display for RusimgError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -72,18 +73,27 @@ pub trait Rusimg {
     fn grayscale(&mut self);
     fn view(&self) -> Result<(), RusimgError>;
 
-    fn save_filepath(source_filepath: &String, destination_filepath: Option<&String>, new_extension: &String) -> RusimgError {
+    fn save_filepath(source_filepath: &String, destination_filepath: Option<&String>, new_extension: &String) -> Result<String, RusimgError> {
         if let Some(path) = destination_filepath {
             if Path::new(path).is_dir() {
-                let filename = Path::new(&source_filepath).file_name().expect("Failed to get filename").to_str().expect("Failed to convert filename to string");
-                Path::new(path).join(filename).with_extension(new_extension).to_str().expect("Failed to convert path to string").to_string()
+                let filename = match Path::new(&source_filepath).file_name() {
+                    Some(filename) => filename,
+                    None => return Err(RusimgError::FailedToSaveImageInSaving),
+                };
+                match Path::new(path).join(filename).with_extension(new_extension).to_str() {
+                    Some(s) => Ok(s.to_string()),
+                    None => Err(RusimgError::FailedToSaveImageInSaving),
+                }
             }
             else {
-                path.to_string()
+                Ok(path.to_string())
             }
         }
         else {
-            Path::new(&source_filepath).with_extension(new_extension).to_str().expect("Failed to convert path to string").to_string()
+            match Path::new(&source_filepath).with_extension(new_extension).to_str() {
+                Some(s) => Ok(s.to_string()),
+                None => Err(RusimgError::FailedToSaveImageInConverting),
+            }
         }
     }
 }
