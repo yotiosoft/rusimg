@@ -65,7 +65,7 @@ impl Rusimg for PngImage {
     }
 
     fn save(&mut self, path: Option<&String>) -> Result<(), RusimgError> {
-        let save_path = Self::save_filepath(&self.filepath_input, path, &"png".to_string());
+        let save_path = Self::save_filepath(&self.filepath_input, path, &"png".to_string())?;
         
         // image_bytes == None の場合、DynamicImage を 保存
         if self.image_bytes.is_none() {
@@ -134,7 +134,7 @@ impl Rusimg for PngImage {
         }
     }
 
-    fn resize(&mut self, resize_ratio: u8) -> Result<(), String> {
+    fn resize(&mut self, resize_ratio: u8) -> Result<(), RusimgError> {
         let nwidth = (self.width as f32 * (resize_ratio as f32 / 100.0)) as usize;
         let nheight = (self.height as f32 * (resize_ratio as f32 / 100.0)) as usize;
 
@@ -149,7 +149,7 @@ impl Rusimg for PngImage {
         Ok(())
     }
 
-    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), String> {
+    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), RusimgError> {
         let mut w = trim_wh.0;
         let mut h = trim_wh.1;
         if self.width < (trim_xy.0 + w) as usize || self.height < (trim_xy.1 + h) as usize {
@@ -159,7 +159,7 @@ impl Rusimg for PngImage {
                 println!("Required width or height is larger than image size. Corrected size: {}x{} -> {}x{}", trim_wh.0, trim_wh.1, w, h);
             }
             else {
-                return Err(format!("Trim: Invalid trim point: {}x{}", trim_xy.0, trim_xy.1));
+                return Err(RusimgError::InvalidTrimXY);
             }
         }
 
@@ -180,7 +180,7 @@ impl Rusimg for PngImage {
         self.operations_count += 1;
     }
 
-    fn view(&self) -> Result<(), String> {
+    fn view(&self) -> Result<(), RusimgError> {
         let conf_width = self.width as f64 / std::cmp::max(self.width, self.height) as f64 * 100 as f64;
         let conf_height = self.height as f64 / std::cmp::max(self.width, self.height) as f64 as f64 * 50 as f64;
         let conf = viuer::Config {
@@ -190,7 +190,7 @@ impl Rusimg for PngImage {
             ..Default::default()
         };
 
-        viuer::print(&self.image, &conf).map_err(|e| format!("Failed to view image: {}", e.to_string()))?;
+        viuer::print(&self.image, &conf).map_err(|e| RusimgError::FailedToViewImage(e.to_string()))?;
 
         Ok(())
     }
