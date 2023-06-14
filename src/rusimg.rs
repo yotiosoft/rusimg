@@ -16,9 +16,9 @@ pub enum RusimgError {
     FailedToOpenImage(String),
     FailedToSaveImage(String),
     FailedToSaveImageInConverting,
-    FailedToSaveImageInSaving,
     FailedToCopyBinaryData(String),
     FailedToGetFilename(String),
+    FailedToGetFilepath(String),
     FailedToCreateFile(String),
     FailedToWriteFIle(String),
     FailedToDecodeWebp,
@@ -42,9 +42,9 @@ impl fmt::Display for RusimgError {
             RusimgError::FailedToOpenImage(s) => write!(f, "Failed to open image: {}", s),
             RusimgError::FailedToSaveImage(s) => write!(f, "Failed to save image: {}", s),
             RusimgError::FailedToSaveImageInConverting => write!(f, "Failed to save image"),
-            RusimgError::FailedToSaveImageInSaving => write!(f, "Failed to save image"),
             RusimgError::FailedToCopyBinaryData(s) => write!(f, "Failed to copy binary data to memory: {}", s),
             RusimgError::FailedToGetFilename(s) => write!(f, "Failed to get filename: {}", s),
+            RusimgError::FailedToGetFilepath(s) => write!(f, "Failed to get filepath: {}", s),
             RusimgError::FailedToCreateFile(s) => write!(f, "Failed to create file: {}", s),
             RusimgError::FailedToWriteFIle(s) => write!(f, "Failed to write file: {}", s),
             RusimgError::FailedToDecodeWebp => write!(f, "Failed to decode webp"),
@@ -84,11 +84,11 @@ pub trait Rusimg {
             if Path::new(path).is_dir() {
                 let filename = match Path::new(&source_filepath).file_name() {
                     Some(filename) => filename,
-                    None => return Err(RusimgError::FailedToSaveImageInSaving),
+                    None => return Err(RusimgError::FailedToGetFilename(source_filepath.clone())),
                 };
                 match Path::new(path).join(filename).with_extension(new_extension).to_str() {
                     Some(s) => Ok(s.to_string()),
-                    None => Err(RusimgError::FailedToSaveImageInSaving),
+                    None => Err(RusimgError::FailedToGetFilepath(source_filepath.clone())),
                 }
             }
             else {
@@ -321,7 +321,7 @@ pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>)
                 Some(bmp) => {
                     bmp.compress(quality)
                 },
-                None => return Err(RusimgError::FailedToSaveImageInSaving),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Jpeg => {
@@ -329,7 +329,7 @@ pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>)
                 Some(jpeg) => {
                     jpeg.compress(quality)
                 },
-                None => return Err(RusimgError::FailedToSaveImageInSaving),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Png => {
@@ -337,7 +337,7 @@ pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>)
                 Some(png) => {
                     png.compress(quality)
                 },
-                None => return Err(RusimgError::FailedToSaveImageInSaving),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Webp => {
@@ -345,7 +345,7 @@ pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>)
                 Some(webp) => {
                     webp.compress(quality)
                 },
-                None => return Err(RusimgError::FailedToSaveImageInSaving),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
     }
@@ -579,7 +579,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                     );
                     Ok(bmp.filepath_output.as_deref().unwrap().to_string())
                 },
-                None => return Err(RusimgError::FailedToSaveImageInSaving),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Jpeg => {
@@ -592,7 +592,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                     );
                     Ok(jpeg.filepath_output.as_deref().unwrap().to_string())
                 },
-                None => return Err(RusimgError::FailedToSaveImageInSaving),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Png => {
@@ -605,7 +605,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                     );
                     Ok(png.filepath_output.as_deref().unwrap().to_string())
                 },
-                None => return Err(RusimgError::FailedToSaveImageInSaving),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Webp => {
@@ -618,7 +618,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                     );
                     Ok(webp.filepath_output.as_deref().unwrap().to_string())
                 },
-                None => return Err(RusimgError::FailedToSaveImageInSaving),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
     }
