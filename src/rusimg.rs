@@ -125,7 +125,7 @@ pub struct Img {
     pub data: ImgData,
 }
 
-pub fn get_extension(path: &str) -> Result<Extension, String> {
+pub fn get_extension(path: &str) -> Result<Extension, RusimgError> {
     let path = path.to_ascii_lowercase();
     match Path::new(&path).extension().and_then(|s| s.to_str()) {
         Some("bmp") => Ok(Extension::Bmp),
@@ -142,16 +142,16 @@ pub fn get_extension(path: &str) -> Result<Extension, String> {
             } else if path.ends_with("webp") {
                 Ok(Extension::Webp)
             } else {
-                Err("Unsupported file extension".to_string())
+                Err(RusimgError::UnsupportedFileExtension)
             }
         },
     }
 }
 
-pub fn open_image(path: &str) -> Result<Img, String> {
+pub fn open_image(path: &str) -> Result<Img, RusimgError> {
     match get_extension(&path) {
         Ok(Extension::Bmp) => {
-            let bmp = bmp::BmpImage::open(&path).map_err(|e| e.to_string())?;
+            let bmp = bmp::BmpImage::open(&path)?;
             Ok(Img {
                 extension: Extension::Bmp,
                 data: ImgData {
@@ -163,7 +163,7 @@ pub fn open_image(path: &str) -> Result<Img, String> {
             })
         },
         Ok(Extension::Jpeg) => {
-            let jpeg = jpeg::JpegImage::open(&path).map_err(|e| e.to_string())?;
+            let jpeg = jpeg::JpegImage::open(&path)?;
             Ok(Img {
                 extension: Extension::Jpeg,
                 data: ImgData {
@@ -175,7 +175,7 @@ pub fn open_image(path: &str) -> Result<Img, String> {
             })
         },
         Ok(Extension::Png) => {
-            let png = png::PngImage::open(&path).map_err(|e| e.to_string())?;
+            let png = png::PngImage::open(&path)?;
             Ok(Img {
                 extension: Extension::Png,
                 data: ImgData {
@@ -187,7 +187,7 @@ pub fn open_image(path: &str) -> Result<Img, String> {
             })
         },
         Ok(Extension::Webp) => {
-            let webp = webp::WebpImage::open(&path).map_err(|e| e.to_string())?;
+            let webp = webp::WebpImage::open(&path)?;
             Ok(Img {
                 extension: Extension::Webp,
                 data: ImgData {
