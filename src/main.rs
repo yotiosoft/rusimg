@@ -48,7 +48,7 @@ fn main() -> Result<(), String> {
         println!("[Processing: {}]", &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
 
         // ファイルを開く
-        let mut image = rusimg::open_image(&image_file_path)?;
+        let mut image = rusimg::open_image(&image_file_path).map_err(|e| e.to_string())?;
 
         // --trim -> トリミング
         if let Some(trim) = args.trim {
@@ -70,7 +70,7 @@ fn main() -> Result<(), String> {
 
         // --convert -> 変換
         if let Some(ref c) = args.destination_extension {
-            let extension = rusimg::get_extension(&c)?;
+            let extension = rusimg::get_extension(&c).map_err(|e| e.to_string())?;
 
             // 変換
             match rusimg::convert(&mut image, &extension) {

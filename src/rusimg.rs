@@ -8,6 +8,7 @@ use std::fs::Metadata;
 use std::fmt;
 use image::DynamicImage;
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum RusimgError {
     FailedToOpenFile(String),
     FailedToReadFile(String),
