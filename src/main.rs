@@ -55,7 +55,7 @@ fn main() -> Result<(), String> {
             // トリミング
             match rusimg::trim(&mut image, (trim.0.0, trim.0.1), (trim.1.0, trim.1.1)) {
                 Ok(_) => (),
-                Err(e) => return Err(e),
+                Err(e) => return Err(e.to_string()),
             }
         }
 
@@ -64,7 +64,7 @@ fn main() -> Result<(), String> {
             // リサイズ
             match rusimg::resize(&mut image, resize) {
                 Ok(_) => (),
-                Err(e) => return Err(e),
+                Err(e) => return Err(e.to_string()),
             }
         }
 
@@ -113,7 +113,7 @@ fn main() -> Result<(), String> {
         if args.view {
             match rusimg::view(&mut image) {
                 Ok(_) => (),
-                Err(e) => return Err(e),
+                Err(e) => return Err(e.to_string()),
             }
         }
 
