@@ -53,7 +53,7 @@ impl Rusimg for BmpImage {
     }
 
     fn save(&mut self, path: Option<&String>) -> Result<(), RusimgError> {
-        let save_path = Self::save_filepath(&self.filepath_input, path, &"bmp".to_string());
+        let save_path = Self::save_filepath(&self.filepath_input, path, &"bmp".to_string())?;
         
         self.image.save(&save_path).map_err(|e| RusimgError::FailedToSaveImage(e.to_string()))?;
         self.metadata_output = Some(std::fs::metadata(&save_path).map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
@@ -80,7 +80,7 @@ impl Rusimg for BmpImage {
         Ok(())
     }
 
-    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), String> {
+    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), RusimgError> {
         let mut w = trim_wh.0;
         let mut h = trim_wh.1;
         if self.width < (trim_xy.0 + w) as usize || self.height < (trim_xy.1 + h) as usize {
@@ -90,7 +90,7 @@ impl Rusimg for BmpImage {
                 println!("Required width or height is larger than image size. Corrected size: {}x{} -> {}x{}", trim_wh.0, trim_wh.1, w, h);
             }
             else {
-                return Err(format!("Trim: Invalid trim point: {}x{}", trim_xy.0, trim_xy.1));
+                return Err(RusimgError::InvalidTrimXY);
             }
         }
 
@@ -109,7 +109,7 @@ impl Rusimg for BmpImage {
         println!("Grayscale: Done.");
     }
 
-    fn view(&self) -> Result<(), String> {
+    fn view(&self) -> Result<(), RusimgError> {
         let conf_width = self.width as f64 / std::cmp::max(self.width, self.height) as f64 * 100 as f64;
         let conf_height = self.height as f64 / std::cmp::max(self.width, self.height) as f64 as f64 * 50 as f64;
         let conf = viuer::Config {
@@ -119,7 +119,7 @@ impl Rusimg for BmpImage {
             ..Default::default()
         };
 
-        viuer::print(&self.image, &conf).map_err(|e| format!("Failed to view image: {}", e.to_string()))?;
+        viuer::print(&self.image, &conf).map_err(|e| RusimgError::FailedToViewImage(e.to_string()))?;
 
         Ok(())
     }

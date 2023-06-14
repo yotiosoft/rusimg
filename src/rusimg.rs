@@ -26,9 +26,11 @@ pub enum RusimgError {
     FailedToConvertFilenameToString,
     FailedToConvertPathToString,
     FailedToGetExtension,
+    FailedToViewImage(String),
     InvalidTrimXY,
     BMPImagesCannotBeCompressed,
     UnsupportedFileExtension,
+    ImageDataIsNone,
 }
 impl fmt::Display for RusimgError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -57,8 +59,11 @@ impl fmt::Display for RusimgError {
             RusimgError::FailedToConvertFilenameToString => write!(f, "Failed to convert filename to string"),
             RusimgError::FailedToConvertPathToString => write!(f, "Failed to convert path to string"),
             RusimgError::FailedToGetExtension => write!(f, "Failed to get extension"),
+            RusimgError::FailedToViewImage(s) => write!(f, "Failed to view image: {}", s),
             RusimgError::InvalidTrimXY => write!(f, "Invalid trim XY"),
             RusimgError::BMPImagesCannotBeCompressed => write!(f, "BMP images cannot be compressed"),
+            RusimgError::UnsupportedFileExtension => write!(f, "Unsupported file extension"),
+            RusimgError::ImageDataIsNone => write!(f, "Image data is None"),
         }
     }
 }
@@ -197,14 +202,14 @@ pub fn open_image(path: &str) -> Result<Img, String> {
     }
 }
 
-pub fn resize(source_image: &mut Img, resize_ratio: u8) -> Result<(), String> {
+pub fn resize(source_image: &mut Img, resize_ratio: u8) -> Result<(), RusimgError> {
     match source_image.extension {
         Extension::Bmp => {
             match &mut source_image.data.bmp {
                 Some(bmp) => {
                     bmp.resize(resize_ratio)
                 },
-                None => return Err("Failed to save bmp image".to_string()),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Jpeg => {
@@ -212,7 +217,7 @@ pub fn resize(source_image: &mut Img, resize_ratio: u8) -> Result<(), String> {
                 Some(jpeg) => {
                     jpeg.resize(resize_ratio)
                 },
-                None => return Err("Failed to save jpeg image".to_string()),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Png => {
@@ -220,7 +225,7 @@ pub fn resize(source_image: &mut Img, resize_ratio: u8) -> Result<(), String> {
                 Some(png) => {
                     png.resize(resize_ratio)
                 },
-                None => return Err("Failed to save png image".to_string()),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Webp => {
@@ -228,20 +233,20 @@ pub fn resize(source_image: &mut Img, resize_ratio: u8) -> Result<(), String> {
                 Some(webp) => {
                     webp.resize(resize_ratio)
                 },
-                None => return Err("Failed to save webp image".to_string()),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
     }
 }
 
-pub fn trim(image: &mut Img, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), String> {
+pub fn trim(image: &mut Img, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), RusimgError> {
     match image.extension {
         Extension::Bmp => {
             match &mut image.data.bmp {
                 Some(bmp) => {
                     bmp.trim(trim_xy, trim_wh)
                 },
-                None => return Err("Failed to save bmp image".to_string()),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Jpeg => {
@@ -249,7 +254,7 @@ pub fn trim(image: &mut Img, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result
                 Some(jpeg) => {
                     jpeg.trim(trim_xy, trim_wh)
                 },
-                None => return Err("Failed to save jpeg image".to_string()),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Png => {
@@ -257,7 +262,7 @@ pub fn trim(image: &mut Img, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result
                 Some(png) => {
                     png.trim(trim_xy, trim_wh)
                 },
-                None => return Err("Failed to save png image".to_string()),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Webp => {
@@ -265,7 +270,7 @@ pub fn trim(image: &mut Img, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result
                 Some(webp) => {
                     webp.trim(trim_xy, trim_wh)
                 },
-                None => return Err("Failed to save webp image".to_string()),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
     }
@@ -618,14 +623,14 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
     }
 }
 
-pub fn view(image: &mut Img) -> Result<(), String> {
+pub fn view(image: &mut Img) -> Result<(), RusimgError> {
     match image.extension {
         Extension::Bmp => {
             match &mut image.data.bmp {
                 Some(bmp) => {
                     bmp.view()
                 },
-                None => return Err("Failed to view bmp image".to_string()),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Jpeg => {
@@ -633,7 +638,7 @@ pub fn view(image: &mut Img) -> Result<(), String> {
                 Some(jpeg) => {
                     jpeg.view()
                 },
-                None => return Err("Failed to view jpeg image".to_string()),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Png => {
@@ -641,7 +646,7 @@ pub fn view(image: &mut Img) -> Result<(), String> {
                 Some(png) => {
                     png.view()
                 },
-                None => return Err("Failed to view png image".to_string()),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Webp => {
@@ -649,7 +654,7 @@ pub fn view(image: &mut Img) -> Result<(), String> {
                 Some(webp) => {
                     webp.view()
                 },
-                None => return Err("Failed to view webp image".to_string()),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
     }
