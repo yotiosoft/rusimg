@@ -36,24 +36,24 @@ fn get_files_in_dir(dir_path: &String) -> Result<Vec<String>, String> {
 
 fn get_files_by_regex(source_path_str: &String) -> Result<Vec<PathBuf>, String> {
     let path = PathBuf::from(source_path_str);
-    let parent_path = path.parent();
+    let mut parent_path = path.parent();
     let child_path = path.file_name();
-    if parent_path.is_none() {
-        return Err("cannot get parent path".to_string());
+    if parent_path.is_none() || parent_path.unwrap().to_str().unwrap() == "" {
+        parent_path = Some(Path::new("."));
     }
     if child_path.is_none() {
-        return Err("cannot get child path".to_string());
+        return Err("cannot get file name".to_string());
     }
 
-    let v = FilesNamed::regex(child_path.unwrap().to_str().unwrap())
-        .within(path.parent().unwrap())
+    let v = FilesNamed::wildmatch(child_path.unwrap().to_str().unwrap())
+        .within(parent_path.unwrap())
         .find();
 
     if let Ok(v) = v {
         Ok(v)
     }
     else {
-        Err("cannot get files by regex".to_string())
+        Err("cannot get files by wildmatch".to_string())
     }
 }
 
