@@ -5,7 +5,7 @@ mod parse;
 mod rusimg;
 use file_matcher::FilesNamed;
 
-fn get_files_in_dir(dir_path: &String) -> Result<Vec<String>, String> {
+fn get_files_in_dir(dir_path: &String) -> Result<Vec<PathBuf>, String> {
     let mut files = fs::read_dir(&dir_path).expect("cannot read directory");
     let mut ret = Vec::new();
 
@@ -21,7 +21,7 @@ fn get_files_in_dir(dir_path: &String) -> Result<Vec<String>, String> {
                 else {
                     let file_name = dir_entry.file_name().into_string().expect("cannot convert file name");
                     if rusimg::get_extension(&file_name).is_ok() {
-                        ret.push(Path::new(&dir_path).join(&file_name).to_str().expect("cannot convert file name").to_string());
+                        ret.push(Path::new(&dir_path).join(&file_name));
                     }
                 }
             },
@@ -65,13 +65,7 @@ fn main() -> Result<(), String> {
         get_files_in_dir(&args.souce_path)?
     }
     else {
-        let v = get_files_by_regex(&args.souce_path);
-
-        for path in v.unwrap() {
-            println!("{}", path.to_str().unwrap());
-        }
-
-        vec![args.souce_path]
+        get_files_by_regex(&args.souce_path)?
     };
 
     for image_file_path in image_files {
