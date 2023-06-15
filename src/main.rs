@@ -38,7 +38,12 @@ fn get_files_by_wildcard(source_path_str: &String) -> Result<Vec<PathBuf>, Strin
     let mut ret = Vec::new();
     for entry in glob(source_path_str).expect("Failed to read glob pattern") {
         match entry {
-            Ok(path) => ret.push(path),
+            Ok(path) => {
+                // 画像形式であればファイルリストに追加
+                if rusimg::get_extension(&path).is_ok() {
+                    ret.push(path);
+                }
+            },
             Err(e) => println!("{:?}", e),
         }
     }
