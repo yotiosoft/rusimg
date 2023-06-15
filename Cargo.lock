@@ -967,6 +967,7 @@ version = "0.1.0"
 dependencies = [
  "clap 4.1.8",
  "file-matcher",
+ "glob",
  "image",
  "mozjpeg",
  "oxipng",

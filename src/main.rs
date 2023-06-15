@@ -3,7 +3,7 @@ use std::fs;
 
 mod parse;
 mod rusimg;
-use file_matcher::FilesNamed;
+use glob::glob;
 
 fn get_files_in_dir(dir_path: &String) -> Result<Vec<PathBuf>, String> {
     let mut files = fs::read_dir(&dir_path).expect("cannot read directory");
@@ -35,26 +35,14 @@ fn get_files_in_dir(dir_path: &String) -> Result<Vec<PathBuf>, String> {
 }
 
 fn get_files_by_wildcard(source_path_str: &String) -> Result<Vec<PathBuf>, String> {
-    let path = PathBuf::from(source_path_str);
-    let mut parent_path = path.parent();
-    let child_path = path.file_name();
-    if parent_path.is_none() || parent_path.unwrap().to_str().unwrap() == "" {
-        parent_path = Some(Path::new("."));
+    let mut ret = Vec::new();
+    for entry in glob(source_path_str).expect("Failed to read glob pattern") {
+        match entry {
+            Ok(path) => ret.push(path),
+            Err(e) => println!("{:?}", e),
+        }
     }
-    if child_path.is_none() {
-        return Err("cannot get file name".to_string());
-    }
-
-    let v = FilesNamed::wildmatch(child_path.unwrap().to_str().unwrap())
-        .within(parent_path.unwrap())
-        .find();
-
-    if let Ok(v) = v {
-        Ok(v)
-    }
-    else {
-        Err("cannot get files by wildmatch".to_string())
-    }
+    Ok(ret)
 }
 
 fn main() -> Result<(), String> {
