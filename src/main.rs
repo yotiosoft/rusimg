@@ -1,8 +1,9 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::fs;
 
 mod parse;
 mod rusimg;
+use file_matcher::FilesNamed;
 
 fn get_files_in_dir(dir_path: &String) -> Result<Vec<String>, String> {
     let mut files = fs::read_dir(&dir_path).expect("cannot read directory");
@@ -33,6 +34,29 @@ fn get_files_in_dir(dir_path: &String) -> Result<Vec<String>, String> {
     Ok(ret)
 }
 
+fn get_files_by_regex(source_path_str: &String) -> Result<Vec<PathBuf>, String> {
+    let path = PathBuf::from(source_path_str);
+    let parent_path = path.parent();
+    let child_path = path.file_name();
+    if parent_path.is_none() {
+        return Err("cannot get parent path".to_string());
+    }
+    if child_path.is_none() {
+        return Err("cannot get child path".to_string());
+    }
+
+    let v = FilesNamed::regex(child_path.unwrap().to_str().unwrap())
+        .within(path.parent().unwrap())
+        .find();
+
+    if let Ok(v) = v {
+        Ok(v)
+    }
+    else {
+        Err("cannot get files by regex".to_string())
+    }
+}
+
 fn main() -> Result<(), String> {
     let args = parse::parser();
 
@@ -41,6 +65,12 @@ fn main() -> Result<(), String> {
         get_files_in_dir(&args.souce_path)?
     }
     else {
+        let v = get_files_by_regex(&args.souce_path);
+
+        for path in v.unwrap() {
+            println!("{}", path.to_str().unwrap());
+        }
+
         vec![args.souce_path]
     };
 
