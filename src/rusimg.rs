@@ -3,7 +3,7 @@ mod jpeg;
 mod png;
 mod webp;
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::fs::Metadata;
 use std::fmt;
 use image::DynamicImage;
@@ -126,8 +126,8 @@ pub struct Img {
     pub data: ImgData,
 }
 
-pub fn get_extension(path: &str) -> Result<Extension, RusimgError> {
-    let path = path.to_ascii_lowercase();
+pub fn get_extension(path: &Path) -> Result<Extension, RusimgError> {
+    let path = path.to_str().ok_or(RusimgError::FailedToConvertPathToString)?.to_ascii_lowercase();
     match Path::new(&path).extension().and_then(|s| s.to_str()) {
         Some("bmp") => Ok(Extension::Bmp),
         Some("jpg") | Some("jpeg") => Ok(Extension::Jpeg),
@@ -149,10 +149,10 @@ pub fn get_extension(path: &str) -> Result<Extension, RusimgError> {
     }
 }
 
-pub fn open_image(path: &str) -> Result<Img, RusimgError> {
-    match get_extension(&path) {
+pub fn open_image(path: &Path) -> Result<Img, RusimgError> {
+    match get_extension(path) {
         Ok(Extension::Bmp) => {
-            let bmp = bmp::BmpImage::open(&path)?;
+            let bmp = bmp::BmpImage::open(path.to_str().unwrap())?;
             Ok(Img {
                 extension: Extension::Bmp,
                 data: ImgData {
@@ -164,7 +164,7 @@ pub fn open_image(path: &str) -> Result<Img, RusimgError> {
             })
         },
         Ok(Extension::Jpeg) => {
-            let jpeg = jpeg::JpegImage::open(&path)?;
+            let jpeg = jpeg::JpegImage::open(path.to_str().unwrap())?;
             Ok(Img {
                 extension: Extension::Jpeg,
                 data: ImgData {
@@ -176,7 +176,7 @@ pub fn open_image(path: &str) -> Result<Img, RusimgError> {
             })
         },
         Ok(Extension::Png) => {
-            let png = png::PngImage::open(&path)?;
+            let png = png::PngImage::open(path.to_str().unwrap())?;
             Ok(Img {
                 extension: Extension::Png,
                 data: ImgData {
@@ -188,7 +188,7 @@ pub fn open_image(path: &str) -> Result<Img, RusimgError> {
             })
         },
         Ok(Extension::Webp) => {
-            let webp = webp::WebpImage::open(&path)?;
+            let webp = webp::WebpImage::open(path.to_str().unwrap())?;
             Ok(Img {
                 extension: Extension::Webp,
                 data: ImgData {
@@ -600,17 +600,17 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
     }
 }
 
-pub fn save_print(before_path: &String, after_path: &String, before_size: u64, after_size: u64) {
+pub fn save_print(before_path: &Path, after_path: &Path, before_size: u64, after_size: u64) {
     if before_path == after_path {
-        println!("Overwrite: {}", before_path);
+        println!("Overwrite: {}", before_path.display());
         println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
     }
     else if get_extension(before_path) != get_extension(after_path) {
-        println!("Convert: {} -> {}", before_path, after_path);
+        println!("Convert: {} -> {}", before_path.display(), after_path.display());
         println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
     }
     else {
-        println!("Move: {} -> {}", before_path, after_path);
+        println!("Move: {} -> {}", before_path.display(), after_path.display());
         println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
     }
 }
@@ -622,7 +622,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                 Some(ref mut bmp) => {
                     bmp.save(path)?;
                     save_print(
-                        &bmp.filepath_input, &bmp.filepath_output.as_ref().unwrap(), 
+                        &Path::new(&bmp.filepath_input), &Path::new(&bmp.filepath_output.as_ref().unwrap()), 
                         bmp.metadata_input.len(), bmp.metadata_output.as_ref().unwrap().len()
                     );
                     Ok(bmp.filepath_output.as_deref().unwrap().to_string())
@@ -635,7 +635,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                 Some(ref mut jpeg) => {
                     jpeg.save(path)?;
                     save_print(
-                        &jpeg.filepath_input, &jpeg.filepath_output.as_ref().unwrap(), 
+                        &Path::new(&jpeg.filepath_input), &Path::new(&jpeg.filepath_output.as_ref().unwrap()), 
                         jpeg.metadata_input.len(), jpeg.metadata_output.as_ref().unwrap().len()
                     );
                     Ok(jpeg.filepath_output.as_deref().unwrap().to_string())
@@ -648,7 +648,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                 Some(ref mut png) => {
                     png.save(path)?;
                     save_print(
-                        &png.filepath_input, &png.filepath_output.as_ref().unwrap(), 
+                        &Path::new(&png.filepath_input), &Path::new(&png.filepath_output.as_ref().unwrap()), 
                         png.metadata_input.len(), png.metadata_output.as_ref().unwrap().len()
                     );
                     Ok(png.filepath_output.as_deref().unwrap().to_string())
@@ -661,7 +661,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                 Some(ref mut webp) => {
                     webp.save(path)?;
                     save_print(
-                        &webp.filepath_input, &webp.filepath_output.as_ref().unwrap(), 
+                        &Path::new(&webp.filepath_input), &Path::new(&webp.filepath_output.as_ref().unwrap()), 
                         webp.metadata_input.len(), webp.metadata_output.as_ref().unwrap().len()
                     );
                     Ok(webp.filepath_output.as_deref().unwrap().to_string())

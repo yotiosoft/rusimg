@@ -20,7 +20,7 @@ fn get_files_in_dir(dir_path: &String) -> Result<Vec<PathBuf>, String> {
                 }
                 else {
                     let file_name = dir_entry.file_name().into_string().expect("cannot convert file name");
-                    if rusimg::get_extension(&file_name).is_ok() {
+                    if rusimg::get_extension(&Path::new(&file_name)).is_ok() {
                         ret.push(Path::new(&dir_path).join(&file_name));
                     }
                 }
@@ -94,7 +94,7 @@ fn main() -> Result<(), String> {
 
         // --convert -> 変換
         if let Some(ref c) = args.destination_extension {
-            let extension = rusimg::get_extension(&c).map_err(|e| e.to_string())?;
+            let extension = rusimg::get_extension(&Path::new(&c)).map_err(|e| e.to_string())?;
 
             // 変換
             match rusimg::convert(&mut image, &extension) {
@@ -126,7 +126,7 @@ fn main() -> Result<(), String> {
         let saved_filepath = rusimg::save_image(output_path, &mut image.data, &image.extension).map_err(|e| e.to_string())?;
 
         // --delete -> 元ファイルの削除 (optinal)
-        if args.delete && image_file_path != saved_filepath {
+        if args.delete && image_file_path.to_str().unwrap() != saved_filepath {
             match fs::remove_file(&image_file_path) {
                 Ok(_) => (),
                 Err(e) => return Err(e.to_string()),
