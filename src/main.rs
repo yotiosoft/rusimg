@@ -34,7 +34,7 @@ fn get_files_in_dir(dir_path: &String) -> Result<Vec<PathBuf>, String> {
     Ok(ret)
 }
 
-fn get_files_by_regex(source_path_str: &String) -> Result<Vec<PathBuf>, String> {
+fn get_files_by_wildcard(source_path_str: &String) -> Result<Vec<PathBuf>, String> {
     let path = PathBuf::from(source_path_str);
     let mut parent_path = path.parent();
     let child_path = path.file_name();
@@ -65,7 +65,7 @@ fn main() -> Result<(), String> {
         get_files_in_dir(&args.souce_path)?
     }
     else {
-        get_files_by_regex(&args.souce_path)?
+        get_files_by_wildcard(&args.souce_path)?
     };
 
     for image_file_path in image_files {
