@@ -42,8 +42,8 @@ impl Rusimg for PngImage {
         })
     }
 
-    fn open(path: &str) -> Result<Self, RusimgError> {
-        let mut file = std::fs::File::open(path).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
+    fn open(path: PathBuf) -> Result<Self, RusimgError> {
+        let mut file = std::fs::File::open(&path).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
         let mut buf = Vec::new();
         file.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
         let metadata_input = file.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
@@ -60,7 +60,7 @@ impl Rusimg for PngImage {
             operations_count: 0,
             metadata_input,
             metadata_output: None,
-            filepath_input: PathBuf::from(path),
+            filepath_input: path,
             filepath_output: None,
         })
     }

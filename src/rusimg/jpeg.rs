@@ -3,7 +3,7 @@ use image::DynamicImage;
 
 use std::fs::Metadata;
 use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::rusimg::Rusimg;
 use super::RusimgError;
@@ -40,8 +40,8 @@ impl Rusimg for JpegImage {
         })
     }
 
-    fn open(path: &str) -> Result<Self, RusimgError> {
-        let mut raw_data = std::fs::File::open(path).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
+    fn open(path: PathBuf) -> Result<Self, RusimgError> {
+        let mut raw_data = std::fs::File::open(&path).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
         let mut buf = Vec::new();
         raw_data.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
         let metadata_input = raw_data.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
@@ -49,7 +49,7 @@ impl Rusimg for JpegImage {
         let image = image::load_from_memory(&buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
         let (width, height) = (image.width() as usize, image.height() as usize);
 
-        let extension_str = Path::new(path).extension().and_then(|s| s.to_str()).unwrap_or("").to_string();
+        let extension_str = path.extension().and_then(|s| s.to_str()).unwrap_or("").to_string();
 
         Ok(Self {
             image,
@@ -60,7 +60,7 @@ impl Rusimg for JpegImage {
             extension_str,
             metadata_input,
             metadata_output: None,
-            filepath_input: PathBuf::from(path),
+            filepath_input: path,
             filepath_output: None,
         })
     }
@@ -99,7 +99,7 @@ impl Rusimg for JpegImage {
         compress.write_scanlines(&image_bytes);
         compress.finish_compress();
 
-        self.image_bytes = Some(compress.data_to_vec().map_err(|e| RusimgError::FailedToCompressImage(None))?);
+        self.image_bytes = Some(compress.data_to_vec().map_err(|_| RusimgError::FailedToCompressImage(None))?);
 
         println!("Compress: Done.");
         self.operations_count += 1;

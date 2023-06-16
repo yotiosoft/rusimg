@@ -71,7 +71,7 @@ impl fmt::Display for RusimgError {
 
 pub trait Rusimg {
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
-    fn open(path: &str) -> Result<Self, RusimgError> where Self: Sized;
+    fn open(path: PathBuf) -> Result<Self, RusimgError> where Self: Sized;
     fn save(&mut self, path: Option<&PathBuf>) -> Result<(), RusimgError>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError>;
     fn resize(&mut self, resize_ratio: u8) -> Result<(), RusimgError>;
@@ -146,7 +146,7 @@ pub fn get_extension(path: &Path) -> Result<Extension, RusimgError> {
 pub fn open_image(path: &Path) -> Result<Img, RusimgError> {
     match get_extension(path) {
         Ok(Extension::Bmp) => {
-            let bmp = bmp::BmpImage::open(path.to_str().unwrap())?;
+            let bmp = bmp::BmpImage::open(path.to_path_buf())?;
             Ok(Img {
                 extension: Extension::Bmp,
                 data: ImgData {
@@ -158,7 +158,7 @@ pub fn open_image(path: &Path) -> Result<Img, RusimgError> {
             })
         },
         Ok(Extension::Jpeg) => {
-            let jpeg = jpeg::JpegImage::open(path.to_str().unwrap())?;
+            let jpeg = jpeg::JpegImage::open(path.to_path_buf())?;
             Ok(Img {
                 extension: Extension::Jpeg,
                 data: ImgData {
@@ -170,7 +170,7 @@ pub fn open_image(path: &Path) -> Result<Img, RusimgError> {
             })
         },
         Ok(Extension::Png) => {
-            let png = png::PngImage::open(path.to_str().unwrap())?;
+            let png = png::PngImage::open(path.to_path_buf())?;
             Ok(Img {
                 extension: Extension::Png,
                 data: ImgData {
@@ -182,7 +182,7 @@ pub fn open_image(path: &Path) -> Result<Img, RusimgError> {
             })
         },
         Ok(Extension::Webp) => {
-            let webp = webp::WebpImage::open(path.to_str().unwrap())?;
+            let webp = webp::WebpImage::open(path.to_path_buf())?;
             Ok(Img {
                 extension: Extension::Webp,
                 data: ImgData {

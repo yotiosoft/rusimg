@@ -39,8 +39,8 @@ impl Rusimg for WebpImage {
         })
     }
 
-    fn open(path: &str) -> Result<Self, RusimgError> {
-        let mut raw_data = std::fs::File::open(path).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
+    fn open(path: PathBuf) -> Result<Self, RusimgError> {
+        let mut raw_data = std::fs::File::open(&path).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
         let mut buf = Vec::new();
         raw_data.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
         let metadata_input = raw_data.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
@@ -59,7 +59,7 @@ impl Rusimg for WebpImage {
                 required_quality: None,
                 metadata_input,
                 metadata_output: None,
-                filepath_input: PathBuf::from(path),
+                filepath_input: path,
                 filepath_output: None,
             })
         }
