@@ -98,7 +98,7 @@ pub enum Extension {
     Webp,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ImgData {
     bmp: Option<bmp::BmpImage>,
     jpeg: Option<jpeg::JpegImage>,
@@ -141,48 +141,28 @@ pub fn open_image(path: &Path) -> Result<Img, RusimgError> {
             let bmp = bmp::BmpImage::open(path.to_path_buf())?;
             Ok(Img {
                 extension: Extension::Bmp,
-                data: ImgData {
-                    bmp: Some(bmp),
-                    jpeg: None,
-                    png: None,
-                    webp: None,
-                },
+                data: ImgData { bmp: Some(bmp), ..Default::default() },
             })
         },
         Ok(Extension::Jpeg) => {
             let jpeg = jpeg::JpegImage::open(path.to_path_buf())?;
             Ok(Img {
                 extension: Extension::Jpeg,
-                data: ImgData {
-                    bmp: None,
-                    jpeg: Some(jpeg),
-                    png: None,
-                    webp: None,
-                },
+                data: ImgData { jpeg: Some(jpeg), ..Default::default() },
             })
         },
         Ok(Extension::Png) => {
             let png = png::PngImage::open(path.to_path_buf())?;
             Ok(Img {
                 extension: Extension::Png,
-                data: ImgData {
-                    bmp: None,
-                    jpeg: None,
-                    png: Some(png),
-                    webp: None,
-                },
+                data: ImgData { png: Some(png), ..Default::default() },
             })
         },
         Ok(Extension::Webp) => {
             let webp = webp::WebpImage::open(path.to_path_buf())?;
             Ok(Img {
                 extension: Extension::Webp,
-                data: ImgData {
-                    bmp: None,
-                    jpeg: None,
-                    png: None,
-                    webp: Some(webp),
-                },
+                data: ImgData { webp: Some(webp), ..Default::default() },
             })
         },
         Err(e) => Err(e),
@@ -355,12 +335,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                             )?;
                             Ok(Img {
                                 extension: Extension::Jpeg,
-                                data: ImgData {
-                                    bmp: None,
-                                    jpeg: Some(jpeg),
-                                    png: None,
-                                    webp: None,
-                                },
+                                data: ImgData { jpeg: Some(jpeg), ..Default::default() },
                             })
                         }
                         Extension::Png => {
@@ -371,12 +346,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                             )?;
                             Ok(Img {
                                 extension: Extension::Png,
-                                data: ImgData {
-                                    bmp: None,
-                                    jpeg: None,
-                                    png: Some(png),
-                                    webp: None,
-                                },
+                                data: ImgData { png: Some(png), ..Default::default() },
                             })
                         },
                         Extension::Webp => {
@@ -387,12 +357,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                             )?;
                             Ok(Img {
                                 extension: Extension::Webp,
-                                data: ImgData {
-                                    bmp: None,
-                                    jpeg: None,
-                                    png: None,
-                                    webp: Some(webp),
-                                },
+                                data: ImgData { webp: Some(webp), ..Default::default() },
                             })
                         },
                     }
@@ -413,12 +378,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                             )?;
                             Ok(Img {
                                 extension: Extension::Bmp,
-                                data: ImgData {
-                                    bmp: Some(bmp),
-                                    jpeg: None,
-                                    png: None,
-                                    webp: None,
-                                },
+                                data: ImgData { bmp: Some(bmp), ..Default::default() },
                             })
                         },
                         Extension::Jpeg => {
@@ -432,12 +392,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                             )?;
                             Ok(Img {
                                 extension: Extension::Png,
-                                data: ImgData {
-                                    bmp: None,
-                                    jpeg: None,
-                                    png: Some(png),
-                                    webp: None,
-                                },
+                                data: ImgData { png: Some(png), ..Default::default() },
                             })
                         },
                         Extension::Webp => {
@@ -448,12 +403,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                             )?;
                             Ok(Img {
                                 extension: Extension::Webp,
-                                data: ImgData {
-                                    bmp: None,
-                                    jpeg: None,
-                                    png: None,
-                                    webp: Some(webp),
-                                },
+                                data: ImgData { webp: Some(webp), ..Default::default() },
                             })
                         },
                     }
@@ -474,12 +424,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                             )?;
                             Ok(Img {
                                 extension: Extension::Bmp,
-                                data: ImgData {
-                                    bmp: Some(bmp),
-                                    jpeg: None,
-                                    png: None,
-                                    webp: None,
-                                },
+                                data: ImgData { bmp: Some(bmp), ..Default::default() },
                             })
                         },
                         Extension::Jpeg => {
@@ -490,12 +435,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                             )?;
                             Ok(Img {
                                 extension: Extension::Jpeg,
-                                data: ImgData {
-                                    bmp: None,
-                                    jpeg: Some(jpeg),
-                                    png: None,
-                                    webp: None,
-                                },
+                                data: ImgData { jpeg: Some(jpeg), ..Default::default() },
                             })
                         },
                         Extension::Png => {
@@ -509,12 +449,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                             )?;
                             Ok(Img {
                                 extension: Extension::Webp,
-                                data: ImgData {
-                                    bmp: None,
-                                    jpeg: None,
-                                    png: None,
-                                    webp: Some(webp),
-                                },
+                                data: ImgData { webp: Some(webp), ..Default::default() },
                             })
                         },
                     }
@@ -535,12 +470,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                             )?;
                             Ok(Img {
                                 extension: Extension::Bmp,
-                                data: ImgData {
-                                    bmp: Some(bmp),
-                                    jpeg: None,
-                                    png: None,
-                                    webp: None,
-                                },
+                                data: ImgData { bmp: Some(bmp), ..Default::default() },
                             })
                         },
                         Extension::Jpeg => {
@@ -551,12 +481,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                             )?;
                             Ok(Img {
                                 extension: Extension::Jpeg,
-                                data: ImgData {
-                                    bmp: None,
-                                    jpeg: Some(jpeg),
-                                    png: None,
-                                    webp: None,
-                                },
+                                data: ImgData { jpeg: Some(jpeg), ..Default::default() },
                             })
                         },
                         Extension::Png => {
@@ -567,12 +492,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                             )?;
                             Ok(Img {
                                 extension: Extension::Png,
-                                data: ImgData {
-                                    bmp: None,
-                                    jpeg: None,
-                                    png: Some(png),
-                                    webp: None,
-                                },
+                                data: ImgData { png: Some(png), ..Default::default() },
                             })
                         },
                         Extension::Webp => {
