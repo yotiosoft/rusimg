@@ -15,18 +15,14 @@ pub enum RusimgError {
     FailedToGetMetadata(String),
     FailedToOpenImage(String),
     FailedToSaveImage(String),
-    FailedToSaveImageInConverting,
     FailedToCopyBinaryData(String),
     FailedToGetFilename(PathBuf),
-    FailedToGetFilepath(PathBuf),
     FailedToCreateFile(String),
     FailedToWriteFIle(String),
     FailedToDecodeWebp,
     FailedToEncodeWebp(String),
     FailedToCompressImage(Option<String>),
-    FailedToConvertFilenameToString,
     FailedToConvertPathToString,
-    FailedToGetExtension,
     FailedToViewImage(String),
     InvalidTrimXY,
     BMPImagesCannotBeCompressed,
@@ -41,7 +37,6 @@ impl fmt::Display for RusimgError {
             RusimgError::FailedToGetMetadata(s) => write!(f, "Failed to get metadata: {}", s),
             RusimgError::FailedToOpenImage(s) => write!(f, "Failed to open image: {}", s),
             RusimgError::FailedToSaveImage(s) => write!(f, "Failed to save image: {}", s),
-            RusimgError::FailedToSaveImageInConverting => write!(f, "Failed to save image"),
             RusimgError::FailedToCopyBinaryData(s) => write!(f, "Failed to copy binary data to memory: {}", s),
             RusimgError::FailedToGetFilename(s) => write!(f, "Failed to get filename: {}", s.display()),
             RusimgError::FailedToCreateFile(s) => write!(f, "Failed to create file: {}", s),
@@ -56,9 +51,7 @@ impl fmt::Display for RusimgError {
                     write!(f, "Failed to compress image")
                 }
             }
-            RusimgError::FailedToConvertFilenameToString => write!(f, "Failed to convert filename to string"),
             RusimgError::FailedToConvertPathToString => write!(f, "Failed to convert path to string"),
-            RusimgError::FailedToGetExtension => write!(f, "Failed to get extension"),
             RusimgError::FailedToViewImage(s) => write!(f, "Failed to view image: {}", s),
             RusimgError::InvalidTrimXY => write!(f, "Invalid trim XY"),
             RusimgError::BMPImagesCannotBeCompressed => write!(f, "BMP images cannot be compressed"),
@@ -404,7 +397,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                         },
                     }
                 },
-                None => return Err(RusimgError::FailedToSaveImageInConverting),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Jpeg => {
@@ -465,7 +458,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                         },
                     }
                 },
-                None => return Err(RusimgError::FailedToSaveImageInConverting),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Png => {
@@ -526,7 +519,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                         },
                     }
                 },
-                None => return Err(RusimgError::FailedToSaveImageInConverting),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Webp => {
@@ -587,7 +580,7 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                         },
                     }
                 },
-                None => return Err(RusimgError::FailedToSaveImageInConverting),
+                None => return Err(RusimgError::ImageDataIsNone),
             }
         },
     }
