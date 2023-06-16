@@ -21,7 +21,7 @@ pub struct PngImage {
 }
 
 impl Rusimg for PngImage {
-    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, RusimgError> {
+    fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         let mut new_binary_data = Vec::new();
@@ -60,7 +60,7 @@ impl Rusimg for PngImage {
             operations_count: 0,
             metadata_input,
             metadata_output: None,
-            filepath_input: path.to_string(),
+            filepath_input: PathBuf::from(path),
             filepath_output: None,
         })
     }

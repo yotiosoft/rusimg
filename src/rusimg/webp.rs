@@ -2,7 +2,7 @@ use image::{DynamicImage, EncodableLayout};
 
 use std::fs::Metadata;
 use std::io::{Read, Write};
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 
 use crate::rusimg::Rusimg;
 use super::RusimgError;
@@ -22,7 +22,7 @@ pub struct WebpImage {
 }
 
 impl Rusimg for WebpImage {
-    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, RusimgError> {
+    fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         Ok(Self {
@@ -59,7 +59,7 @@ impl Rusimg for WebpImage {
                 required_quality: None,
                 metadata_input,
                 metadata_output: None,
-                filepath_input: path.to_string(),
+                filepath_input: PathBuf::from(path),
                 filepath_output: None,
             })
         }

@@ -119,7 +119,7 @@ fn main() -> Result<(), String> {
         let saved_filepath = rusimg::save_image(output_path, &mut image.data, &image.extension).map_err(|e| e.to_string())?;
 
         // --delete -> 元ファイルの削除 (optinal)
-        if args.delete && image_file_path.to_str().unwrap() != saved_filepath {
+        if args.delete && image_file_path != saved_filepath {
             match fs::remove_file(&image_file_path) {
                 Ok(_) => (),
                 Err(e) => return Err(e.to_string()),
