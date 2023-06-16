@@ -17,8 +17,8 @@ pub enum RusimgError {
     FailedToSaveImage(String),
     FailedToSaveImageInConverting,
     FailedToCopyBinaryData(String),
-    FailedToGetFilename(String),
-    FailedToGetFilepath(String),
+    FailedToGetFilename(PathBuf),
+    FailedToGetFilepath(PathBuf),
     FailedToCreateFile(String),
     FailedToWriteFIle(String),
     FailedToDecodeWebp,
@@ -43,8 +43,8 @@ impl fmt::Display for RusimgError {
             RusimgError::FailedToSaveImage(s) => write!(f, "Failed to save image: {}", s),
             RusimgError::FailedToSaveImageInConverting => write!(f, "Failed to save image"),
             RusimgError::FailedToCopyBinaryData(s) => write!(f, "Failed to copy binary data to memory: {}", s),
-            RusimgError::FailedToGetFilename(s) => write!(f, "Failed to get filename: {}", s),
-            RusimgError::FailedToGetFilepath(s) => write!(f, "Failed to get filepath: {}", s),
+            RusimgError::FailedToGetFilename(s) => write!(f, "Failed to get filename: {}", s.display()),
+            RusimgError::FailedToGetFilepath(s) => write!(f, "Failed to get filepath: {}", s.display()),
             RusimgError::FailedToCreateFile(s) => write!(f, "Failed to create file: {}", s),
             RusimgError::FailedToWriteFIle(s) => write!(f, "Failed to write file: {}", s),
             RusimgError::FailedToDecodeWebp => write!(f, "Failed to decode webp"),
@@ -70,7 +70,7 @@ impl fmt::Display for RusimgError {
 }
 
 pub trait Rusimg {
-    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
+    fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
     fn open(path: &str) -> Result<Self, RusimgError> where Self: Sized;
     fn save(&mut self, path: Option<&String>) -> Result<(), RusimgError>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError>;
@@ -79,27 +79,21 @@ pub trait Rusimg {
     fn grayscale(&mut self);
     fn view(&self) -> Result<(), RusimgError>;
 
-    fn save_filepath(source_filepath: &String, destination_filepath: Option<&String>, new_extension: &String) -> Result<String, RusimgError> {
+    fn save_filepath(source_filepath: &PathBuf, destination_filepath: Option<&PathBuf>, new_extension: &String) -> Result<PathBuf, RusimgError> {
         if let Some(path) = destination_filepath {
             if Path::new(path).is_dir() {
                 let filename = match Path::new(&source_filepath).file_name() {
                     Some(filename) => filename,
                     None => return Err(RusimgError::FailedToGetFilename(source_filepath.clone())),
                 };
-                match Path::new(path).join(filename).with_extension(new_extension).to_str() {
-                    Some(s) => Ok(s.to_string()),
-                    None => Err(RusimgError::FailedToGetFilepath(source_filepath.clone())),
-                }
+                Ok(Path::new(path).join(filename).with_extension(new_extension))
             }
             else {
-                Ok(path.to_string())
+                Ok(path.clone())
             }
         }
         else {
-            match Path::new(&source_filepath).with_extension(new_extension).to_str() {
-                Some(s) => Ok(s.to_string()),
-                None => Err(RusimgError::FailedToSaveImageInConverting),
-            }
+            Ok(Path::new(&source_filepath).with_extension(new_extension))
         }
     }
 }
@@ -422,8 +416,8 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                         Extension::Bmp => {
                             let bmp = bmp::BmpImage::import(
                                 dynamic_image, 
-                                jpeg.filepath_input.clone(), 
-                                jpeg.metadata_input.clone()
+                                jpeg.filepath_input, 
+                                jpeg.metadata_input
                             )?;
                             Ok(Img {
                                 extension: Extension::Bmp,

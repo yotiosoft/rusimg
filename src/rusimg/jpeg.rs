@@ -3,7 +3,7 @@ use image::DynamicImage;
 
 use std::fs::Metadata;
 use std::io::{Read, Write};
-use std::path::Path;
+use std::path::PathBuf;
 
 use crate::rusimg::Rusimg;
 use super::RusimgError;
@@ -18,8 +18,8 @@ pub struct JpegImage {
     extension_str: String,
     pub metadata_input: Metadata,
     pub metadata_output: Option<Metadata>,
-    pub filepath_input: String,
-    pub filepath_output: Option<String>,
+    pub filepath_input: PathBuf,
+    pub filepath_output: Option<PathBuf>,
 }
 
 impl Rusimg for JpegImage {

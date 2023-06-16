@@ -2,6 +2,7 @@ use image::DynamicImage;
 
 use std::fs::Metadata;
 use std::io::Read;
+use std::path::PathBuf;
 
 use crate::rusimg::Rusimg;
 use super::RusimgError;
@@ -13,12 +14,12 @@ pub struct BmpImage {
     height: usize,
     pub metadata_input: Metadata,
     pub metadata_output: Option<Metadata>,
-    pub filepath_input: String,
+    pub filepath_input: PathBuf,
     pub filepath_output: Option<String>,
 }
 
 impl Rusimg for BmpImage {
-    fn import(image: DynamicImage, source_path: String, source_metadata: Metadata) -> Result<Self, RusimgError> {
+    fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         Ok(Self {
@@ -47,7 +48,7 @@ impl Rusimg for BmpImage {
             height,
             metadata_input,
             metadata_output: None,
-            filepath_input: path.to_string(),
+            filepath_input: PathBuf::from(path),
             filepath_output: None,
         })
     }

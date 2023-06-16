@@ -1,5 +1,6 @@
 use std::io::{Read, Write, Cursor};
 use std::fs::Metadata;
+use std::path::PathBuf;
 use image::DynamicImage;
 
 use crate::rusimg::Rusimg;
@@ -15,8 +16,8 @@ pub struct PngImage {
     operations_count: u32,
     pub metadata_input: Metadata,
     pub metadata_output: Option<Metadata>,
-    pub filepath_input: String,
-    pub filepath_output: Option<String>,
+    pub filepath_input: PathBuf,
+    pub filepath_output: Option<PathBuf>,
 }
 
 impl Rusimg for PngImage {
