@@ -609,7 +609,7 @@ pub fn save_print(before_path: &Path, after_path: &Path, before_size: u64, after
     }
 }
 
-pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extension) -> Result<String, RusimgError> {
+pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extension) -> Result<PathBuf, RusimgError> {
     match extension {
         Extension::Bmp => {
             match data.bmp {
@@ -619,7 +619,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                         &Path::new(&bmp.filepath_input), &Path::new(&bmp.filepath_output.as_ref().unwrap()), 
                         bmp.metadata_input.len(), bmp.metadata_output.as_ref().unwrap().len()
                     );
-                    Ok(bmp.filepath_output.as_deref().unwrap().to_string())
+                    Ok(bmp.filepath_output.unwrap())
                 },
                 None => return Err(RusimgError::ImageDataIsNone),
             }
@@ -632,7 +632,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                         &Path::new(&jpeg.filepath_input), &Path::new(&jpeg.filepath_output.as_ref().unwrap()), 
                         jpeg.metadata_input.len(), jpeg.metadata_output.as_ref().unwrap().len()
                     );
-                    Ok(jpeg.filepath_output.as_deref().unwrap().to_string())
+                    Ok(jpeg.filepath_output.unwrap())
                 },
                 None => return Err(RusimgError::ImageDataIsNone),
             }
@@ -645,7 +645,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                         &Path::new(&png.filepath_input), &Path::new(&png.filepath_output.as_ref().unwrap()), 
                         png.metadata_input.len(), png.metadata_output.as_ref().unwrap().len()
                     );
-                    Ok(png.filepath_output.as_deref().unwrap().to_string())
+                    Ok(png.filepath_output.unwrap())
                 },
                 None => return Err(RusimgError::ImageDataIsNone),
             }
@@ -658,7 +658,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                         &Path::new(&webp.filepath_input), &Path::new(&webp.filepath_output.as_ref().unwrap()), 
                         webp.metadata_input.len(), webp.metadata_output.as_ref().unwrap().len()
                     );
-                    Ok(webp.filepath_output.as_deref().unwrap().to_string())
+                    Ok(webp.filepath_output.unwrap())
                 },
                 None => return Err(RusimgError::ImageDataIsNone),
             }

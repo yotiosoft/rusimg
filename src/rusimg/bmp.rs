@@ -15,7 +15,7 @@ pub struct BmpImage {
     pub metadata_input: Metadata,
     pub metadata_output: Option<Metadata>,
     pub filepath_input: PathBuf,
-    pub filepath_output: Option<String>,
+    pub filepath_output: Option<PathBuf>,
 }
 
 impl Rusimg for BmpImage {
