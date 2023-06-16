@@ -53,7 +53,7 @@ impl Rusimg for BmpImage {
         })
     }
 
-    fn save(&mut self, path: Option<&String>) -> Result<(), RusimgError> {
+    fn save(&mut self, path: Option<&PathBuf>) -> Result<(), RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"bmp".to_string())?;
         
         self.image.save(&save_path).map_err(|e| RusimgError::FailedToSaveImage(e.to_string()))?;

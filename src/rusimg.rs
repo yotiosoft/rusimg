@@ -72,7 +72,7 @@ impl fmt::Display for RusimgError {
 pub trait Rusimg {
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
     fn open(path: &str) -> Result<Self, RusimgError> where Self: Sized;
-    fn save(&mut self, path: Option<&String>) -> Result<(), RusimgError>;
+    fn save(&mut self, path: Option<&PathBuf>) -> Result<(), RusimgError>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError>;
     fn resize(&mut self, resize_ratio: u8) -> Result<(), RusimgError>;
     fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), RusimgError>;
@@ -416,8 +416,8 @@ pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Resul
                         Extension::Bmp => {
                             let bmp = bmp::BmpImage::import(
                                 dynamic_image, 
-                                jpeg.filepath_input, 
-                                jpeg.metadata_input
+                                jpeg.filepath_input.clone(),
+                                jpeg.metadata_input.clone()
                             )?;
                             Ok(Img {
                                 extension: Extension::Bmp,
@@ -609,7 +609,7 @@ pub fn save_print(before_path: &Path, after_path: &Path, before_size: u64, after
     }
 }
 
-pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extension) -> Result<PathBuf, RusimgError> {
+pub fn save_image(path: Option<&PathBuf>, data: &mut ImgData, extension: &Extension) -> Result<PathBuf, RusimgError> {
     match extension {
         Extension::Bmp => {
             match data.bmp {
@@ -619,7 +619,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                         &Path::new(&bmp.filepath_input), &Path::new(&bmp.filepath_output.as_ref().unwrap()), 
                         bmp.metadata_input.len(), bmp.metadata_output.as_ref().unwrap().len()
                     );
-                    Ok(bmp.filepath_output.unwrap())
+                    Ok(bmp.filepath_output.clone().unwrap())
                 },
                 None => return Err(RusimgError::ImageDataIsNone),
             }
@@ -632,7 +632,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                         &Path::new(&jpeg.filepath_input), &Path::new(&jpeg.filepath_output.as_ref().unwrap()), 
                         jpeg.metadata_input.len(), jpeg.metadata_output.as_ref().unwrap().len()
                     );
-                    Ok(jpeg.filepath_output.unwrap())
+                    Ok(jpeg.filepath_output.clone().unwrap())
                 },
                 None => return Err(RusimgError::ImageDataIsNone),
             }
@@ -645,7 +645,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                         &Path::new(&png.filepath_input), &Path::new(&png.filepath_output.as_ref().unwrap()), 
                         png.metadata_input.len(), png.metadata_output.as_ref().unwrap().len()
                     );
-                    Ok(png.filepath_output.unwrap())
+                    Ok(png.filepath_output.clone().unwrap())
                 },
                 None => return Err(RusimgError::ImageDataIsNone),
             }
@@ -658,7 +658,7 @@ pub fn save_image(path: Option<&String>, data: &mut ImgData, extension: &Extensi
                         &Path::new(&webp.filepath_input), &Path::new(&webp.filepath_output.as_ref().unwrap()), 
                         webp.metadata_input.len(), webp.metadata_output.as_ref().unwrap().len()
                     );
-                    Ok(webp.filepath_output.unwrap())
+                    Ok(webp.filepath_output.clone().unwrap())
                 },
                 None => return Err(RusimgError::ImageDataIsNone),
             }

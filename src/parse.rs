@@ -1,9 +1,10 @@
+use std::path::PathBuf;
 use clap::Parser;
 use regex::Regex;
 
 pub struct ArgStruct {
     pub souce_path: String,
-    pub destination_path: Option<String>,
+    pub destination_path: Option<PathBuf>,
     pub destination_extension: Option<String>,
     pub quality: Option<f32>,
     pub delete: bool,
@@ -21,7 +22,7 @@ struct Args {
 
     /// Destination file path (file name or directory path)
     #[arg(short, long)]
-    output: Option<String>,
+    output: Option<PathBuf>,
 
     /// Destination file extension (e.g. jpeg, png, webp, bmp)
     #[arg(short, long)]

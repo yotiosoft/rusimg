@@ -68,7 +68,7 @@ impl Rusimg for WebpImage {
         }
     }
 
-    fn save(&mut self, path: Option<&String>) -> Result<(), RusimgError> {
+    fn save(&mut self, path: Option<&PathBuf>) -> Result<(), RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"webp".to_string())?;
 
         // 元が webp かつ操作回数が 0 なら encode しない
