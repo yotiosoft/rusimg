@@ -5,7 +5,7 @@ mod parse;
 mod rusimg;
 use glob::glob;
 
-fn get_files_in_dir(dir_path: &String) -> Result<Vec<PathBuf>, String> {
+fn get_files_in_dir(dir_path: &PathBuf) -> Result<Vec<PathBuf>, String> {
     let mut files = fs::read_dir(&dir_path).expect("cannot read directory");
     let mut ret = Vec::new();
 
@@ -15,7 +15,7 @@ fn get_files_in_dir(dir_path: &String) -> Result<Vec<PathBuf>, String> {
             Ok(dir_entry) => {
                 let path = dir_entry.path();
                 if path.is_dir() {
-                    let mut files = get_files_in_dir(&path.into_os_string().into_string().expect("cannot convert file name"))?;
+                    let mut files = get_files_in_dir(&path)?;
                     ret.append(&mut files);
                 }
                 else {
@@ -34,9 +34,9 @@ fn get_files_in_dir(dir_path: &String) -> Result<Vec<PathBuf>, String> {
     Ok(ret)
 }
 
-fn get_files_by_wildcard(source_path_str: &String) -> Result<Vec<PathBuf>, String> {
+fn get_files_by_wildcard(source_path: &PathBuf) -> Result<Vec<PathBuf>, String> {
     let mut ret = Vec::new();
-    for entry in glob(source_path_str).expect("Failed to read glob pattern") {
+    for entry in glob(source_path.to_str().unwrap()).expect("Failed to read glob pattern") {
         match entry {
             Ok(path) => {
                 // 画像形式であればファイルリストに追加
@@ -53,12 +53,15 @@ fn get_files_by_wildcard(source_path_str: &String) -> Result<Vec<PathBuf>, Strin
 fn main() -> Result<(), String> {
     let args = parse::parser();
 
-    let source_path = Path::new(&args.souce_path);
+    let source_path = match args.souce_path {
+        Some(s) => s,
+        None => PathBuf::from(".")                  // カレントディレクトリ
+    };
     let image_files = if source_path.is_dir() {
-        get_files_in_dir(&args.souce_path)?
+        get_files_in_dir(&source_path)?
     }
     else {
-        get_files_by_wildcard(&args.souce_path)?
+        get_files_by_wildcard(&source_path)?
     };
 
     for image_file_path in image_files {
