@@ -3,7 +3,7 @@ use clap::Parser;
 use regex::Regex;
 
 pub struct ArgStruct {
-    pub souce_path: Option<String>,
+    pub souce_path: Option<PathBuf>,
     pub destination_path: Option<PathBuf>,
     pub destination_extension: Option<String>,
     pub quality: Option<f32>,
@@ -18,7 +18,7 @@ pub struct ArgStruct {
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Source file path (file name or directory path)
-    source: Option<String>,
+    source: Option<PathBuf>,
 
     /// Destination file path (file name or directory path)
     #[arg(short, long)]
