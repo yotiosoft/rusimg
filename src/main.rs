@@ -4,6 +4,8 @@ use std::fs;
 mod parse;
 mod rusimg;
 use glob::glob;
+use parse::ArgStruct;
+use rusimg::RusimgError;
 
 fn get_files_in_dir(dir_path: &PathBuf) -> Result<Vec<PathBuf>, String> {
     let mut files = fs::read_dir(&dir_path).expect("cannot read directory");
@@ -50,6 +52,66 @@ fn get_files_by_wildcard(source_path: &PathBuf) -> Result<Vec<PathBuf>, String> 
     Ok(ret)
 }
 
+fn process(args: ArgStruct, image_file_path: PathBuf) -> Result<(), RusimgError> {
+    // ファイルを開く
+    let mut image = rusimg::open_image(&image_file_path)?;
+
+    // --trim -> トリミング
+    if let Some(trim) = args.trim {
+        // トリミング
+        rusimg::trim(&mut image, (trim.0.0, trim.0.1), (trim.1.0, trim.1.1))?;
+    }
+
+    // --resize -> リサイズ
+    if let Some(resize) = args.resize {
+        // リサイズ
+        rusimg::resize(&mut image, resize)?;
+    }
+
+    // --convert -> 画像形式変換
+    if let Some(ref c) = args.destination_extension {
+        let extension = rusimg::convert_str_to_extension(&c).map_err(|e| e.to_string())?;
+
+        // 変換
+        rusimg::convert(&mut image, &extension)?;
+    }
+
+    // --grayscale -> グレースケール
+    if args.grayscale {
+        // グレースケール
+        rusimg::grayscale(&mut image)?;
+    }
+
+    // --quality -> 圧縮
+    if let Some(q) = args.quality {
+        // 圧縮
+        rusimg::compress(&mut image.data, &image.extension, Some(q))?;
+    }
+
+    // 出力
+    let output_path = match &args.destination_path {
+        Some(path) => Some(path),
+        None => None,
+    };
+    let saved_filepath = rusimg::save_image(output_path, &mut image.data, &image.extension)?;
+
+    // --delete -> 元ファイルの削除 (optinal)
+    if args.delete && image_file_path != saved_filepath {
+        match fs::remove_file(&image_file_path) {
+            Ok(_) => (),
+            Err(e) => return Err(e.to_string()),
+        }
+    }
+
+    // 表示
+    if args.view {
+        match rusimg::view(&mut image) {
+            Ok(_) => (),
+            Err(e) => return Err(e.to_string()),
+        }
+    }
+}
+
 fn main() -> Result<(), String> {
     let args = parse::parser();
 
@@ -67,81 +129,7 @@ fn main() -> Result<(), String> {
     for image_file_path in image_files {
         println!("[Processing: {}]", &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
 
-        // ファイルを開く
-        let mut image = match rusimg::open_image(&image_file_path) {
-            Ok(img) => img,
-            Err(_) => {
-                println!("Failed to open as image file.");
-                continue
-            },
-        };
-
-        // --trim -> トリミング
-        if let Some(trim) = args.trim {
-            // トリミング
-            match rusimg::trim(&mut image, (trim.0.0, trim.0.1), (trim.1.0, trim.1.1)) {
-                Ok(_) => (),
-                Err(e) => return Err(e.to_string()),
-            }
-        }
-
-        // --resize -> リサイズ
-        if let Some(resize) = args.resize {
-            // リサイズ
-            match rusimg::resize(&mut image, resize) {
-                Ok(_) => (),
-                Err(e) => return Err(e.to_string()),
-            }
-        }
-
-        // --convert -> 変換
-        if let Some(ref c) = args.destination_extension {
-            let extension = rusimg::convert_str_to_extension(&c).map_err(|e| e.to_string())?;
-
-            // 変換
-            match rusimg::convert(&mut image, &extension) {
-                Ok(img) => image = img,
-                Err(e) => return Err(e.to_string()),
-            }
-        }
-
-        // --grayscale -> グレースケール
-        if args.grayscale {
-            // グレースケール
-            rusimg::grayscale(&mut image);
-        }
-
-        // --quality -> 圧縮
-        if let Some(q) = args.quality {
-            // 圧縮
-            match rusimg::compress(&mut image.data, &image.extension, Some(q)) {
-                Ok(_) => (),
-                Err(e) => return Err(e.to_string()),
-            }
-        }
-
-        // 出力
-        let output_path = match &args.destination_path {
-            Some(path) => Some(path),
-            None => None,
-        };
-        let saved_filepath = rusimg::save_image(output_path, &mut image.data, &image.extension).map_err(|e| e.to_string())?;
-
-        // --delete -> 元ファイルの削除 (optinal)
-        if args.delete && image_file_path != saved_filepath {
-            match fs::remove_file(&image_file_path) {
-                Ok(_) => (),
-                Err(e) => return Err(e.to_string()),
-            }
-        }
-
-        // 表示
-        if args.view {
-            match rusimg::view(&mut image) {
-                Ok(_) => (),
-                Err(e) => return Err(e.to_string()),
-            }
-        }
+        
 
         println!("Done.");
     }
