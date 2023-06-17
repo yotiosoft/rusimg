@@ -96,7 +96,7 @@ fn main() -> Result<(), String> {
 
         // --convert -> 変換
         if let Some(ref c) = args.destination_extension {
-            let extension = rusimg::get_extension(&Path::new(&c)).map_err(|e| e.to_string())?;
+            let extension = rusimg::convert_str_to_extension(&c).map_err(|e| e.to_string())?;
 
             // 変換
             match rusimg::convert(&mut image, &extension) {

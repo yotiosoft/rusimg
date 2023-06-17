@@ -112,6 +112,7 @@ pub struct Img {
     pub data: ImgData,
 }
 
+// 拡張子に.を含む
 pub fn get_extension(path: &Path) -> Result<Extension, RusimgError> {
     let path = path.to_str().ok_or(RusimgError::FailedToConvertPathToString)?.to_ascii_lowercase();
     match Path::new(&path).extension().and_then(|s| s.to_str()) {
@@ -122,6 +123,17 @@ pub fn get_extension(path: &Path) -> Result<Extension, RusimgError> {
         _ => {
             Err(RusimgError::UnsupportedFileExtension)
         },
+    }
+}
+
+// 拡張子に.を含まない
+pub fn convert_str_to_extension(extension_str: &str) -> Result<Extension, RusimgError> {
+    match extension_str {
+        "bmp" => Ok(Extension::Bmp),
+        "jpg" | "jpeg" | "jfif" => Ok(Extension::Jpeg),
+        "png" => Ok(Extension::Png),
+        "webp" => Ok(Extension::Webp),
+        _ => Err(RusimgError::UnsupportedFileExtension),
     }
 }
 
@@ -307,191 +319,62 @@ pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>)
     }
 }
 
-pub fn convert(source_img: &mut Img, destination_extension: &Extension) -> Result<Img, RusimgError> {
-    match source_img.extension {
+pub fn convert(original: &mut Img, to: &Extension) -> Result<Img, RusimgError> {
+    let (dynamic_image, filepath, metadata) = match original.extension {
         Extension::Bmp => {
-            match &source_img.data.bmp {
-                Some(bmp) => {
-                    let dynamic_image = bmp.image.clone();
-                    match destination_extension {
-                        Extension::Bmp => {
-                            Ok(source_img.clone())
-                        },
-                        Extension::Jpeg => {
-                            let jpeg = jpeg::JpegImage::import(
-                                dynamic_image, 
-                                bmp.filepath_input.clone(), 
-                                bmp.metadata_input.clone()
-                            )?;
-                            Ok(Img {
-                                extension: Extension::Jpeg,
-                                data: ImgData { jpeg: Some(jpeg), ..Default::default() },
-                            })
-                        }
-                        Extension::Png => {
-                            let png = png::PngImage::import(
-                                dynamic_image, 
-                                bmp.filepath_input.clone(), 
-                                bmp.metadata_input.clone()
-                            )?;
-                            Ok(Img {
-                                extension: Extension::Png,
-                                data: ImgData { png: Some(png), ..Default::default() },
-                            })
-                        },
-                        Extension::Webp => {
-                            let webp = webp::WebpImage::import(
-                                dynamic_image, 
-                                bmp.filepath_input.clone(),
-                                bmp.metadata_input.clone()
-                            )?;
-                            Ok(Img {
-                                extension: Extension::Webp,
-                                data: ImgData { webp: Some(webp), ..Default::default() },
-                            })
-                        },
-                    }
-                },
+            match &original.data.bmp {
+                Some(bmp) => (bmp.image.clone(), bmp.filepath_input.clone(), bmp.metadata_input.clone()),
                 None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Jpeg => {
-            match &source_img.data.jpeg {
-                Some(jpeg) => {
-                    let dynamic_image = jpeg.image.clone();
-                    match destination_extension {
-                        Extension::Bmp => {
-                            let bmp = bmp::BmpImage::import(
-                                dynamic_image, 
-                                jpeg.filepath_input.clone(),
-                                jpeg.metadata_input.clone()
-                            )?;
-                            Ok(Img {
-                                extension: Extension::Bmp,
-                                data: ImgData { bmp: Some(bmp), ..Default::default() },
-                            })
-                        },
-                        Extension::Jpeg => {
-                            Ok(source_img.clone())
-                        },
-                        Extension::Png => {
-                            let png = png::PngImage::import(
-                                dynamic_image, 
-                                jpeg.filepath_input.clone(), 
-                                jpeg.metadata_input.clone()
-                            )?;
-                            Ok(Img {
-                                extension: Extension::Png,
-                                data: ImgData { png: Some(png), ..Default::default() },
-                            })
-                        },
-                        Extension::Webp => {
-                            let webp = webp::WebpImage::import(
-                                dynamic_image, 
-                                jpeg.filepath_input.clone(), 
-                                jpeg.metadata_input.clone()
-                            )?;
-                            Ok(Img {
-                                extension: Extension::Webp,
-                                data: ImgData { webp: Some(webp), ..Default::default() },
-                            })
-                        },
-                    }
-                },
+            match &original.data.jpeg {
+                Some(jpeg) => (jpeg.image.clone(), jpeg.filepath_input.clone(), jpeg.metadata_input.clone()),
                 None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Png => {
-            match &source_img.data.png {
-                Some(png) => {
-                    let dynamic_image = png.image.clone();
-                    match destination_extension {
-                        Extension::Bmp => {
-                            let bmp = bmp::BmpImage::import(
-                                dynamic_image, 
-                                png.filepath_input.clone(), 
-                                png.metadata_input.clone()
-                            )?;
-                            Ok(Img {
-                                extension: Extension::Bmp,
-                                data: ImgData { bmp: Some(bmp), ..Default::default() },
-                            })
-                        },
-                        Extension::Jpeg => {
-                            let jpeg = jpeg::JpegImage::import(
-                                dynamic_image, 
-                                png.filepath_input.clone(), 
-                                png.metadata_input.clone()
-                            )?;
-                            Ok(Img {
-                                extension: Extension::Jpeg,
-                                data: ImgData { jpeg: Some(jpeg), ..Default::default() },
-                            })
-                        },
-                        Extension::Png => {
-                            Ok(source_img.clone())
-                        },
-                        Extension::Webp => {
-                            let webp = webp::WebpImage::import(
-                                dynamic_image, 
-                                png.filepath_input.clone(), 
-                                png.metadata_input.clone()
-                            )?;
-                            Ok(Img {
-                                extension: Extension::Webp,
-                                data: ImgData { webp: Some(webp), ..Default::default() },
-                            })
-                        },
-                    }
-                },
+            match &original.data.png {
+                Some(png) => (png.image.clone(), png.filepath_input.clone(), png.metadata_input.clone()),
                 None => return Err(RusimgError::ImageDataIsNone),
             }
         },
         Extension::Webp => {
-            match &source_img.data.webp {
-                Some(webp) => {
-                    let dynamic_image = webp.image.clone();
-                    match destination_extension {
-                        Extension::Bmp => {
-                            let bmp = bmp::BmpImage::import(
-                                dynamic_image, 
-                                webp.filepath_input.clone(), 
-                                webp.metadata_input.clone()
-                            )?;
-                            Ok(Img {
-                                extension: Extension::Bmp,
-                                data: ImgData { bmp: Some(bmp), ..Default::default() },
-                            })
-                        },
-                        Extension::Jpeg => {
-                            let jpeg = jpeg::JpegImage::import(
-                                dynamic_image, 
-                                webp.filepath_input.clone(), 
-                                webp.metadata_input.clone()
-                            )?;
-                            Ok(Img {
-                                extension: Extension::Jpeg,
-                                data: ImgData { jpeg: Some(jpeg), ..Default::default() },
-                            })
-                        },
-                        Extension::Png => {
-                            let png = png::PngImage::import(
-                                dynamic_image, 
-                                webp.filepath_input.clone(), 
-                                webp.metadata_input.clone()
-                            )?;
-                            Ok(Img {
-                                extension: Extension::Png,
-                                data: ImgData { png: Some(png), ..Default::default() },
-                            })
-                        },
-                        Extension::Webp => {
-                            Ok(source_img.clone())
-                        },
-                    }
-                },
+            match &original.data.webp {
+                Some(webp) => (webp.image.clone(), webp.filepath_input.clone(), webp.metadata_input.clone()),
                 None => return Err(RusimgError::ImageDataIsNone),
             }
+        },
+    };
+
+    match to {
+        Extension::Bmp => {
+            let bmp = bmp::BmpImage::import(dynamic_image, filepath, metadata)?;
+            Ok(Img {
+                extension: Extension::Bmp,
+                data: ImgData { bmp: Some(bmp), ..Default::default() },
+            })
+        },
+        Extension::Jpeg => {
+            let jpeg = jpeg::JpegImage::import(dynamic_image, filepath, metadata)?;
+            Ok(Img {
+                extension: Extension::Jpeg,
+                data: ImgData { jpeg: Some(jpeg), ..Default::default() },
+            })
+        },
+        Extension::Png => {
+            let png = png::PngImage::import(dynamic_image, filepath, metadata)?;
+            Ok(Img {
+                extension: Extension::Png,
+                data: ImgData { png: Some(png), ..Default::default() },
+            })
+        },
+        Extension::Webp => {
+            let webp = webp::WebpImage::import(dynamic_image, filepath, metadata)?;
+            Ok(Img {
+                extension: Extension::Webp,
+                data: ImgData { webp: Some(webp), ..Default::default() },
+            })
         },
     }
 }
