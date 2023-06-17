@@ -44,7 +44,6 @@ impl fmt::Display for RusimgError {
             RusimgError::FailedToSaveImageInConverting => write!(f, "Failed to save image"),
             RusimgError::FailedToCopyBinaryData(s) => write!(f, "Failed to copy binary data to memory: {}", s),
             RusimgError::FailedToGetFilename(s) => write!(f, "Failed to get filename: {}", s.display()),
-            RusimgError::FailedToGetFilepath(s) => write!(f, "Failed to get filepath: {}", s.display()),
             RusimgError::FailedToCreateFile(s) => write!(f, "Failed to create file: {}", s),
             RusimgError::FailedToWriteFIle(s) => write!(f, "Failed to write file: {}", s),
             RusimgError::FailedToDecodeWebp => write!(f, "Failed to decode webp"),
