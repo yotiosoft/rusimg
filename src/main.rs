@@ -53,12 +53,15 @@ fn get_files_by_wildcard(source_path_str: &String) -> Result<Vec<PathBuf>, Strin
 fn main() -> Result<(), String> {
     let args = parse::parser();
 
-    let source_path = Path::new(&args.souce_path);
+    let source_path = match args.souce_path {
+        Some(ref s) => Path::new(s),
+        None => Path::new(".")                  // カレントディレクトリ
+    };
     let image_files = if source_path.is_dir() {
-        get_files_in_dir(&args.souce_path)?
+        get_files_in_dir(&source_path)?
     }
     else {
-        get_files_by_wildcard(&args.souce_path)?
+        get_files_by_wildcard(&source_path)?
     };
 
     for image_file_path in image_files {
