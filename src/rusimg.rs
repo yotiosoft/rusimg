@@ -116,21 +116,11 @@ pub fn get_extension(path: &Path) -> Result<Extension, RusimgError> {
     let path = path.to_str().ok_or(RusimgError::FailedToConvertPathToString)?.to_ascii_lowercase();
     match Path::new(&path).extension().and_then(|s| s.to_str()) {
         Some("bmp") => Ok(Extension::Bmp),
-        Some("jpg") | Some("jpeg") => Ok(Extension::Jpeg),
+        Some("jpg") | Some("jpeg") | Some("jfif") => Ok(Extension::Jpeg),
         Some("png") => Ok(Extension::Png),
         Some("webp") => Ok(Extension::Webp),
         _ => {
-            if path.ends_with(".bmp") {
-                Ok(Extension::Bmp)
-            } else if path.ends_with(".jpg") || path.ends_with(".jpeg") {
-                Ok(Extension::Jpeg)
-            } else if path.ends_with(".png") {
-                Ok(Extension::Png)
-            } else if path.ends_with(".webp") {
-                Ok(Extension::Webp)
-            } else {
-                Err(RusimgError::UnsupportedFileExtension)
-            }
+            Err(RusimgError::UnsupportedFileExtension)
         },
     }
 }
