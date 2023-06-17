@@ -68,7 +68,13 @@ fn main() -> Result<(), String> {
         println!("[Processing: {}]", &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
 
         // ファイルを開く
-        let mut image = rusimg::open_image(&image_file_path).map_err(|e| e.to_string())?;
+        let mut image = match rusimg::open_image(&image_file_path) {
+            Ok(img) => img,
+            Err(_) => {
+                println!("Failed to open as image file.");
+                continue
+            },
+        };
 
         // --trim -> トリミング
         if let Some(trim) = args.trim {
