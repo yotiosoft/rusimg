@@ -245,38 +245,42 @@ pub fn trim(image: &mut Img, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result
     }
 }
 
-pub fn grayscale(image: &mut Img) {
+pub fn grayscale(image: &mut Img) -> Result<(), RusimgError> {
     match image.extension {
         Extension::Bmp => {
             match &mut image.data.bmp {
                 Some(bmp) => {
-                    bmp.grayscale()
+                    bmp.grayscale();
+                    Ok(())
                 },
-                None => (),
+                None => Err(RusimgError::ImageDataIsNone)
             }
         },
         Extension::Jpeg => {
             match &mut image.data.jpeg {
                 Some(jpeg) => {
-                    jpeg.grayscale()
+                    jpeg.grayscale();
+                    Ok(())
                 },
-                None => (),
+                None => Err(RusimgError::ImageDataIsNone)
             }
         },
         Extension::Png => {
             match &mut image.data.png {
                 Some(png) => {
-                    png.grayscale()
+                    png.grayscale();
+                    Ok(())
                 },
-                None => (),
+                None => Err(RusimgError::ImageDataIsNone)
             }
         },
         Extension::Webp => {
             match &mut image.data.webp {
                 Some(webp) => {
-                    webp.grayscale()
+                    webp.grayscale();
+                    Ok(())
                 },
-                None => (),
+                None => Err(RusimgError::ImageDataIsNone)
             }
         },
     }
