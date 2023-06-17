@@ -120,13 +120,13 @@ pub fn get_extension(path: &Path) -> Result<Extension, RusimgError> {
         Some("png") => Ok(Extension::Png),
         Some("webp") => Ok(Extension::Webp),
         _ => {
-            if path.ends_with("bmp") {
+            if path.ends_with(".bmp") {
                 Ok(Extension::Bmp)
-            } else if path.ends_with("jpg") || path.ends_with("jpeg") {
+            } else if path.ends_with(".jpg") || path.ends_with(".jpeg") {
                 Ok(Extension::Jpeg)
-            } else if path.ends_with("png") {
+            } else if path.ends_with(".png") {
                 Ok(Extension::Png)
-            } else if path.ends_with("webp") {
+            } else if path.ends_with(".webp") {
                 Ok(Extension::Webp)
             } else {
                 Err(RusimgError::UnsupportedFileExtension)
