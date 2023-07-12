@@ -73,6 +73,14 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<(), Processing
     // ファイルを開く
     let mut image = rusimg::open_image(&image_file_path).map_err(rierr)?;
 
+    // --convert -> 画像形式変換
+    if let Some(ref c) = args.destination_extension {
+        let extension = rusimg::convert_str_to_extension(&c).map_err(rierr)?;
+
+        // 変換
+        image = rusimg::convert(&mut image, &extension).map_err(rierr)?;
+    }
+
     // --trim -> トリミング
     if let Some(trim) = args.trim {
         // トリミング
@@ -83,14 +91,6 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<(), Processing
     if let Some(resize) = args.resize {
         // リサイズ
         rusimg::resize(&mut image, resize).map_err(rierr)?;
-    }
-
-    // --convert -> 画像形式変換
-    if let Some(ref c) = args.destination_extension {
-        let extension = rusimg::convert_str_to_extension(&c).map_err(rierr)?;
-
-        // 変換
-        rusimg::convert(&mut image, &extension).map_err(rierr)?;
     }
 
     // --grayscale -> グレースケール

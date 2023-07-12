@@ -97,6 +97,16 @@ pub enum Extension {
     Png,
     Webp,
 }
+impl fmt::Display for Extension {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Extension::Bmp => write!(f, "bmp"),
+            Extension::Jpeg => write!(f, "jpeg"),
+            Extension::Png => write!(f, "png"),
+            Extension::Webp => write!(f, "webp"),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Default)]
 pub struct ImgData {
