@@ -21,7 +21,7 @@ impl fmt::Display for ProcessingError {
     }
 }
 
-fn get_files_in_dir(dir_path: &PathBuf) -> Result<Vec<PathBuf>, String> {
+fn get_files_in_dir(dir_path: &PathBuf, recursive: bool) -> Result<Vec<PathBuf>, String> {
     let mut files = fs::read_dir(&dir_path).expect("cannot read directory");
     let mut ret = Vec::new();
 
@@ -30,8 +30,9 @@ fn get_files_in_dir(dir_path: &PathBuf) -> Result<Vec<PathBuf>, String> {
         match dir_entry {
             Ok(dir_entry) => {
                 let path = dir_entry.path();
-                if path.is_dir() {
-                    let mut files = get_files_in_dir(&path)?;
+                // recursive に探索
+                if path.is_dir() && recursive {
+                    let mut files = get_files_in_dir(&path, recursive)?;
                     ret.append(&mut files);
                 }
                 else {
@@ -130,7 +131,7 @@ fn main() -> Result<(), String> {
 
     let source_path = args.souce_path.clone().or(Some(PathBuf::from("."))).unwrap();
     let image_files = if source_path.is_dir() {
-        get_files_in_dir(&source_path)?
+        get_files_in_dir(&source_path, args.recursive)?
     }
     else {
         get_files_by_wildcard(&source_path)?

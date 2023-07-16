@@ -6,6 +6,7 @@ pub struct ArgStruct {
     pub souce_path: Option<PathBuf>,
     pub destination_path: Option<PathBuf>,
     pub destination_extension: Option<String>,
+    pub recursive: bool,
     pub quality: Option<f32>,
     pub delete: bool,
     pub resize: Option<u8>,
@@ -19,6 +20,10 @@ pub struct ArgStruct {
 struct Args {
     /// Source file path (file name or directory path)
     source: Option<PathBuf>,
+
+    /// Recusive search
+    #[arg(long)]
+    recursive: bool,
 
     /// Destination file path (file name or directory path)
     #[arg(short, long)]
@@ -81,6 +86,7 @@ pub fn parser() -> ArgStruct {
         souce_path: args.source,
         destination_path: args.output,
         destination_extension: args.convert,
+        recursive: args.recursive,
         quality: args.quality,
         delete: args.delete,
         resize: args.resize,
