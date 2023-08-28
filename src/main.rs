@@ -127,8 +127,10 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<(), Processing
 }
 
 fn main() -> Result<(), String> {
+    // 引数のパース
     let args = parse::parser();
 
+    // 作業ディレクトリの指定（default: current dir）
     let source_path = args.souce_path.clone().or(Some(PathBuf::from("."))).unwrap();
     let image_files = if source_path.is_dir() {
         get_files_in_dir(&source_path, args.recursive)?
