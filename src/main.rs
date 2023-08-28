@@ -139,6 +139,14 @@ fn main() -> Result<(), String> {
         get_files_by_wildcard(&source_path)?
     };
 
+    // 検出した画像ファイルパスの表示
+    println!("{} images are detected.", image_files.len());
+    for image_file_path in &image_files {
+        println!("  {}", image_file_path.to_str().unwrap());
+    }
+    println!();
+
+    // 各画像に対する処理
     for image_file_path in image_files {
         println!("[Processing: {}]", &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
 
