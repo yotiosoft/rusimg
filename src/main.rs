@@ -140,7 +140,7 @@ fn main() -> Result<(), String> {
     };
 
     // 検出した画像ファイルパスの表示
-    println!("{} images are detected.", image_files.len());
+    println!("🔎 {} images are detected.", image_files.len());
     for image_file_path in &image_files {
         println!("  {}", image_file_path.to_str().unwrap());
     }
@@ -148,7 +148,7 @@ fn main() -> Result<(), String> {
 
     // 各画像に対する処理
     for image_file_path in image_files {
-        println!("[Processing: {}]", &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
+        println!("👨‍💻 [Processing: {}]", &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
 
         match process(&args, &image_file_path) {
             Ok(_) => {},
@@ -161,7 +161,7 @@ fn main() -> Result<(), String> {
         println!("Done.");
     }
 
-    print!("All images are processed.");
+    println!("✅ All images are processed.");
 
     Ok(())
 }
