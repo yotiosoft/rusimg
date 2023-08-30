@@ -1,23 +1,12 @@
 use std::path::{Path, PathBuf};
 use std::fs;
 use std::fmt;
-use std::io::Read;
 
 mod parse;
 mod rusimg;
 use glob::glob;
 use parse::ArgStruct;
 use rusimg::RusimgError;
-
-#[macro_export]
-macro_rules! printlnc {
-    () => {
-        $crate::print!("  \n")
-    };
-    ($($arg:tt)*) => {{
-        $crate::io::_print("  " + $crate::format_args_nl!($($arg)*));
-    }};
-}
 
 pub enum ProcessingError {
     RusimgError(RusimgError),
@@ -54,7 +43,7 @@ fn get_files_in_dir(dir_path: &PathBuf, recursive: bool) -> Result<Vec<PathBuf>,
                 }
             },
             Err(e) => {
-                printlnc!("cannot read a directory entry: {}", e.to_string());
+                println!("cannot read a directory entry: {}", e.to_string());
                 continue;
             },
         }
@@ -72,7 +61,7 @@ fn get_files_by_wildcard(source_path: &PathBuf) -> Result<Vec<PathBuf>, String> 
                     ret.push(path);
                 }
             },
-            Err(e) => printlnc!("{:?}", e),
+            Err(e) => println!("{:?}", e),
         }
     }
     Ok(ret)
@@ -155,24 +144,24 @@ fn main() -> Result<(), String> {
     for image_file_path in &image_files {
         println!("  {}", image_file_path.to_str().unwrap());
     }
-    printlnc!();
+    println!();
 
     // 各画像に対する処理
     for image_file_path in image_files {
-        printlnc!(" [Processing: {}]", &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
+        println!(" [Processing: {}]", &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
 
         match process(&args, &image_file_path) {
             Ok(_) => {},
             Err(e) => {
-                printlnc!("Error: {}", e.to_string());
+                println!("Error: {}", e.to_string());
                 continue;
             },
         }
 
-        printlnc!("Done.");
+        println!("Done.");
     }
 
-    println!("✅ All images are processed.");
+    println!("\n✅ All images are processed.");
 
     Ok(())
 }
