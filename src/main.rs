@@ -67,6 +67,21 @@ fn get_files_by_wildcard(source_path: &PathBuf) -> Result<Vec<PathBuf>, String> 
     Ok(ret)
 }
 
+fn save_print(before_path: &Path, after_path: &Path, before_size: u64, after_size: u64) {
+    if before_path == after_path {
+        println!("Overwrite: {}", before_path.display());
+        println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
+    }
+    else if rusimg::get_extension(before_path) != rusimg::get_extension(after_path) {
+        println!("Convert: {} -> {}", before_path.display(), after_path.display());
+        println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
+    }
+    else {
+        println!("Move: {} -> {}", before_path.display(), after_path.display());
+        println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
+    }
+}
+
 fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<(), ProcessingError> {
     let rierr = |e: RusimgError| ProcessingError::RusimgError(e);
     let ioerr = |e: std::io::Error| ProcessingError::IOError(e.to_string());
@@ -111,7 +126,9 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<(), Processing
         Some(path) => Some(path),
         None => None,
     };
-    let saved_filepath = rusimg::save_image(output_path, &mut image.data, &image.extension).map_err(rierr)?;
+    let (saved_filepath, opened_filepath, before_size, after_size)
+         = rusimg::save_image(output_path, &mut image.data, &image.extension).map_err(rierr)?;
+    save_print(&opened_filepath, &saved_filepath, before_size, after_size);
 
     // --delete -> 元ファイルの削除 (optinal)
     if args.delete && image_file_path != &saved_filepath {
@@ -148,7 +165,7 @@ fn main() -> Result<(), String> {
 
     // 各画像に対する処理
     for image_file_path in image_files {
-        println!(" [Processing: {}]", &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
+        println!("[Processing: {}]", &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
 
         match process(&args, &image_file_path) {
             Ok(_) => {},
