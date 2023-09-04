@@ -122,6 +122,12 @@ pub struct Img {
     pub data: ImgData,
 }
 
+#[derive(Debug, Clone)]
+pub struct ImgSize {
+    pub width: usize,
+    pub height: usize,
+}
+
 // 拡張子に.を含む
 pub fn get_extension(path: &Path) -> Result<Extension, RusimgError> {
     let path = path.to_str().ok_or(RusimgError::FailedToConvertPathToString)?.to_ascii_lowercase();
