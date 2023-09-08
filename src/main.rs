@@ -148,13 +148,19 @@ fn main() -> Result<(), String> {
     let args = parse::parser();
 
     // 作業ディレクトリの指定（default: current dir）
-    let source_path = args.souce_path.clone().or(Some(PathBuf::from("."))).unwrap();
-    let image_files = if source_path.is_dir() {
-        get_files_in_dir(&source_path, args.recursive)?
+    let source_paths = args.souce_path.clone().or(Some(vec![PathBuf::from(".")])).unwrap();
+    let mut image_files = Vec::new();
+    for source_path in source_paths {
+        let image_files_temp = if source_path.is_dir() {
+            get_files_in_dir(&source_path, args.recursive)?
+        }
+        else {
+            get_files_by_wildcard(&source_path)?
+        };
+        for image_file in image_files_temp {
+            image_files.push(image_file);
+        }
     }
-    else {
-        get_files_by_wildcard(&source_path)?
-    };
 
     // 検出した画像ファイルパスの表示
     println!("🔎 {} images are detected.", image_files.len());

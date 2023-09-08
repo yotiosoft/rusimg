@@ -3,7 +3,7 @@ use clap::Parser;
 use regex::Regex;
 
 pub struct ArgStruct {
-    pub souce_path: Option<PathBuf>,
+    pub souce_path: Option<Vec<PathBuf>>,
     pub destination_path: Option<PathBuf>,
     pub destination_extension: Option<String>,
     pub recursive: bool,
@@ -19,7 +19,7 @@ pub struct ArgStruct {
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Source file path (file name or directory path)
-    source: Option<PathBuf>,
+    source: Option<Vec<PathBuf>>,
 
     /// Recusive search
     #[arg(long)]
