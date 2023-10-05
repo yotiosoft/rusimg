@@ -61,6 +61,7 @@ struct Args {
 pub fn parser() -> ArgStruct {
     let args = Args::parse();
 
+    // If trim option is specified, check the format.
     let trim = if args.trim.is_some() {
         let re = Regex::new(r"^\d*x\d*\+\d*\+\d*$").unwrap();
         let trim = args.trim.unwrap();
@@ -81,6 +82,12 @@ pub fn parser() -> ArgStruct {
     else {
         None
     };
+
+    // If nothing mode option is specified, raise error.
+    if args.resize.is_none() && args.trim.is_none() && !args.grayscale && args.quality.is_none() {
+        println!("Please specify at least one mode option.");
+        std::process::exit(1);
+    }
 
     ArgStruct {
         souce_path: args.source,
