@@ -170,6 +170,7 @@ fn main() -> Result<(), String> {
     println!();
 
     // 各画像に対する処理
+    let mut error_count = 0;
     for image_file_path in image_files {
         println!("[Processing: {}]", &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
 
@@ -177,6 +178,7 @@ fn main() -> Result<(), String> {
             Ok(_) => {},
             Err(e) => {
                 println!("Error: {}", e.to_string());
+                error_count = error_count + 1;
                 continue;
             },
         }
@@ -184,7 +186,13 @@ fn main() -> Result<(), String> {
         println!("Done.");
     }
 
-    println!("\n✅ All images are processed.");
+    if error_count > 0 {
+        println!("\n{} images are failed to process.", error_count);
+        std::process::exit(1);
+    }
+    else {
+        println!("\n✅ All images are processed.");
+    }
 
     Ok(())
 }
