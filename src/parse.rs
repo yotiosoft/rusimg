@@ -83,12 +83,6 @@ pub fn parser() -> ArgStruct {
         None
     };
 
-    // If nothing mode option is specified, raise error.
-    if args.resize.is_none() && trim.is_none() && !args.grayscale && args.quality.is_none() {
-        println!("Please specify at least one mode option.");
-        std::process::exit(1);
-    }
-
     ArgStruct {
         souce_path: args.source,
         destination_path: args.output,
