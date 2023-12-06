@@ -61,8 +61,10 @@ struct Args {
 pub fn parser() -> ArgStruct {
     let args = Args::parse();
 
-    let trim = if let Some(trim) = args.trim {
+    // If trim option is specified, check the format.
+    let trim = if args.trim.is_some() {
         let re = Regex::new(r"^\d*x\d*\+\d*\+\d*$").unwrap();
+        let trim = args.trim.unwrap();
         if re.is_match(&trim) {
             let trim_wh = trim.split("+").collect::<Vec<&str>>();
             let trim_xy = trim_wh[0].split("x").collect::<Vec<&str>>();

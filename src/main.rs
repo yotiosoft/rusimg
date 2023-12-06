@@ -1,12 +1,13 @@
 use std::path::{Path, PathBuf};
 use std::fs;
 use std::fmt;
-
-mod parse;
-mod rusimg;
 use glob::glob;
 use parse::ArgStruct;
 use rusimg::RusimgError;
+use colored::*;
+
+mod parse;
+mod rusimg;
 
 pub enum ProcessingError {
     RusimgError(RusimgError),
@@ -163,28 +164,37 @@ fn main() -> Result<(), String> {
     }
 
     // 検出した画像ファイルパスの表示
-    println!("🔎 {} images are detected.", image_files.len());
+    let total_image_count = image_files.len();
+    println!("🔎 {} images are detected.", total_image_count);
     for image_file_path in &image_files {
-        println!("  {}", image_file_path.to_str().unwrap());
+        print!("  {}\t", image_file_path.to_str().unwrap());
     }
     println!();
 
     // 各画像に対する処理
+    let mut error_count = 0;
     for image_file_path in image_files {
-        println!("[Processing: {}]", &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
+        let processing_str = format!("[Processing: {}]", &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
+        println!("{}", processing_str.yellow());
 
         match process(&args, &image_file_path) {
-            Ok(_) => {},
+            Ok(_) => {
+                println!("{}", "Done.".green());
+            },
             Err(e) => {
-                println!("Error: {}", e.to_string());
-                continue;
+                println!("{}: {}", "Error".red(), e.to_string());
+                error_count = error_count + 1;
             },
         }
-
-        println!("Done.");
     }
 
-    println!("\n✅ All images are processed.");
+    if error_count > 0 {
+        println!("\n✅ {} images are processed.", total_image_count - error_count);
+        println!("❌ {} images are failed to process.", error_count);
+    }
+    else {
+        println!("\n✅ All images are processed.");
+    }
 
     Ok(())
 }
