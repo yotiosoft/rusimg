@@ -70,15 +70,15 @@ fn get_files_by_wildcard(source_path: &PathBuf) -> Result<Vec<PathBuf>, String> 
 
 fn save_print(before_path: &Path, after_path: &Path, before_size: u64, after_size: u64) {
     if before_path == after_path {
-        println!("Overwrite: {}", before_path.display());
+        println!("{}: {}", "Overwrite".bold(), before_path.display());
         println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
     }
     else if rusimg::get_extension(before_path) != rusimg::get_extension(after_path) {
-        println!("Convert: {} -> {}", before_path.display(), after_path.display());
+        println!("{}: {} -> {}", "Convert".bold(), before_path.display(), after_path.display());
         println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
     }
     else {
-        println!("Move: {} -> {}", before_path.display(), after_path.display());
+        println!("{}: {} -> {}", "Move".bold(), before_path.display(), after_path.display());
         println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
     }
 }
@@ -175,11 +175,11 @@ fn main() -> Result<(), String> {
     let mut error_count = 0;
     for image_file_path in image_files {
         let processing_str = format!("[Processing: {}]", &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
-        println!("{}", processing_str.yellow());
+        println!("{}", processing_str.yellow().bold());
 
         match process(&args, &image_file_path) {
             Ok(_) => {
-                println!("{}", "Done.".green());
+                println!("{}", "Done.".green().bold());
             },
             Err(e) => {
                 println!("{}: {}", "Error".red(), e.to_string());
