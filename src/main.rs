@@ -163,29 +163,30 @@ fn main() -> Result<(), String> {
         }
     }
 
-    // image_files から最長の文字列の長さを取得
-    let max_image_file_len = image_files.iter().map(|x| x.to_str().unwrap().len()).max().unwrap();
-    println!("max len: {}", max_image_file_len);
-
     // 検出した画像ファイルパスの表示
     let total_image_count = image_files.len();
-    let window_width = 180;
-    println!("🔎 {} images are detected.", total_image_count);
-    let mut str_width = 0;
+    println!("{}", format!("🔎 {} images are detected.", total_image_count).bold());
+    /*
+    let mut str_width_count = 0;
     for image_file_path in &image_files {
-        print!(" {lc:<cl$}", lc=image_file_path.to_str().unwrap(), cl=max_image_file_len);
-        str_width = str_width + max_image_file_len + 1;
-        if str_width > window_width {
-            println!();
-            str_width = 0;
+        if str_width_count == 0 {
+            print!("  ");
+            print!("{}\t", image_file_path.to_str().unwrap());
+        }
+        else {
+            println!("{}", image_file_path.to_str().unwrap());
+            str_width_count = 0;
         }
     }
     println!();
+    */
 
     // 各画像に対する処理
     let mut error_count = 0;
+    let mut count = 0;
     for image_file_path in image_files {
-        let processing_str = format!("[Processing: {}]", &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
+        count = count + 1;
+        let processing_str = format!("[{}/{}] Processing: {}", count, total_image_count, &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
         println!("{}", processing_str.yellow().bold());
 
         match process(&args, &image_file_path) {
