@@ -1,7 +1,7 @@
 use image::{DynamicImage, EncodableLayout};
 
 use std::fs::Metadata;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::path::{PathBuf, Path};
 
 use crate::rusimg::Rusimg;
@@ -39,25 +39,20 @@ impl Rusimg for WebpImage {
         })
     }
 
-    fn open(path: PathBuf) -> Result<Self, RusimgError> {
-        let mut raw_data = std::fs::File::open(&path).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
-        let mut buf = Vec::new();
-        raw_data.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
-        let metadata_input = raw_data.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
-
-        let webp_decoder = webp::Decoder::new(&buf).decode();
+    fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> {
+        let webp_decoder = webp::Decoder::new(&image_buf).decode();
         if let Some(webp_decoder) = webp_decoder {
             let image = webp_decoder.to_image();
             let (width, height) = (image.width() as usize, image.height() as usize);
 
             Ok(Self {
                 image,
-                image_bytes: Some(buf),
+                image_bytes: Some(image_buf),
                 width,
                 height,
                 operations_count: 0,
                 required_quality: None,
-                metadata_input,
+                metadata_input: metadata,
                 metadata_output: None,
                 filepath_input: path,
                 filepath_output: None,

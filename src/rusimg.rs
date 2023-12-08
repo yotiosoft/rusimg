@@ -6,7 +6,8 @@ mod webp;
 use std::path::{Path, PathBuf};
 use std::fs::Metadata;
 use std::fmt;
-use image::DynamicImage;
+use image::{DynamicImage, ImageFormat};
+use std::io::Read;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RusimgError {
@@ -63,7 +64,7 @@ impl fmt::Display for RusimgError {
 
 pub trait Rusimg {
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
-    fn open(path: PathBuf) -> Result<Self, RusimgError> where Self: Sized;
+    fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
     fn save(&mut self, path: Option<&PathBuf>) -> Result<(), RusimgError>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError>;
     fn resize(&mut self, resize_ratio: u8) -> Result<(), RusimgError>;
@@ -142,6 +143,12 @@ pub fn get_extension(path: &Path) -> Result<Extension, RusimgError> {
     }
 }
 
+// 画像フォーマットを取得
+fn guess_image_format(image_buf: &[u8]) -> Result<image::ImageFormat, RusimgError> {
+    let format = image::guess_format(image_buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
+    Ok(format)
+}
+
 // 拡張子に.を含まない
 pub fn convert_str_to_extension(extension_str: &str) -> Result<Extension, RusimgError> {
     match extension_str {
@@ -154,36 +161,41 @@ pub fn convert_str_to_extension(extension_str: &str) -> Result<Extension, Rusimg
 }
 
 pub fn open_image(path: &Path) -> Result<Img, RusimgError> {
-    match get_extension(path) {
-        Ok(Extension::Bmp) => {
-            let bmp = bmp::BmpImage::open(path.to_path_buf())?;
+    let mut raw_data = std::fs::File::open(&path.to_path_buf()).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
+    let mut buf = Vec::new();
+    raw_data.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
+    let metadata_input = raw_data.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
+
+    match guess_image_format(&buf)? {
+        ImageFormat::Bmp => {
+            let bmp = bmp::BmpImage::open(path.to_path_buf(), buf, metadata_input)?;
             Ok(Img {
                 extension: Extension::Bmp,
                 data: ImgData { bmp: Some(bmp), ..Default::default() },
             })
         },
-        Ok(Extension::Jpeg) => {
-            let jpeg = jpeg::JpegImage::open(path.to_path_buf())?;
+        ImageFormat::Jpeg => {
+            let jpeg = jpeg::JpegImage::open(path.to_path_buf(), buf, metadata_input)?;
             Ok(Img {
                 extension: Extension::Jpeg,
                 data: ImgData { jpeg: Some(jpeg), ..Default::default() },
             })
         },
-        Ok(Extension::Png) => {
-            let png = png::PngImage::open(path.to_path_buf())?;
+        ImageFormat::Png => {
+            let png = png::PngImage::open(path.to_path_buf(), buf, metadata_input)?;
             Ok(Img {
                 extension: Extension::Png,
                 data: ImgData { png: Some(png), ..Default::default() },
             })
         },
-        Ok(Extension::Webp) => {
-            let webp = webp::WebpImage::open(path.to_path_buf())?;
+        ImageFormat::WebP => {
+            let webp = webp::WebpImage::open(path.to_path_buf(), buf, metadata_input)?;
             Ok(Img {
                 extension: Extension::Webp,
                 data: ImgData { webp: Some(webp), ..Default::default() },
             })
         },
-        Err(e) => Err(e),
+        _ => Err(RusimgError::UnsupportedFileExtension),
     }
 }
 

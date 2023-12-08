@@ -1,4 +1,4 @@
-use std::io::{Read, Write, Cursor};
+use std::io::{Write, Cursor};
 use std::fs::Metadata;
 use std::path::PathBuf;
 use image::DynamicImage;
@@ -42,23 +42,18 @@ impl Rusimg for PngImage {
         })
     }
 
-    fn open(path: PathBuf) -> Result<Self, RusimgError> {
-        let mut file = std::fs::File::open(&path).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
-        let mut buf = Vec::new();
-        file.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
-        let metadata_input = file.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
-
-        let image = image::load_from_memory(&buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
+    fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> {
+        let image = image::load_from_memory(&image_buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         Ok(Self {
-            binary_data: buf,
+            binary_data: image_buf,
             image,
             image_bytes: None,
             width,
             height,
             operations_count: 0,
-            metadata_input,
+            metadata_input: metadata,
             metadata_output: None,
             filepath_input: path,
             filepath_output: None,

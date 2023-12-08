@@ -1,7 +1,6 @@
 use image::DynamicImage;
 
 use std::fs::Metadata;
-use std::io::Read;
 use std::path::PathBuf;
 
 use crate::rusimg::Rusimg;
@@ -32,19 +31,14 @@ impl Rusimg for BmpImage {
         })
     }
 
-    fn open(path: PathBuf) -> Result<Self, RusimgError> {
-        let mut raw_data = std::fs::File::open(&path).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
-        let mut buf = Vec::new();
-        raw_data.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
-        let metadata_input = raw_data.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
-
-        let image = image::load_from_memory(&buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
+    fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> {
+        let image = image::load_from_memory(&image_buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
         let size = ImgSize { width: image.width() as usize, height: image.height() as usize };
 
         Ok(Self {
             image,
             size,
-            metadata_input,
+            metadata_input: metadata,
             metadata_output: None,
             filepath_input: path,
             filepath_output: None,
