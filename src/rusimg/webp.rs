@@ -92,7 +92,7 @@ impl Rusimg for WebpImage {
         };
        
         // DynamicImage を （圧縮＆）保存
-        let encoded_webp = webp::Encoder::from_image(&self.image).map_err(|e| RusimgError::FailedToEncodeWebp(e.to_string()))?.encode(quality);
+        let encoded_webp = webp::Encoder::from_rgba(&self.image.to_rgba8(), self.image.width(), self.image.height()).encode(quality);
         if self.required_quality.is_some() {
             println!("Compress: Done.");
         }

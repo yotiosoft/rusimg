@@ -70,7 +70,7 @@ impl Rusimg for PngImage {
         
         // image_bytes == None の場合、DynamicImage を 保存
         if self.image_bytes.is_none() {
-            self.image.save(&save_path).map_err(|e| RusimgError::FailedToSaveImage(e.to_string()))?;
+            self.image.to_rgba8().save(&save_path).map_err(|e| RusimgError::FailedToSaveImage(e.to_string()))?;
             self.metadata_output = Some(std::fs::metadata(&save_path).map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
         }
         // image_bytes != None の場合、oxipng で圧縮したバイナリデータを保存
