@@ -8,6 +8,7 @@ use std::fs::Metadata;
 use std::fmt;
 use image::{DynamicImage, ImageFormat};
 use std::io::Read;
+use std::io::{stdout, Write};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RusimgError {
@@ -62,10 +63,16 @@ impl fmt::Display for RusimgError {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum RusimgStatus {
+    Success,
+    Cancel,
+}
+
 pub trait Rusimg {
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
     fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
-    fn save(&mut self, path: Option<&PathBuf>) -> Result<(), RusimgError>;
+    fn save(&mut self, path: Option<&PathBuf>) -> Result<RusimgStatus, RusimgError>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError>;
     fn resize(&mut self, resize_ratio: u8) -> Result<(), RusimgError>;
     fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), RusimgError>;
@@ -88,6 +95,30 @@ pub trait Rusimg {
         else {
             Ok(Path::new(&source_filepath).with_extension(new_extension))
         }
+    }
+
+    fn check_file_exists(path: &PathBuf) -> bool {
+        // ファイルの存在チェック
+        // ファイルが存在する場合、上書きするかどうかを確認
+        if Path::new(path).exists() {
+            print!("The image file {} already exists. Do you want to overwrite it? [y/N]: ", path.display());
+            loop {
+                stdout().flush().unwrap();
+
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input).unwrap();
+                if input.trim().to_ascii_lowercase() == "y" || input.trim().to_ascii_lowercase() == "yes" {
+                    return true;
+                }
+                else if input.trim().to_ascii_lowercase() == "n" || input.trim().to_ascii_lowercase() == "no" || input.trim() == "" {
+                    return false;
+                }
+                else {
+                    print!("Please enter y or n: ");
+                }
+            }
+        }
+        return true;
     }
 }
 
@@ -411,16 +442,18 @@ pub fn convert(original: &mut Img, to: &Extension) -> Result<Img, RusimgError> {
     }
 }
 
-pub fn save_image(path: Option<&PathBuf>, data: &mut ImgData, extension: &Extension) -> Result<(PathBuf, PathBuf, u64, u64), RusimgError> {
+pub fn save_image(path: Option<&PathBuf>, data: &mut ImgData, extension: &Extension) -> Result<(RusimgStatus, Option<PathBuf>, PathBuf, u64, Option<u64>), RusimgError> {
     match extension {
         Extension::Bmp => {
             match data.bmp {
                 Some(ref mut bmp) => {
-                    bmp.save(path)?;
-                    Ok((bmp.filepath_output.clone().unwrap(), 
+                    let status = bmp.save(path)?;
+                    Ok((status,
+                        //bmp.filepath_output.clone().unwrap(), 
+                        bmp.filepath_output.clone().or(None),
                         bmp.filepath_input.clone(), 
                         bmp.metadata_input.len(), 
-                        bmp.metadata_output.as_ref().unwrap().len()))
+                        bmp.metadata_output.as_ref().or(None).map(|m| m.len())))
                 },
                 None => return Err(RusimgError::ImageDataIsNone),
             }
@@ -428,11 +461,12 @@ pub fn save_image(path: Option<&PathBuf>, data: &mut ImgData, extension: &Extens
         Extension::Jpeg => {
             match data.jpeg {
                 Some(ref mut jpeg) => {
-                    jpeg.save(path)?;
-                    Ok((jpeg.filepath_output.clone().unwrap(), 
+                    let status = jpeg.save(path)?;
+                    Ok((status,
+                        jpeg.filepath_output.clone().or(None),
                         jpeg.filepath_input.clone(), 
                         jpeg.metadata_input.len(), 
-                        jpeg.metadata_output.as_ref().unwrap().len()))
+                        jpeg.metadata_output.as_ref().or(None).map(|m| m.len())))
                 },
                 None => return Err(RusimgError::ImageDataIsNone),
             }
@@ -440,11 +474,12 @@ pub fn save_image(path: Option<&PathBuf>, data: &mut ImgData, extension: &Extens
         Extension::Png => {
             match data.png {
                 Some(ref mut png) => {
-                    png.save(path)?;
-                    Ok((png.filepath_output.clone().unwrap(), 
+                    let status = png.save(path)?;
+                    Ok((status,
+                        png.filepath_output.clone().or(None),
                         png.filepath_input.clone(), 
                         png.metadata_input.len(), 
-                        png.metadata_output.as_ref().unwrap().len()))
+                        png.metadata_output.as_ref().or(None).map(|m| m.len())))
                 },
                 None => return Err(RusimgError::ImageDataIsNone),
             }
@@ -452,11 +487,12 @@ pub fn save_image(path: Option<&PathBuf>, data: &mut ImgData, extension: &Extens
         Extension::Webp => {
             match data.webp {
                 Some(ref mut webp) => {
-                    webp.save(path)?;
-                    Ok((webp.filepath_output.clone().unwrap(), 
+                    let status = webp.save(path)?;
+                    Ok((status,
+                        webp.filepath_output.clone().or(None),
                         webp.filepath_input.clone(), 
                         webp.metadata_input.len(), 
-                        webp.metadata_output.as_ref().unwrap().len()))
+                        webp.metadata_output.as_ref().or(None).map(|m| m.len())))
                 },
                 None => return Err(RusimgError::ImageDataIsNone),
             }

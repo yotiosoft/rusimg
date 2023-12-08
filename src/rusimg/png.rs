@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use image::DynamicImage;
 
 use crate::rusimg::Rusimg;
-use super::RusimgError;
+use super::{RusimgError, RusimgStatus};
 
 #[derive(Debug, Clone)]
 pub struct PngImage {
@@ -60,8 +60,13 @@ impl Rusimg for PngImage {
         })
     }
 
-    fn save(&mut self, path: Option<&PathBuf>) -> Result<(), RusimgError> {
+    fn save(&mut self, path: Option<&PathBuf>) -> Result<RusimgStatus, RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"png".to_string())?;
+
+        // ファイルが存在するか？＆上書き確認
+        if Self::check_file_exists(&save_path) == false {
+            return Ok(RusimgStatus::Cancel);
+        }
         
         // image_bytes == None の場合、DynamicImage を 保存
         if self.image_bytes.is_none() {
@@ -77,7 +82,7 @@ impl Rusimg for PngImage {
 
         self.filepath_output = Some(save_path);
 
-        Ok(())
+        Ok(RusimgStatus::Success)
     }
 
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {

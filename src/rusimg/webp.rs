@@ -5,7 +5,7 @@ use std::io::Write;
 use std::path::{PathBuf, Path};
 
 use crate::rusimg::Rusimg;
-use super::RusimgError;
+use super::{RusimgError, RusimgStatus};
 
 #[derive(Debug, Clone)]
 pub struct WebpImage {
@@ -63,8 +63,13 @@ impl Rusimg for WebpImage {
         }
     }
 
-    fn save(&mut self, path: Option<&PathBuf>) -> Result<(), RusimgError> {
+    fn save(&mut self, path: Option<&PathBuf>) -> Result<RusimgStatus, RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"webp".to_string())?;
+
+        // ファイルが存在するか？＆上書き確認
+        if Self::check_file_exists(&save_path) == false {
+            return Ok(RusimgStatus::Cancel);
+        }
 
         // 元が webp かつ操作回数が 0 なら encode しない
         let source_is_webp = Path::new(&self.filepath_input).extension().and_then(|s| s.to_str()).unwrap_or("").to_string() == "webp";
@@ -75,7 +80,7 @@ impl Rusimg for WebpImage {
             self.metadata_output = Some(file.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
             self.filepath_output = Some(save_path);
 
-            return Ok(());
+            return Ok(RusimgStatus::Success);
         }
 
         // quality
@@ -98,7 +103,7 @@ impl Rusimg for WebpImage {
         self.metadata_output = Some(file.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
         self.filepath_output = Some(save_path);
 
-        Ok(())
+        Ok(RusimgStatus::Success)
     }
 
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {
