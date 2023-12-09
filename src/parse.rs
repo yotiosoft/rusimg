@@ -13,6 +13,8 @@ pub struct ArgStruct {
     pub trim: Option<((u32, u32), (u32, u32))>,
     pub grayscale: bool,
     pub view: bool,
+    pub yes: bool,
+    pub no: bool,
 }
 
 #[derive(clap::Parser, Debug)]
@@ -56,6 +58,14 @@ struct Args {
     /// View result in the comand line
     #[arg(short, long)]
     view: bool,
+
+    /// Yes to all
+    #[arg(short, long)]
+    yes: bool,
+
+    /// No to all
+    #[arg(short, long)]
+    no: bool,
 }
 
 pub fn parser() -> ArgStruct {
@@ -94,5 +104,7 @@ pub fn parser() -> ArgStruct {
         trim,
         grayscale: args.grayscale,
         view: args.view,
+        yes: args.yes,
+        no: args.no,
     }
 }

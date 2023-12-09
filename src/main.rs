@@ -12,12 +12,14 @@ mod rusimg;
 pub enum ProcessingError {
     RusimgError(RusimgError),
     IOError(String),
+    ArgError(String),
 }
 impl fmt::Display for ProcessingError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ProcessingError::RusimgError(e) => write!(f, "{}", e.to_string()),
             ProcessingError::IOError(e) => write!(f, "{}", e),
+            ProcessingError::ArgError(e) => write!(f, "{}", e),
         }
     }
 }
@@ -93,6 +95,21 @@ fn save_print(before_path: PathBuf, after_path: Option<PathBuf>, before_size: u6
 fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::RusimgStatus, ProcessingError> {
     let rierr = |e: RusimgError| ProcessingError::RusimgError(e);
     let ioerr = |e: std::io::Error| ProcessingError::IOError(e.to_string());
+    let argerr = |e: String| ProcessingError::ArgError(e);
+
+    // ファイルの上書き確認オプション
+    let file_overwrite_ask = match (args.yes, args.no) {
+        (true, false) => Some(rusimg::FileOverwriteAsk::YesToAll),
+        (false, true) => Some(rusimg::FileOverwriteAsk::NoToAll),
+        (false, false) => Some(rusimg::FileOverwriteAsk::AskEverytime),
+        (true, true) => None,
+    };
+    let file_overwrite_ask = if let Some(ref _c) = file_overwrite_ask {
+        file_overwrite_ask.unwrap()
+    }
+    else {
+        return Err(argerr("Cannot specify both --yes and --no.".to_string()))?;
+    };
 
     // ファイルを開く
     let mut image = rusimg::open_image(&image_file_path).map_err(rierr)?;
@@ -135,7 +152,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
         None => None,
     };
     let (save_status, saved_filepath, opened_filepath, before_size, after_size)
-         = rusimg::save_image(output_path, &mut image.data, &image.extension).map_err(rierr)?;
+         = rusimg::save_image(output_path, &mut image.data, &image.extension, &file_overwrite_ask).map_err(rierr)?;
     save_print(opened_filepath, saved_filepath.clone(), before_size, after_size);
 
     // --delete -> 元ファイルの削除 (optinal)
