@@ -101,13 +101,20 @@ pub trait Rusimg {
         // ファイルの存在チェック
         // ファイルが存在する場合、上書きするかどうかを確認
         if Path::new(path).exists() {
+            print!("The image file \"{}\" already exists.", path.display());
             match file_overwrite_ask {
-                FileOverwriteAsk::YesToAll => return true,
-                FileOverwriteAsk::NoToAll => return false,
+                FileOverwriteAsk::YesToAll => {
+                    println!(" -> Overwrite it.");
+                    return true
+                },
+                FileOverwriteAsk::NoToAll => {
+                    println!(" -> Skip it.");
+                    return false
+                },
                 FileOverwriteAsk::AskEverytime => {},
             }
 
-            print!("The image file {} already exists. Do you want to overwrite it? [y/N]: ", path.display());
+            print!(" Do you want to overwrite it? [y/N]: ");
             loop {
                 stdout().flush().unwrap();
 
