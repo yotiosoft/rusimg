@@ -35,7 +35,7 @@ struct Args {
     #[arg(short, long)]
     convert: Option<String>,
 
-    /// Resize images in parcent (must be 0 < resize <= 100)
+    /// Resize images in parcent (must be 0 < size)
     #[arg(short, long)]
     resize: Option<u8>,
 
@@ -92,6 +92,15 @@ pub fn parser() -> ArgStruct {
     else {
         None
     };
+
+    if (args.quality < Some(0.0) || args.quality > Some(100.0)) && args.quality.is_some() {
+        println!("Quality must be 0.0 <= q <= 100.0");
+        std::process::exit(1);
+    }
+    if args.resize < Some(0) && args.resize.is_some() {
+        println!("Resize must be 0 < size");
+        std::process::exit(1);
+    }
 
     ArgStruct {
         souce_path: args.source,
