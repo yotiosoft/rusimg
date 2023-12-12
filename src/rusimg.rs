@@ -30,6 +30,7 @@ pub enum RusimgError {
     BMPImagesCannotBeCompressed,
     UnsupportedFileExtension,
     ImageDataIsNone,
+    FailedToGetDynamicImage,
 }
 impl fmt::Display for RusimgError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -59,6 +60,7 @@ impl fmt::Display for RusimgError {
             RusimgError::BMPImagesCannotBeCompressed => write!(f, "BMP images cannot be compressed"),
             RusimgError::UnsupportedFileExtension => write!(f, "Unsupported file extension"),
             RusimgError::ImageDataIsNone => write!(f, "Image data is None"),
+            RusimgError::FailedToGetDynamicImage => write!(f, "Failed to get dynamic image"),
         }
     }
 }
@@ -155,10 +157,10 @@ impl fmt::Display for Extension {
 
 #[derive(Debug, Clone, Default)]
 pub struct ImgData {
-    bmp: Option<bmp::BmpImage>,
-    jpeg: Option<jpeg::JpegImage>,
-    png: Option<png::PngImage>,
-    webp: Option<webp::WebpImage>,
+    pub bmp: Option<bmp::BmpImage>,
+    pub jpeg: Option<jpeg::JpegImage>,
+    pub png: Option<png::PngImage>,
+    pub webp: Option<webp::WebpImage>,
 }
 
 #[derive(Debug, Clone)]
@@ -462,7 +464,7 @@ pub fn convert(original: &mut Img, to: &Extension) -> Result<Img, RusimgError> {
     }
 }
 
-pub fn save_image(path: Option<&PathBuf>, data: &mut ImgData, extension: &Extension, file_overwrite_ask: &FileOverwriteAsk) -> Result<(RusimgStatus, Option<PathBuf>, PathBuf, u64, Option<u64>), RusimgError> {
+pub fn save_image(path: Option<&PathBuf>, data: &mut ImgData, extension: &Extension, file_overwrite_ask: FileOverwriteAsk) -> Result<(RusimgStatus, Option<PathBuf>, PathBuf, u64, Option<u64>), RusimgError> {
     match extension {
         Extension::Bmp => {
             match data.bmp {
