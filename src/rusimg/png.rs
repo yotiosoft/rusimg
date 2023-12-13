@@ -47,7 +47,7 @@ impl Rusimg for PngImage {
         let mut buf = Vec::new();
         file.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
         let metadata_input = file.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
-
+        
         let image = image::load_from_memory(&buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
         let (width, height) = (image.width() as usize, image.height() as usize);
 
