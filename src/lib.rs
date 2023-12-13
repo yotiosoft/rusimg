@@ -3,7 +3,6 @@ use rusimg::RusimgError;
 use rusimg::*;
 use image::DynamicImage;
 
-mod parse;
 mod rusimg;
 
 /// Open an image file.
