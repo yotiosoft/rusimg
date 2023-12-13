@@ -152,7 +152,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
         None => None,
     };
     let (save_status, saved_filepath, opened_filepath, before_size, after_size)
-         = rusimg::save_image(output_path, &mut image.data, &image.extension, &file_overwrite_ask).map_err(rierr)?;
+         = rusimg::save_image(output_path, &mut image.data, &image.extension, file_overwrite_ask).map_err(rierr)?;
     save_print(opened_filepath, saved_filepath.clone(), before_size, after_size);
 
     // --delete -> 元ファイルの削除 (optinal)
