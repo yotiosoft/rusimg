@@ -1,10 +1,5 @@
-use std::path::{Path, PathBuf};
-use std::fs;
-use std::fmt;
-use glob::glob;
-use parse::ArgStruct;
+use std::path::PathBuf;
 use rusimg::RusimgError;
-use colored::*;
 use rusimg::*;
 use image::DynamicImage;
 

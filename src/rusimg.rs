@@ -182,35 +182,10 @@ pub enum FileOverwriteAsk {
     AskEverytime,
 }
 
-// 拡張子に.を含む
-pub fn get_extension(path: &Path) -> Result<Extension, RusimgError> {
-    let path = path.to_str().ok_or(RusimgError::FailedToConvertPathToString)?.to_ascii_lowercase();
-    match Path::new(&path).extension().and_then(|s| s.to_str()) {
-        Some("bmp") => Ok(Extension::Bmp),
-        Some("jpg") | Some("jpeg") | Some("jfif") => Ok(Extension::Jpeg),
-        Some("png") => Ok(Extension::Png),
-        Some("webp") => Ok(Extension::Webp),
-        _ => {
-            Err(RusimgError::UnsupportedFileExtension)
-        },
-    }
-}
-
 // 画像フォーマットを取得
 fn guess_image_format(image_buf: &[u8]) -> Result<image::ImageFormat, RusimgError> {
     let format = image::guess_format(image_buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
     Ok(format)
-}
-
-// 拡張子に.を含まない
-pub fn convert_str_to_extension(extension_str: &str) -> Result<Extension, RusimgError> {
-    match extension_str {
-        "bmp" => Ok(Extension::Bmp),
-        "jpg" | "jpeg" | "jfif" => Ok(Extension::Jpeg),
-        "png" => Ok(Extension::Png),
-        "webp" => Ok(Extension::Webp),
-        _ => Err(RusimgError::UnsupportedFileExtension),
-    }
 }
 
 pub fn open_image(path: &Path) -> Result<Img, RusimgError> {

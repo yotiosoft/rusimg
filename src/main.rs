@@ -40,7 +40,7 @@ fn get_files_in_dir(dir_path: &PathBuf, recursive: bool) -> Result<Vec<PathBuf>,
                 }
                 else {
                     let file_name = dir_entry.file_name().into_string().expect("cannot convert file name");
-                    if rusimg::get_extension(&Path::new(&file_name)).is_ok() {
+                    if get_extension(&Path::new(&file_name)).is_ok() {
                         ret.push(Path::new(&dir_path).join(&file_name));
                     }
                 }
@@ -60,7 +60,7 @@ fn get_files_by_wildcard(source_path: &PathBuf) -> Result<Vec<PathBuf>, String> 
         match entry {
             Ok(path) => {
                 // 画像形式であればファイルリストに追加
-                if rusimg::get_extension(&path).is_ok() {
+                if get_extension(&path).is_ok() {
                     ret.push(path);
                 }
             },
@@ -70,6 +70,32 @@ fn get_files_by_wildcard(source_path: &PathBuf) -> Result<Vec<PathBuf>, String> 
     Ok(ret)
 }
 
+// 拡張子に.を含まない
+fn convert_str_to_extension(extension_str: &str) -> Result<rusimg::Extension, RusimgError> {
+    match extension_str {
+        "bmp" => Ok(rusimg::Extension::Bmp),
+        "jpg" | "jpeg" | "jfif" => Ok(rusimg::Extension::Jpeg),
+        "png" => Ok(rusimg::Extension::Png),
+        "webp" => Ok(rusimg::Extension::Webp),
+        _ => Err(RusimgError::UnsupportedFileExtension),
+    }
+}
+
+// 拡張子に.を含む
+fn get_extension(path: &Path) -> Result<rusimg::Extension, RusimgError> {
+    let path = path.to_str().ok_or(RusimgError::FailedToConvertPathToString)?.to_ascii_lowercase();
+    match Path::new(&path).extension().and_then(|s| s.to_str()) {
+        Some("bmp") => Ok(rusimg::Extension::Bmp),
+        Some("jpg") | Some("jpeg") | Some("jfif") => Ok(rusimg::Extension::Jpeg),
+        Some("png") => Ok(rusimg::Extension::Png),
+        Some("webp") => Ok(rusimg::Extension::Webp),
+        _ => {
+            Err(RusimgError::UnsupportedFileExtension)
+        },
+    }
+}
+
+// 保存先などの表示
 fn save_print(before_path: PathBuf, after_path: Option<PathBuf>, before_size: u64, after_size: Option<u64>) {
     match (after_path, after_size) {
         (Some(after_path), Some(after_size)) => {
@@ -77,7 +103,7 @@ fn save_print(before_path: PathBuf, after_path: Option<PathBuf>, before_size: u6
                 println!("{}: {}", "Overwrite".bold(), before_path.display());
                 println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
             }
-            else if rusimg::get_extension(before_path.as_path()) != rusimg::get_extension(after_path.as_path()) {
+            else if get_extension(before_path.as_path()) != get_extension(after_path.as_path()) {
                 println!("{}: {} -> {}", "Convert".bold(), before_path.display(), after_path.display());
                 println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
             }
@@ -116,7 +142,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
 
     // --convert -> 画像形式変換
     if let Some(ref c) = args.destination_extension {
-        let extension = rusimg::convert_str_to_extension(&c).map_err(rierr)?;
+        let extension = convert_str_to_extension(&c).map_err(rierr)?;
 
         // 変換
         image = rusimg::convert(&mut image, &extension).map_err(rierr)?;
