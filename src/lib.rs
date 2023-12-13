@@ -11,11 +11,57 @@ use image::DynamicImage;
 mod parse;
 mod rusimg;
 
+/// Open an image file.
 pub fn open_image(path: &PathBuf) -> Result<Img, RusimgError> {
     let img = rusimg::open_image(path)?;
     Ok(img)
 }
 
+/// Resize an image.
+/// It must be called after open_image().
+/// Set ratio to 100 to keep the original size.
+pub fn resize(img: &mut Img, ratio: u8) -> Result<(), RusimgError> {
+    rusimg::resize(img, ratio)?;
+    Ok(())
+}
+
+/// Trim an image.
+/// It must be called after open_image().
+pub fn trim(img: &mut Img, trim_x: u32, trim_y: u32, trim_w: u32, trim_h: u32) -> Result<(), RusimgError> {
+    rusimg::trim(img, (trim_x, trim_y), (trim_w, trim_h))?;
+    Ok(())
+}
+
+/// Grayscale an image.
+/// It must be called after open_image().
+pub fn grayscale(img: &mut Img) -> Result<(), RusimgError> {
+    rusimg::grayscale(img)?;
+    Ok(())
+}
+
+/// Compress an image.
+/// It must be called after open_image().
+/// Set quality to 100 to keep the original quality.
+pub fn compress(img: &mut Img, quality: Option<f32>) -> Result<(), RusimgError> {
+    rusimg::compress(&mut img.data, &img.extension, quality)?;
+    Ok(())
+}
+
+/// Convert an image to another format.
+/// It must be called after open_image().
+pub fn convert(img: &mut Img, new_extension: Extension) -> Result<(), RusimgError> {
+    rusimg::convert(img, &new_extension)?;
+    Ok(())
+}
+
+/// View an image on the terminal.
+/// It must be called after open_image().
+pub fn view(img: &mut Img) -> Result<(), RusimgError> {
+    rusimg::view(img)?;
+    Ok(())
+}
+
+/// Get a DynamicImage from an Img.
 pub fn get_dynamic_image(img: &Img) -> Result<DynamicImage, RusimgError> {
     let dynamic_image = match img.extension {
         Extension::Png => {
