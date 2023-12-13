@@ -13,6 +13,8 @@ pub struct ArgStruct {
     pub trim: Option<((u32, u32), (u32, u32))>,
     pub grayscale: bool,
     pub view: bool,
+    pub yes: bool,
+    pub no: bool,
 }
 
 #[derive(clap::Parser, Debug)]
@@ -33,7 +35,7 @@ struct Args {
     #[arg(short, long)]
     convert: Option<String>,
 
-    /// Resize images in parcent (must be 0 < resize <= 100)
+    /// Resize images in parcent (must be 0 < size)
     #[arg(short, long)]
     resize: Option<u8>,
 
@@ -56,6 +58,14 @@ struct Args {
     /// View result in the comand line
     #[arg(short, long)]
     view: bool,
+
+    /// Yes to all
+    #[arg(short, long)]
+    yes: bool,
+
+    /// No to all
+    #[arg(short, long)]
+    no: bool,
 }
 
 pub fn parser() -> ArgStruct {
@@ -83,6 +93,15 @@ pub fn parser() -> ArgStruct {
         None
     };
 
+    if (args.quality < Some(0.0) || args.quality > Some(100.0)) && args.quality.is_some() {
+        println!("Quality must be 0.0 <= q <= 100.0");
+        std::process::exit(1);
+    }
+    if args.resize < Some(0) && args.resize.is_some() {
+        println!("Resize must be 0 < size");
+        std::process::exit(1);
+    }
+
     ArgStruct {
         souce_path: args.source,
         destination_path: args.output,
@@ -94,5 +113,7 @@ pub fn parser() -> ArgStruct {
         trim,
         grayscale: args.grayscale,
         view: args.view,
+        yes: args.yes,
+        no: args.no,
     }
 }

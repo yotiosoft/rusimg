@@ -1,10 +1,10 @@
-use std::io::{Read, Write, Cursor};
+use std::io::{Write, Cursor};
 use std::fs::Metadata;
 use std::path::PathBuf;
 use image::DynamicImage;
 
 use crate::rusimg::Rusimg;
-use super::RusimgError;
+use super::{RusimgError, RusimgStatus};
 
 #[derive(Debug, Clone)]
 pub struct PngImage {
@@ -42,35 +42,35 @@ impl Rusimg for PngImage {
         })
     }
 
-    fn open(path: PathBuf) -> Result<Self, RusimgError> {
-        let mut file = std::fs::File::open(&path).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
-        let mut buf = Vec::new();
-        file.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
-        let metadata_input = file.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
-        
-        let image = image::load_from_memory(&buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
+    fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> {
+        let image = image::load_from_memory(&image_buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         Ok(Self {
-            binary_data: buf,
+            binary_data: image_buf,
             image,
             image_bytes: None,
             width,
             height,
             operations_count: 0,
-            metadata_input,
+            metadata_input: metadata,
             metadata_output: None,
             filepath_input: path,
             filepath_output: None,
         })
     }
 
-    fn save(&mut self, path: Option<&PathBuf>) -> Result<(), RusimgError> {
+    fn save(&mut self, path: Option<&PathBuf>, file_overwrite_ask: &super::FileOverwriteAsk) -> Result<RusimgStatus, RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"png".to_string())?;
+
+        // ファイルが存在するか？＆上書き確認
+        if Self::check_file_exists(&save_path, &file_overwrite_ask) == false {
+            return Ok(RusimgStatus::Cancel);
+        }
         
         // image_bytes == None の場合、DynamicImage を 保存
         if self.image_bytes.is_none() {
-            self.image.save(&save_path).map_err(|e| RusimgError::FailedToSaveImage(e.to_string()))?;
+            self.image.to_rgba8().save(&save_path).map_err(|e| RusimgError::FailedToSaveImage(e.to_string()))?;
             self.metadata_output = Some(std::fs::metadata(&save_path).map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
         }
         // image_bytes != None の場合、oxipng で圧縮したバイナリデータを保存
@@ -82,7 +82,7 @@ impl Rusimg for PngImage {
 
         self.filepath_output = Some(save_path);
 
-        Ok(())
+        Ok(RusimgStatus::Success)
     }
 
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {

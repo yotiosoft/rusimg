@@ -1,11 +1,10 @@
 use image::DynamicImage;
 
 use std::fs::Metadata;
-use std::io::Read;
 use std::path::PathBuf;
 
 use crate::rusimg::Rusimg;
-use super::RusimgError;
+use super::{RusimgError, RusimgStatus};
 use super::ImgSize;
 
 #[derive(Debug, Clone)]
@@ -32,33 +31,32 @@ impl Rusimg for BmpImage {
         })
     }
 
-    fn open(path: PathBuf) -> Result<Self, RusimgError> {
-        let mut raw_data = std::fs::File::open(&path).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
-        let mut buf = Vec::new();
-        raw_data.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
-        let metadata_input = raw_data.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
-
-        let image = image::load_from_memory(&buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
+    fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> {
+        let image = image::load_from_memory(&image_buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
         let size = ImgSize { width: image.width() as usize, height: image.height() as usize };
 
         Ok(Self {
             image,
             size,
-            metadata_input,
+            metadata_input: metadata,
             metadata_output: None,
             filepath_input: path,
             filepath_output: None,
         })
     }
 
-    fn save(&mut self, path: Option<&PathBuf>) -> Result<(), RusimgError> {
+    fn save(&mut self, path: Option<&PathBuf>, file_overwrite_ask: &super::FileOverwriteAsk) -> Result<RusimgStatus, RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"bmp".to_string())?;
+        // ファイルが存在するか？＆上書き確認
+        if Self::check_file_exists(&save_path, &file_overwrite_ask) == false {
+            return Ok(RusimgStatus::Cancel);
+        }
         
-        self.image.save(&save_path).map_err(|e| RusimgError::FailedToSaveImage(e.to_string()))?;
+        self.image.to_rgba8().save(&save_path).map_err(|e| RusimgError::FailedToSaveImage(e.to_string()))?;
         self.metadata_output = Some(std::fs::metadata(&save_path).map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
         self.filepath_output = Some(save_path);
 
-        Ok(())
+        Ok(RusimgStatus::Success)
     }
 
     fn compress(&mut self, _quality: Option<f32>) -> Result<(), RusimgError> {

@@ -12,12 +12,14 @@ mod rusimg;
 pub enum ProcessingError {
     RusimgError(RusimgError),
     IOError(String),
+    ArgError(String),
 }
 impl fmt::Display for ProcessingError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ProcessingError::RusimgError(e) => write!(f, "{}", e.to_string()),
             ProcessingError::IOError(e) => write!(f, "{}", e),
+            ProcessingError::ArgError(e) => write!(f, "{}", e),
         }
     }
 }
@@ -68,24 +70,46 @@ fn get_files_by_wildcard(source_path: &PathBuf) -> Result<Vec<PathBuf>, String> 
     Ok(ret)
 }
 
-fn save_print(before_path: &Path, after_path: &Path, before_size: u64, after_size: u64) {
-    if before_path == after_path {
-        println!("{}: {}", "Overwrite".bold(), before_path.display());
-        println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
-    }
-    else if rusimg::get_extension(before_path) != rusimg::get_extension(after_path) {
-        println!("{}: {} -> {}", "Convert".bold(), before_path.display(), after_path.display());
-        println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
-    }
-    else {
-        println!("{}: {} -> {}", "Move".bold(), before_path.display(), after_path.display());
-        println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
+fn save_print(before_path: PathBuf, after_path: Option<PathBuf>, before_size: u64, after_size: Option<u64>) {
+    match (after_path, after_size) {
+        (Some(after_path), Some(after_size)) => {
+            if before_path == after_path {
+                println!("{}: {}", "Overwrite".bold(), before_path.display());
+                println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
+            }
+            else if rusimg::get_extension(before_path.as_path()) != rusimg::get_extension(after_path.as_path()) {
+                println!("{}: {} -> {}", "Convert".bold(), before_path.display(), after_path.display());
+                println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
+            }
+            else {
+                println!("{}: {} -> {}", "Move".bold(), before_path.display(), after_path.display());
+                println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
+            }
+        },
+        (_, _) => {
+            return;
+        },
     }
 }
 
-fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<(), ProcessingError> {
+fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::RusimgStatus, ProcessingError> {
     let rierr = |e: RusimgError| ProcessingError::RusimgError(e);
     let ioerr = |e: std::io::Error| ProcessingError::IOError(e.to_string());
+    let argerr = |e: String| ProcessingError::ArgError(e);
+
+    // ファイルの上書き確認オプション
+    let file_overwrite_ask = match (args.yes, args.no) {
+        (true, false) => Some(rusimg::FileOverwriteAsk::YesToAll),
+        (false, true) => Some(rusimg::FileOverwriteAsk::NoToAll),
+        (false, false) => Some(rusimg::FileOverwriteAsk::AskEverytime),
+        (true, true) => None,
+    };
+    let file_overwrite_ask = if let Some(ref _c) = file_overwrite_ask {
+        file_overwrite_ask.unwrap()
+    }
+    else {
+        return Err(argerr("Cannot specify both --yes and --no.".to_string()))?;
+    };
 
     // ファイルを開く
     let mut image = rusimg::open_image(&image_file_path).map_err(rierr)?;
@@ -127,13 +151,15 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<(), Processing
         Some(path) => Some(path),
         None => None,
     };
-    let (saved_filepath, opened_filepath, before_size, after_size)
-         = rusimg::save_image(output_path, &mut image.data, &image.extension).map_err(rierr)?;
-    save_print(&opened_filepath, &saved_filepath, before_size, after_size);
+    let (save_status, saved_filepath, opened_filepath, before_size, after_size)
+         = rusimg::save_image(output_path, &mut image.data, &image.extension, &file_overwrite_ask).map_err(rierr)?;
+    save_print(opened_filepath, saved_filepath.clone(), before_size, after_size);
 
     // --delete -> 元ファイルの削除 (optinal)
-    if args.delete && image_file_path != &saved_filepath {
-        fs::remove_file(&image_file_path).map_err(ioerr)?;
+    if let Some(ref saved_filepath) = saved_filepath {
+        if args.delete && image_file_path != saved_filepath {
+            fs::remove_file(&image_file_path).map_err(ioerr)?;
+        }
     }
 
     // 表示
@@ -141,7 +167,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<(), Processing
         rusimg::view(&mut image).map_err(rierr)?;
     }
 
-    Ok(())
+    Ok(save_status)
 }
 
 fn main() -> Result<(), String> {
@@ -190,8 +216,11 @@ fn main() -> Result<(), String> {
         println!("{}", processing_str.yellow().bold());
 
         match process(&args, &image_file_path) {
-            Ok(_) => {
-                println!("{}", "Done.".green().bold());
+            Ok(status) => {
+                match status {
+                    rusimg::RusimgStatus::Success => println!("{}", "Success.".green().bold()),
+                    rusimg::RusimgStatus::Cancel => println!("{}", "Canceled.".yellow().bold()),
+                }
             },
             Err(e) => {
                 println!("{}: {}", "Error".red(), e.to_string());

@@ -1,11 +1,11 @@
 use image::{DynamicImage, EncodableLayout};
 
 use std::fs::Metadata;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::path::{PathBuf, Path};
 
 use crate::rusimg::Rusimg;
-use super::RusimgError;
+use super::{RusimgError, RusimgStatus};
 
 #[derive(Debug, Clone)]
 pub struct WebpImage {
@@ -39,25 +39,20 @@ impl Rusimg for WebpImage {
         })
     }
 
-    fn open(path: PathBuf) -> Result<Self, RusimgError> {
-        let mut raw_data = std::fs::File::open(&path).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
-        let mut buf = Vec::new();
-        raw_data.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
-        let metadata_input = raw_data.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
-
-        let webp_decoder = webp::Decoder::new(&buf).decode();
+    fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> {
+        let webp_decoder = webp::Decoder::new(&image_buf).decode();
         if let Some(webp_decoder) = webp_decoder {
             let image = webp_decoder.to_image();
             let (width, height) = (image.width() as usize, image.height() as usize);
 
             Ok(Self {
                 image,
-                image_bytes: Some(buf),
+                image_bytes: Some(image_buf),
                 width,
                 height,
                 operations_count: 0,
                 required_quality: None,
-                metadata_input,
+                metadata_input: metadata,
                 metadata_output: None,
                 filepath_input: path,
                 filepath_output: None,
@@ -68,8 +63,13 @@ impl Rusimg for WebpImage {
         }
     }
 
-    fn save(&mut self, path: Option<&PathBuf>) -> Result<(), RusimgError> {
+    fn save(&mut self, path: Option<&PathBuf>, file_overwrite_ask: &super::FileOverwriteAsk) -> Result<RusimgStatus, RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"webp".to_string())?;
+
+        // ファイルが存在するか？＆上書き確認
+        if Self::check_file_exists(&save_path, &file_overwrite_ask) == false {
+            return Ok(RusimgStatus::Cancel);
+        }
 
         // 元が webp かつ操作回数が 0 なら encode しない
         let source_is_webp = Path::new(&self.filepath_input).extension().and_then(|s| s.to_str()).unwrap_or("").to_string() == "webp";
@@ -80,7 +80,7 @@ impl Rusimg for WebpImage {
             self.metadata_output = Some(file.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
             self.filepath_output = Some(save_path);
 
-            return Ok(());
+            return Ok(RusimgStatus::Success);
         }
 
         // quality
@@ -92,7 +92,7 @@ impl Rusimg for WebpImage {
         };
        
         // DynamicImage を （圧縮＆）保存
-        let encoded_webp = webp::Encoder::from_image(&self.image).map_err(|e| RusimgError::FailedToEncodeWebp(e.to_string()))?.encode(quality);
+        let encoded_webp = webp::Encoder::from_rgba(&self.image.to_rgba8(), self.image.width(), self.image.height()).encode(quality);
         if self.required_quality.is_some() {
             println!("Compress: Done.");
         }
@@ -103,7 +103,7 @@ impl Rusimg for WebpImage {
         self.metadata_output = Some(file.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
         self.filepath_output = Some(save_path);
 
-        Ok(())
+        Ok(RusimgStatus::Success)
     }
 
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {
