@@ -103,7 +103,6 @@ impl Rusimg for BmpImage {
 
     fn grayscale(&mut self) {
         self.image = self.image.grayscale();
-        println!("Grayscale: Done.");
     }
 
     fn view(&self) -> Result<(), RusimgError> {

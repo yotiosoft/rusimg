@@ -166,8 +166,6 @@ impl Rusimg for PngImage {
 
         self.image = self.image.crop(trim_xy.0, trim_xy.1, w, h);
 
-        println!("Trim: {}x{} -> {}x{}", self.width, self.height, w, h);
-
         self.width = w as usize;
         self.height = h as usize;
 
@@ -177,7 +175,6 @@ impl Rusimg for PngImage {
 
     fn grayscale(&mut self) {
         self.image = self.image.grayscale();
-        println!("Grayscale: Done.");
         self.operations_count += 1;
     }
 

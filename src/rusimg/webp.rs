@@ -135,7 +135,7 @@ impl Rusimg for WebpImage {
             if self.width > trim_xy.0 as usize && self.height > trim_xy.1 as usize {
                 w = if self.width < (trim_xy.0 + w) as usize { self.width as u32 - trim_xy.0 } else { trim_wh.0 };
                 h = if self.height < (trim_xy.1 + h) as usize { self.height as u32 - trim_xy.1 } else { trim_wh.1 };
-                println!("Required width or height is larger than image size. Corrected size: {}x{} -> {}x{}", trim_wh.0, trim_wh.1, w, h);
+                //println!("Required width or height is larger than image size. Corrected size: {}x{} -> {}x{}", trim_wh.0, trim_wh.1, w, h);
             }
             else {
                 return Err(RusimgError::InvalidTrimXY);
@@ -143,8 +143,6 @@ impl Rusimg for WebpImage {
         }
 
         self.image = self.image.crop(trim_xy.0, trim_xy.1, w, h);
-
-        println!("Trim: {}x{} -> {}x{}", self.width, self.height, w, h);
 
         self.width = w as usize;
         self.height = h as usize;
@@ -155,7 +153,6 @@ impl Rusimg for WebpImage {
 
     fn grayscale(&mut self) {
         self.image = self.image.grayscale();
-        println!("Grayscale: Done.");
         self.operations_count += 1;
     }
 
