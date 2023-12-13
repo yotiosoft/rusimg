@@ -151,12 +151,12 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
     // --trim -> トリミング
     if let Some(trim) = args.trim {
         // トリミング
-        let (before_w, before_h) = rusimg::get_image_size(&image).map_err(rierr)?;
+        let before_size = rusimg::get_image_size(&image).map_err(rierr)?;
         let trim_status = rusimg::trim(&mut image, (trim.0.0, trim.0.1), (trim.1.0, trim.1.1)).map_err(rierr)?;
         match trim_status {
             RusimgStatus::SizeChenged(size) => {
                 let (w, h) = (size.width, size.height);
-                println!("Trim: {}x{} -> {}x{}", before_w, before_h, w, h);
+                println!("Trim: {}x{} -> {}x{}", before_size.width, before_size.height, w, h);
             },
             _ => {},
         }
@@ -165,7 +165,9 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
     // --resize -> リサイズ
     if let Some(resize) = args.resize {
         // リサイズ
-        rusimg::resize(&mut image, resize).map_err(rierr)?;
+        let before_size = rusimg::get_image_size(&image).map_err(rierr)?;
+        let after_size = rusimg::resize(&mut image, resize).map_err(rierr)?;
+        println!("Resize: {}x{} -> {}x{}", before_size.width, before_size.height, after_size.width, after_size.height);
     }
 
     // --grayscale -> グレースケール
@@ -179,6 +181,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
     if let Some(q) = args.quality {
         // 圧縮
         rusimg::compress(&mut image.data, &image.extension, Some(q)).map_err(rierr)?;
+        println!("Compress: Done.");
     }
 
     // 出力

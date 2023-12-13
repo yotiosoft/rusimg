@@ -77,7 +77,7 @@ pub trait Rusimg {
     fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
     fn save(&mut self, path: Option<&PathBuf>, file_overwrite_ask: &FileOverwriteAsk) -> Result<RusimgStatus, RusimgError>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError>;
-    fn resize(&mut self, resize_ratio: u8) -> Result<(), RusimgError>;
+    fn resize(&mut self, resize_ratio: u8) -> Result<ImgSize, RusimgError>;
     fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<RusimgStatus, RusimgError>;
     fn grayscale(&mut self);
     fn view(&self) -> Result<(), RusimgError>;
@@ -170,7 +170,7 @@ pub struct RusImg {
     pub data: ImgData,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub struct ImgSize {
     pub width: usize,
     pub height: usize,
@@ -198,7 +198,7 @@ fn guess_image_format(image_buf: &[u8]) -> Result<image::ImageFormat, RusimgErro
 }
 
 // 画像サイズを取得
-pub fn get_image_size(img: &RusImg) -> Result<(usize, usize), RusimgError> {
+pub fn get_image_size(img: &RusImg) -> Result<ImgSize, RusimgError> {
     match img.extension {
         Extension::Bmp => {
             if img.data.bmp.is_none() {
@@ -206,7 +206,7 @@ pub fn get_image_size(img: &RusImg) -> Result<(usize, usize), RusimgError> {
             }
             let w = img.data.bmp.as_ref().unwrap().image.width() as usize;
             let h = img.data.bmp.as_ref().unwrap().image.height() as usize;
-            Ok((w, h))
+            Ok(ImgSize::new(w, h))
         }
         Extension::Jpeg => {
             if img.data.jpeg.is_none() {
@@ -214,7 +214,7 @@ pub fn get_image_size(img: &RusImg) -> Result<(usize, usize), RusimgError> {
             }
             let w = img.data.jpeg.as_ref().unwrap().image.width() as usize;
             let h = img.data.jpeg.as_ref().unwrap().image.height() as usize;
-            Ok((w, h))
+            Ok(ImgSize::new(w, h))
         }
         Extension::Png => {
             if img.data.png.is_none() {
@@ -222,7 +222,7 @@ pub fn get_image_size(img: &RusImg) -> Result<(usize, usize), RusimgError> {
             }
             let w = img.data.png.as_ref().unwrap().image.width() as usize;
             let h = img.data.png.as_ref().unwrap().image.height() as usize;
-            Ok((w, h))
+            Ok(ImgSize::new(w, h))
         }
         Extension::Webp => {
             if img.data.webp.is_none() {
@@ -230,7 +230,7 @@ pub fn get_image_size(img: &RusImg) -> Result<(usize, usize), RusimgError> {
             }
             let w = img.data.webp.as_ref().unwrap().image.width() as usize;
             let h = img.data.webp.as_ref().unwrap().image.height() as usize;
-            Ok((w, h))
+            Ok(ImgSize::new(w, h))
         }
     }
 }
@@ -274,7 +274,7 @@ pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
     }
 }
 
-pub fn resize(source_image: &mut RusImg, resize_ratio: u8) -> Result<(), RusimgError> {
+pub fn resize(source_image: &mut RusImg, resize_ratio: u8) -> Result<ImgSize, RusimgError> {
     match source_image.extension {
         Extension::Bmp => {
             match &mut source_image.data.bmp {

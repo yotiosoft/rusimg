@@ -63,18 +63,16 @@ impl Rusimg for BmpImage {
         Err(RusimgError::BMPImagesCannotBeCompressed)
     }
 
-    fn resize(&mut self, resize_ratio: u8) -> Result<(), RusimgError> {
+    fn resize(&mut self, resize_ratio: u8) -> Result<ImgSize, RusimgError> {
         let nwidth = (self.size.width as f32 * (resize_ratio as f32 / 100.0)) as usize;
         let nheight = (self.size.height as f32 * (resize_ratio as f32 / 100.0)) as usize;
         
         self.image = self.image.resize(nwidth as u32, nheight as u32, image::imageops::FilterType::Lanczos3);
 
-        println!("Resize: {}x{} -> {}x{}", self.size.width, self.size.height, nwidth, nheight);
-
         self.size.width = nwidth;
         self.size.height = nheight;
 
-        Ok(())
+        Ok(self.size)
     }
 
     fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<RusimgStatus, RusimgError> {

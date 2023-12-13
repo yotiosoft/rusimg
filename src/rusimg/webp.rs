@@ -93,9 +93,6 @@ impl Rusimg for WebpImage {
        
         // DynamicImage を （圧縮＆）保存
         let encoded_webp = webp::Encoder::from_rgba(&self.image.to_rgba8(), self.image.width(), self.image.height()).encode(quality);
-        if self.required_quality.is_some() {
-            println!("Compress: Done.");
-        }
 
         let mut file = std::fs::File::create(&save_path).map_err(|e| RusimgError::FailedToCreateFile(e.to_string()))?;
         file.write_all(&encoded_webp.as_bytes()).map_err(|e| RusimgError::FailedToWriteFIle(e.to_string()))?;
@@ -113,19 +110,17 @@ impl Rusimg for WebpImage {
         Ok(())
     }
 
-    fn resize(&mut self, resize_ratio: u8) -> Result<(), RusimgError> {
+    fn resize(&mut self, resize_ratio: u8) -> Result<ImgSize, RusimgError> {
         let nwidth = (self.width as f32 * (resize_ratio as f32 / 100.0)) as usize;
         let nheight = (self.height as f32 * (resize_ratio as f32 / 100.0)) as usize;
 
         self.image = self.image.resize(nwidth as u32, nheight as u32, image::imageops::FilterType::Lanczos3);
 
-        println!("Resize: {}x{} -> {}x{}", self.width, self.height, nwidth, nheight);
-
         self.width = nwidth;
         self.height = nheight;
 
         self.operations_count += 1;
-        Ok(())
+        Ok(ImgSize::new(self.width, self.height))
     }
 
     fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<RusimgStatus, RusimgError> {
