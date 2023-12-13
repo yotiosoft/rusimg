@@ -3,7 +3,7 @@ use std::fs;
 use std::fmt;
 use glob::glob;
 use parse::ArgStruct;
-use rusimg::RusimgError;
+use rusimg::{RusimgError, RusimgStatus};
 use colored::*;
 
 mod parse;
@@ -151,8 +151,15 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
     // --trim -> トリミング
     if let Some(trim) = args.trim {
         // トリミング
-        rusimg::trim(&mut image, (trim.0.0, trim.0.1), (trim.1.0, trim.1.1)).map_err(rierr)?;
-        println!("Trim: {}x{} -> {}x{}", self.width, self.height, w, h);
+        let (before_w, before_h) = rusimg::get_image_size(&image).map_err(rierr)?;
+        let trim_status = rusimg::trim(&mut image, (trim.0.0, trim.0.1), (trim.1.0, trim.1.1)).map_err(rierr)?;
+        match trim_status {
+            RusimgStatus::SizeChenged(size) => {
+                let (w, h) = (size.width, size.height);
+                println!("Trim: {}x{} -> {}x{}", before_w, before_h, w, h);
+            },
+            _ => {},
+        }
     }
 
     // --resize -> リサイズ
@@ -248,6 +255,7 @@ fn main() -> Result<(), String> {
                 match status {
                     rusimg::RusimgStatus::Success => println!("{}", "Success.".green().bold()),
                     rusimg::RusimgStatus::Cancel => println!("{}", "Canceled.".yellow().bold()),
+                    _ => {},
                 }
             },
             Err(e) => {

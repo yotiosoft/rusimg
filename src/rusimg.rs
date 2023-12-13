@@ -69,6 +69,7 @@ impl fmt::Display for RusimgError {
 pub enum RusimgStatus {
     Success,
     Cancel,
+    SizeChenged(ImgSize),
 }
 
 pub trait Rusimg {
@@ -77,7 +78,7 @@ pub trait Rusimg {
     fn save(&mut self, path: Option<&PathBuf>, file_overwrite_ask: &FileOverwriteAsk) -> Result<RusimgStatus, RusimgError>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError>;
     fn resize(&mut self, resize_ratio: u8) -> Result<(), RusimgError>;
-    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), RusimgError>;
+    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<RusimgStatus, RusimgError>;
     fn grayscale(&mut self);
     fn view(&self) -> Result<(), RusimgError>;
 
@@ -169,10 +170,18 @@ pub struct RusImg {
     pub data: ImgData,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ImgSize {
     pub width: usize,
     pub height: usize,
+}
+impl ImgSize {
+    pub fn new(width: usize, height: usize) -> Self {
+        Self {
+            width,
+            height,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -186,6 +195,44 @@ pub enum FileOverwriteAsk {
 fn guess_image_format(image_buf: &[u8]) -> Result<image::ImageFormat, RusimgError> {
     let format = image::guess_format(image_buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
     Ok(format)
+}
+
+// 画像サイズを取得
+pub fn get_image_size(img: &RusImg) -> Result<(usize, usize), RusimgError> {
+    match img.extension {
+        Extension::Bmp => {
+            if img.data.bmp.is_none() {
+                return Err(RusimgError::FailedToGetDynamicImage);
+            }
+            let w = img.data.bmp.as_ref().unwrap().image.width() as usize;
+            let h = img.data.bmp.as_ref().unwrap().image.height() as usize;
+            Ok((w, h))
+        }
+        Extension::Jpeg => {
+            if img.data.jpeg.is_none() {
+                return Err(RusimgError::FailedToGetDynamicImage);
+            }
+            let w = img.data.jpeg.as_ref().unwrap().image.width() as usize;
+            let h = img.data.jpeg.as_ref().unwrap().image.height() as usize;
+            Ok((w, h))
+        }
+        Extension::Png => {
+            if img.data.png.is_none() {
+                return Err(RusimgError::FailedToGetDynamicImage);
+            }
+            let w = img.data.png.as_ref().unwrap().image.width() as usize;
+            let h = img.data.png.as_ref().unwrap().image.height() as usize;
+            Ok((w, h))
+        }
+        Extension::Webp => {
+            if img.data.webp.is_none() {
+                return Err(RusimgError::FailedToGetDynamicImage);
+            }
+            let w = img.data.webp.as_ref().unwrap().image.width() as usize;
+            let h = img.data.webp.as_ref().unwrap().image.height() as usize;
+            Ok((w, h))
+        }
+    }
 }
 
 pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
@@ -264,7 +311,7 @@ pub fn resize(source_image: &mut RusImg, resize_ratio: u8) -> Result<(), RusimgE
     }
 }
 
-pub fn trim(image: &mut RusImg, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), RusimgError> {
+pub fn trim(image: &mut RusImg, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<RusimgStatus, RusimgError> {
     match image.extension {
         Extension::Bmp => {
             match &mut image.data.bmp {
