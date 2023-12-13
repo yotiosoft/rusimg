@@ -164,7 +164,7 @@ pub struct ImgData {
 }
 
 #[derive(Debug, Clone)]
-pub struct Img {
+pub struct RusImg {
     pub extension: Extension,
     pub data: ImgData,
 }
@@ -188,7 +188,7 @@ fn guess_image_format(image_buf: &[u8]) -> Result<image::ImageFormat, RusimgErro
     Ok(format)
 }
 
-pub fn open_image(path: &Path) -> Result<Img, RusimgError> {
+pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
     let mut raw_data = std::fs::File::open(&path.to_path_buf()).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
     let mut buf = Vec::new();
     raw_data.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
@@ -197,28 +197,28 @@ pub fn open_image(path: &Path) -> Result<Img, RusimgError> {
     match guess_image_format(&buf)? {
         ImageFormat::Bmp => {
             let bmp = bmp::BmpImage::open(path.to_path_buf(), buf, metadata_input)?;
-            Ok(Img {
+            Ok(RusImg {
                 extension: Extension::Bmp,
                 data: ImgData { bmp: Some(bmp), ..Default::default() },
             })
         },
         ImageFormat::Jpeg => {
             let jpeg = jpeg::JpegImage::open(path.to_path_buf(), buf, metadata_input)?;
-            Ok(Img {
+            Ok(RusImg {
                 extension: Extension::Jpeg,
                 data: ImgData { jpeg: Some(jpeg), ..Default::default() },
             })
         },
         ImageFormat::Png => {
             let png = png::PngImage::open(path.to_path_buf(), buf, metadata_input)?;
-            Ok(Img {
+            Ok(RusImg {
                 extension: Extension::Png,
                 data: ImgData { png: Some(png), ..Default::default() },
             })
         },
         ImageFormat::WebP => {
             let webp = webp::WebpImage::open(path.to_path_buf(), buf, metadata_input)?;
-            Ok(Img {
+            Ok(RusImg {
                 extension: Extension::Webp,
                 data: ImgData { webp: Some(webp), ..Default::default() },
             })
@@ -227,7 +227,7 @@ pub fn open_image(path: &Path) -> Result<Img, RusimgError> {
     }
 }
 
-pub fn resize(source_image: &mut Img, resize_ratio: u8) -> Result<(), RusimgError> {
+pub fn resize(source_image: &mut RusImg, resize_ratio: u8) -> Result<(), RusimgError> {
     match source_image.extension {
         Extension::Bmp => {
             match &mut source_image.data.bmp {
@@ -264,7 +264,7 @@ pub fn resize(source_image: &mut Img, resize_ratio: u8) -> Result<(), RusimgErro
     }
 }
 
-pub fn trim(image: &mut Img, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), RusimgError> {
+pub fn trim(image: &mut RusImg, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<(), RusimgError> {
     match image.extension {
         Extension::Bmp => {
             match &mut image.data.bmp {
@@ -301,7 +301,7 @@ pub fn trim(image: &mut Img, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result
     }
 }
 
-pub fn grayscale(image: &mut Img) -> Result<(), RusimgError> {
+pub fn grayscale(image: &mut RusImg) -> Result<(), RusimgError> {
     match image.extension {
         Extension::Bmp => {
             match &mut image.data.bmp {
@@ -379,7 +379,7 @@ pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>)
     }
 }
 
-pub fn convert(original: &mut Img, to: &Extension) -> Result<Img, RusimgError> {
+pub fn convert(original: &mut RusImg, to: &Extension) -> Result<RusImg, RusimgError> {
     let (dynamic_image, filepath, metadata) = match original.extension {
         Extension::Bmp => {
             match &original.data.bmp {
@@ -410,28 +410,28 @@ pub fn convert(original: &mut Img, to: &Extension) -> Result<Img, RusimgError> {
     match to {
         Extension::Bmp => {
             let bmp = bmp::BmpImage::import(dynamic_image, filepath, metadata)?;
-            Ok(Img {
+            Ok(RusImg {
                 extension: Extension::Bmp,
                 data: ImgData { bmp: Some(bmp), ..Default::default() },
             })
         },
         Extension::Jpeg => {
             let jpeg = jpeg::JpegImage::import(dynamic_image, filepath, metadata)?;
-            Ok(Img {
+            Ok(RusImg {
                 extension: Extension::Jpeg,
                 data: ImgData { jpeg: Some(jpeg), ..Default::default() },
             })
         },
         Extension::Png => {
             let png = png::PngImage::import(dynamic_image, filepath, metadata)?;
-            Ok(Img {
+            Ok(RusImg {
                 extension: Extension::Png,
                 data: ImgData { png: Some(png), ..Default::default() },
             })
         },
         Extension::Webp => {
             let webp = webp::WebpImage::import(dynamic_image, filepath, metadata)?;
-            Ok(Img {
+            Ok(RusImg {
                 extension: Extension::Webp,
                 data: ImgData { webp: Some(webp), ..Default::default() },
             })
@@ -497,7 +497,7 @@ pub fn save_image(path: Option<&PathBuf>, data: &mut ImgData, extension: &Extens
     }
 }
 
-pub fn view(image: &mut Img) -> Result<(), RusimgError> {
+pub fn view(image: &mut RusImg) -> Result<(), RusimgError> {
     match image.extension {
         Extension::Bmp => {
             match &mut image.data.bmp {
