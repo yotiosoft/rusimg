@@ -69,7 +69,6 @@ impl fmt::Display for RusimgError {
 pub enum RusimgStatus {
     Success,
     Cancel,
-    SizeChenged(ImgSize),
 }
 
 pub trait Rusimg {
@@ -78,7 +77,7 @@ pub trait Rusimg {
     fn save(&mut self, path: Option<&PathBuf>, file_overwrite_ask: &FileOverwriteAsk) -> Result<RusimgStatus, RusimgError>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError>;
     fn resize(&mut self, resize_ratio: u8) -> Result<ImgSize, RusimgError>;
-    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<RusimgStatus, RusimgError>;
+    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<ImgSize, RusimgError>;
     fn grayscale(&mut self);
     fn view(&self) -> Result<(), RusimgError>;
 
@@ -311,7 +310,7 @@ pub fn resize(source_image: &mut RusImg, resize_ratio: u8) -> Result<ImgSize, Ru
     }
 }
 
-pub fn trim(image: &mut RusImg, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<RusimgStatus, RusimgError> {
+pub fn trim(image: &mut RusImg, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<ImgSize, RusimgError> {
     match image.extension {
         Extension::Bmp => {
             match &mut image.data.bmp {

@@ -123,16 +123,14 @@ impl Rusimg for WebpImage {
         Ok(ImgSize::new(self.width, self.height))
     }
 
-    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<RusimgStatus, RusimgError> {
+    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<ImgSize, RusimgError> {
         let mut w = trim_wh.0;
         let mut h = trim_wh.1;
-        let mut ret = RusimgStatus::Success;
         if self.width < (trim_xy.0 + w) as usize || self.height < (trim_xy.1 + h) as usize {
             if self.width > trim_xy.0 as usize && self.height > trim_xy.1 as usize {
                 w = if self.width < (trim_xy.0 + w) as usize { self.width as u32 - trim_xy.0 } else { trim_wh.0 };
                 h = if self.height < (trim_xy.1 + h) as usize { self.height as u32 - trim_xy.1 } else { trim_wh.1 };
                 //println!("Required width or height is larger than image size. Corrected size: {}x{} -> {}x{}", trim_wh.0, trim_wh.1, w, h);
-                ret = RusimgStatus::SizeChenged(ImgSize::new(w as usize, h as usize));
             }
             else {
                 return Err(RusimgError::InvalidTrimXY);
@@ -145,7 +143,7 @@ impl Rusimg for WebpImage {
         self.height = h as usize;
 
         self.operations_count += 1;
-        Ok(ret)
+        Ok(ImgSize::new(self.width, self.height))
     }
 
     fn grayscale(&mut self) {
