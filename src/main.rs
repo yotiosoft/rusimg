@@ -138,21 +138,21 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
     };
 
     // ファイルを開く
-    let mut image = rusimg::do_open_image(&image_file_path).map_err(rierr)?;
+    let mut image = rusimg::imgprocessor::do_open_image(&image_file_path).map_err(rierr)?;
 
     // --convert -> 画像形式変換
     if let Some(ref c) = args.destination_extension {
         let extension = convert_str_to_extension(&c).map_err(rierr)?;
 
         // 変換
-        image = rusimg::do_convert(&mut image, &extension).map_err(rierr)?;
+        image = rusimg::imgprocessor::do_convert(&mut image, &extension).map_err(rierr)?;
     }
 
     // --trim -> トリミング
     if let Some(trim) = args.trim {
         // トリミング
-        let before_size = rusimg::do_get_image_size(&image).map_err(rierr)?;
-        let trimmed_size = rusimg::do_trim(&mut image, (trim.0.0, trim.0.1), (trim.1.0, trim.1.1)).map_err(rierr)?;
+        let before_size = rusimg::imgprocessor::do_get_image_size(&image).map_err(rierr)?;
+        let trimmed_size = rusimg::imgprocessor::do_trim(&mut image, (trim.0.0, trim.0.1), (trim.1.0, trim.1.1)).map_err(rierr)?;
         if before_size != trimmed_size {
             println!("Trim: {}x{} -> {}x{}", before_size.width, before_size.height, trimmed_size.width, trimmed_size.height);
         }
@@ -161,22 +161,22 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
     // --resize -> リサイズ
     if let Some(resize) = args.resize {
         // リサイズ
-        let before_size = rusimg::do_get_image_size(&image).map_err(rierr)?;
-        let after_size = rusimg::do_resize(&mut image, resize).map_err(rierr)?;
+        let before_size = rusimg::imgprocessor::do_get_image_size(&image).map_err(rierr)?;
+        let after_size = rusimg::imgprocessor::do_resize(&mut image, resize).map_err(rierr)?;
         println!("Resize: {}x{} -> {}x{}", before_size.width, before_size.height, after_size.width, after_size.height);
     }
 
     // --grayscale -> グレースケール
     if args.grayscale {
         // グレースケール
-        rusimg::do_grayscale(&mut image).map_err(rierr)?;
+        rusimg::imgprocessor::do_grayscale(&mut image).map_err(rierr)?;
         println!("Grayscale: Done.");
     }
 
     // --quality -> 圧縮
     if let Some(q) = args.quality {
         // 圧縮
-        rusimg::do_compress(&mut image.data, &image.extension, Some(q)).map_err(rierr)?;
+        rusimg::imgprocessor::do_compress(&mut image.data, &image.extension, Some(q)).map_err(rierr)?;
         println!("Compress: Done.");
     }
 
@@ -186,7 +186,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
         None => None,
     };
     let (save_status, saved_filepath, opened_filepath, before_size, after_size)
-         = rusimg::do_save_image(output_path, &mut image.data, &image.extension, file_overwrite_ask).map_err(rierr)?;
+         = rusimg::imgprocessor::do_save_image(output_path, &mut image.data, &image.extension, file_overwrite_ask).map_err(rierr)?;
     save_print(opened_filepath, saved_filepath.clone(), before_size, after_size);
 
     // --delete -> 元ファイルの削除 (optinal)
@@ -198,7 +198,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
 
     // 表示
     if args.view {
-        rusimg::do_view(&mut image).map_err(rierr)?;
+        rusimg::imgprocessor::do_view(&mut image).map_err(rierr)?;
     }
 
     Ok(save_status)

@@ -1,38 +1,29 @@
-use mozjpeg::{Compress, ColorSpace, ScanMode};
 use image::DynamicImage;
 
 use std::fs::Metadata;
-use std::io::Write;
 use std::path::PathBuf;
 
-use crate::rusimg::Rusimg;
-use super::RusimgError;
+use crate::rusimg::RusimgTrait;
+use super::{RusimgError, RusimgStatus};
 use super::ImgSize;
-use super::RusimgStatus;
 
 #[derive(Debug, Clone)]
-pub struct JpegImage {
+pub struct BmpImage {
     pub image: DynamicImage,
-    image_bytes: Option<Vec<u8>>,
     size: ImgSize,
-    operations_count: u32,
-    extension_str: String,
     pub metadata_input: Metadata,
     pub metadata_output: Option<Metadata>,
     pub filepath_input: PathBuf,
     pub filepath_output: Option<PathBuf>,
 }
 
-impl Rusimg for JpegImage {
+impl RusimgTrait for BmpImage {
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> {
         let size = ImgSize { width: image.width() as usize, height: image.height() as usize };
 
         Ok(Self {
             image,
-            image_bytes: None,
             size,
-            operations_count: 0,
-            extension_str: "jpg".to_string(),
             metadata_input: source_metadata,
             metadata_output: None,
             filepath_input: source_path,
@@ -44,14 +35,9 @@ impl Rusimg for JpegImage {
         let image = image::load_from_memory(&image_buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
         let size = ImgSize { width: image.width() as usize, height: image.height() as usize };
 
-        let extension_str = path.extension().and_then(|s| s.to_str()).unwrap_or("").to_string();
-
         Ok(Self {
             image,
-            image_bytes: None,
             size,
-            operations_count: 0,
-            extension_str,
             metadata_input: metadata,
             metadata_output: None,
             filepath_input: path,
@@ -60,49 +46,21 @@ impl Rusimg for JpegImage {
     }
 
     fn save(&mut self, path: Option<PathBuf>, file_overwrite_ask: &super::FileOverwriteAsk) -> Result<RusimgStatus, RusimgError> {
-        let save_path = Self::save_filepath(&self.filepath_input, path, &self.extension_str)?;
-
+        let save_path = Self::save_filepath(&self.filepath_input, path, &"bmp".to_string())?;
         // ファイルが存在するか？＆上書き確認
         if Self::check_file_exists(&save_path, &file_overwrite_ask) == false {
             return Ok(RusimgStatus::Cancel);
         }
         
-        // image_bytes == None の場合、DynamicImage を 保存
-        if self.image_bytes.is_none() {
-            self.image.to_rgba8().save(&save_path).map_err(|e| RusimgError::FailedToSaveImage(e.to_string()))?;
-            self.metadata_output = Some(std::fs::metadata(&save_path).map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
-        }
-        // image_bytes != None の場合、mozjpeg::Compress で圧縮したバイナリデータを保存
-        else {
-            let mut file = std::fs::File::create(&save_path).map_err(|e| RusimgError::FailedToCreateFile(e.to_string()))?;
-            file.write_all(&self.image_bytes.as_ref().unwrap()).map_err(|e| RusimgError::FailedToWriteFIle(e.to_string()))?;
-            self.metadata_output = Some(file.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
-        }
-
+        self.image.to_rgba8().save(&save_path).map_err(|e| RusimgError::FailedToSaveImage(e.to_string()))?;
+        self.metadata_output = Some(std::fs::metadata(&save_path).map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
         self.filepath_output = Some(save_path);
 
         Ok(RusimgStatus::Success)
     }
 
-    fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {
-        let quality = quality.unwrap_or(75.0);  // default quality: 75.0
-
-        let image_bytes = self.image.clone().into_bytes();
-
-        let mut compress = Compress::new(ColorSpace::JCS_RGB);
-        compress.set_scan_optimization_mode(ScanMode::AllComponentsTogether);
-        compress.set_size(self.size.width, self.size.height);
-        compress.set_mem_dest();
-        compress.set_quality(quality);
-        compress.start_compress();
-        compress.write_scanlines(&image_bytes);
-        compress.finish_compress();
-
-        self.image_bytes = Some(compress.data_to_vec().map_err(|_| RusimgError::FailedToCompressImage(None))?);
-
-        self.operations_count += 1;
-
-        Ok(())
+    fn compress(&mut self, _quality: Option<f32>) -> Result<(), RusimgError> {
+        Err(RusimgError::BMPImagesCannotBeCompressed)
     }
 
     fn resize(&mut self, resize_ratio: u8) -> Result<ImgSize, RusimgError> {
@@ -114,7 +72,6 @@ impl Rusimg for JpegImage {
         self.size.width = nwidth;
         self.size.height = nheight;
 
-        self.operations_count += 1;
         Ok(self.size)
     }
 
@@ -137,13 +94,11 @@ impl Rusimg for JpegImage {
         self.size.width = w as usize;
         self.size.height = h as usize;
 
-        self.operations_count += 1;
         Ok(self.size)
     }
 
     fn grayscale(&mut self) {
         self.image = self.image.grayscale();
-        self.operations_count += 1;
     }
 
     fn view(&self) -> Result<(), RusimgError> {

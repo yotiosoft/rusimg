@@ -1,13 +1,9 @@
-mod bmp;
-mod jpeg;
-mod png;
-mod webp;
+pub mod imgprocessor;
 
 use std::path::{Path, PathBuf};
 use std::fs::Metadata;
 use std::fmt;
-use image::{DynamicImage, ImageFormat};
-use std::io::Read;
+use image::DynamicImage;
 use std::io::{stdout, Write};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -71,7 +67,46 @@ pub enum RusimgStatus {
     Cancel,
 }
 
-pub trait Rusimg {
+#[derive(Debug, Clone, Default)]
+pub struct ImgData {
+    pub bmp: Option<imgprocessor::bmp::BmpImage>,
+    pub jpeg: Option<imgprocessor::jpeg::JpegImage>,
+    pub png: Option<imgprocessor::png::PngImage>,
+    pub webp: Option<imgprocessor::webp::WebpImage>,
+}
+
+#[derive(Debug, Clone)]
+pub struct RusImg {
+    pub extension: Extension,
+    pub data: ImgData,
+}
+
+#[derive(Debug, Clone, PartialEq, Copy)]
+pub struct ImgSize {
+    pub width: usize,
+    pub height: usize,
+}
+impl ImgSize {
+    pub fn new(width: usize, height: usize) -> Self {
+        Self {
+            width,
+            height,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum FileOverwriteAsk {
+    YesToAll,
+    NoToAll,
+    AskEverytime,
+}
+
+pub fn do_open_image(path: &Path) -> Result<RusImg, RusimgError> {
+    imgprocessor::do_open_image(path)
+}
+
+pub trait RusimgTrait {
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
     fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
     fn save(&mut self, path: Option<PathBuf>, file_overwrite_ask: &FileOverwriteAsk) -> Result<RusimgStatus, RusimgError>;
@@ -142,21 +177,21 @@ impl RusImg {
     /// It must be called after open_image().
     /// Set ratio to 100 to keep the original size.
     pub fn resize(&mut self, ratio: u8) -> Result<(), RusimgError> {
-        do_resize(self, ratio)?;
+        imgprocessor::do_resize(self, ratio)?;
         Ok(())
     }
 
     /// Trim an image.
     /// It must be called after open_image().
     pub fn trim(&mut self, trim_x: u32, trim_y: u32, trim_w: u32, trim_h: u32) -> Result<(), RusimgError> {
-        do_trim(self, (trim_x, trim_y), (trim_w, trim_h))?;
+        imgprocessor::do_trim(self, (trim_x, trim_y), (trim_w, trim_h))?;
         Ok(())
     }
 
     /// Grayscale an image.
     /// It must be called after open_image().
     pub fn grayscale(&mut self) -> Result<(), RusimgError> {
-        do_grayscale(self)?;
+        imgprocessor::do_grayscale(self)?;
         Ok(())
     }
 
@@ -164,21 +199,21 @@ impl RusImg {
     /// It must be called after open_image().
     /// Set quality to 100 to keep the original quality.
     pub fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {
-        do_compress(&mut self.data, &self.extension, quality)?;
+        imgprocessor::do_compress(&mut self.data, &self.extension, quality)?;
         Ok(())
     }
 
     /// Convert an image to another format.
     /// It must be called after open_image().
     pub fn convert(&mut self, new_extension: Extension) -> Result<(), RusimgError> {
-        do_convert(self, &new_extension)?;
+        imgprocessor::do_convert(self, &new_extension)?;
         Ok(())
     }
 
     /// View an image on the terminal.
     /// It must be called after open_image().
     pub fn view(&mut self) -> Result<(), RusimgError> {
-        do_view(self)?;
+        imgprocessor::do_view(self)?;
         Ok(())
     }
 
@@ -221,7 +256,7 @@ impl RusImg {
         } else {
             None
         };
-        _ = do_save_image(path_buf, &mut self.data, &self.extension, FileOverwriteAsk::YesToAll)?;
+        _ = imgprocessor::do_save_image(path_buf, &mut self.data, &self.extension, FileOverwriteAsk::YesToAll)?;
         Ok(())
     }
 }
@@ -242,430 +277,5 @@ impl fmt::Display for Extension {
             Extension::Png => write!(f, "png"),
             Extension::Webp => write!(f, "webp"),
         }
-    }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct ImgData {
-    pub bmp: Option<bmp::BmpImage>,
-    pub jpeg: Option<jpeg::JpegImage>,
-    pub png: Option<png::PngImage>,
-    pub webp: Option<webp::WebpImage>,
-}
-
-#[derive(Debug, Clone)]
-pub struct RusImg {
-    pub extension: Extension,
-    pub data: ImgData,
-}
-
-#[derive(Debug, Clone, PartialEq, Copy)]
-pub struct ImgSize {
-    pub width: usize,
-    pub height: usize,
-}
-impl ImgSize {
-    pub fn new(width: usize, height: usize) -> Self {
-        Self {
-            width,
-            height,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum FileOverwriteAsk {
-    YesToAll,
-    NoToAll,
-    AskEverytime,
-}
-
-// 画像フォーマットを取得
-fn do_guess_image_format(image_buf: &[u8]) -> Result<image::ImageFormat, RusimgError> {
-    let format = image::guess_format(image_buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
-    Ok(format)
-}
-
-// 画像サイズを取得
-pub fn do_get_image_size(img: &RusImg) -> Result<ImgSize, RusimgError> {
-    match img.extension {
-        Extension::Bmp => {
-            if img.data.bmp.is_none() {
-                return Err(RusimgError::FailedToGetDynamicImage);
-            }
-            let w = img.data.bmp.as_ref().unwrap().image.width() as usize;
-            let h = img.data.bmp.as_ref().unwrap().image.height() as usize;
-            Ok(ImgSize::new(w, h))
-        }
-        Extension::Jpeg => {
-            if img.data.jpeg.is_none() {
-                return Err(RusimgError::FailedToGetDynamicImage);
-            }
-            let w = img.data.jpeg.as_ref().unwrap().image.width() as usize;
-            let h = img.data.jpeg.as_ref().unwrap().image.height() as usize;
-            Ok(ImgSize::new(w, h))
-        }
-        Extension::Png => {
-            if img.data.png.is_none() {
-                return Err(RusimgError::FailedToGetDynamicImage);
-            }
-            let w = img.data.png.as_ref().unwrap().image.width() as usize;
-            let h = img.data.png.as_ref().unwrap().image.height() as usize;
-            Ok(ImgSize::new(w, h))
-        }
-        Extension::Webp => {
-            if img.data.webp.is_none() {
-                return Err(RusimgError::FailedToGetDynamicImage);
-            }
-            let w = img.data.webp.as_ref().unwrap().image.width() as usize;
-            let h = img.data.webp.as_ref().unwrap().image.height() as usize;
-            Ok(ImgSize::new(w, h))
-        }
-    }
-}
-
-pub fn do_open_image(path: &Path) -> Result<RusImg, RusimgError> {
-    let mut raw_data = std::fs::File::open(&path.to_path_buf()).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
-    let mut buf = Vec::new();
-    raw_data.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
-    let metadata_input = raw_data.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
-
-    match do_guess_image_format(&buf)? {
-        ImageFormat::Bmp => {
-            let bmp = bmp::BmpImage::open(path.to_path_buf(), buf, metadata_input)?;
-            Ok(RusImg {
-                extension: Extension::Bmp,
-                data: ImgData { bmp: Some(bmp), ..Default::default() },
-            })
-        },
-        ImageFormat::Jpeg => {
-            let jpeg = jpeg::JpegImage::open(path.to_path_buf(), buf, metadata_input)?;
-            Ok(RusImg {
-                extension: Extension::Jpeg,
-                data: ImgData { jpeg: Some(jpeg), ..Default::default() },
-            })
-        },
-        ImageFormat::Png => {
-            let png = png::PngImage::open(path.to_path_buf(), buf, metadata_input)?;
-            Ok(RusImg {
-                extension: Extension::Png,
-                data: ImgData { png: Some(png), ..Default::default() },
-            })
-        },
-        ImageFormat::WebP => {
-            let webp = webp::WebpImage::open(path.to_path_buf(), buf, metadata_input)?;
-            Ok(RusImg {
-                extension: Extension::Webp,
-                data: ImgData { webp: Some(webp), ..Default::default() },
-            })
-        },
-        _ => Err(RusimgError::UnsupportedFileExtension),
-    }
-}
-
-pub fn do_resize(source_image: &mut RusImg, resize_ratio: u8) -> Result<ImgSize, RusimgError> {
-    match source_image.extension {
-        Extension::Bmp => {
-            match &mut source_image.data.bmp {
-                Some(bmp) => {
-                    bmp.resize(resize_ratio)
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Jpeg => {
-            match &mut source_image.data.jpeg {
-                Some(jpeg) => {
-                    jpeg.resize(resize_ratio)
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Png => {
-            match &mut source_image.data.png {
-                Some(png) => {
-                    png.resize(resize_ratio)
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Webp => {
-            match &mut source_image.data.webp {
-                Some(webp) => {
-                    webp.resize(resize_ratio)
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-    }
-}
-
-pub fn do_trim(image: &mut RusImg, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<ImgSize, RusimgError> {
-    match image.extension {
-        Extension::Bmp => {
-            match &mut image.data.bmp {
-                Some(bmp) => {
-                    bmp.trim(trim_xy, trim_wh)
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Jpeg => {
-            match &mut image.data.jpeg {
-                Some(jpeg) => {
-                    jpeg.trim(trim_xy, trim_wh)
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Png => {
-            match &mut image.data.png {
-                Some(png) => {
-                    png.trim(trim_xy, trim_wh)
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Webp => {
-            match &mut image.data.webp {
-                Some(webp) => {
-                    webp.trim(trim_xy, trim_wh)
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-    }
-}
-
-pub fn do_grayscale(image: &mut RusImg) -> Result<(), RusimgError> {
-    match image.extension {
-        Extension::Bmp => {
-            match &mut image.data.bmp {
-                Some(bmp) => {
-                    bmp.grayscale();
-                    Ok(())
-                },
-                None => Err(RusimgError::ImageDataIsNone)
-            }
-        },
-        Extension::Jpeg => {
-            match &mut image.data.jpeg {
-                Some(jpeg) => {
-                    jpeg.grayscale();
-                    Ok(())
-                },
-                None => Err(RusimgError::ImageDataIsNone)
-            }
-        },
-        Extension::Png => {
-            match &mut image.data.png {
-                Some(png) => {
-                    png.grayscale();
-                    Ok(())
-                },
-                None => Err(RusimgError::ImageDataIsNone)
-            }
-        },
-        Extension::Webp => {
-            match &mut image.data.webp {
-                Some(webp) => {
-                    webp.grayscale();
-                    Ok(())
-                },
-                None => Err(RusimgError::ImageDataIsNone)
-            }
-        },
-    }
-}
-
-pub fn do_compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>) -> Result<(), RusimgError> {
-    match extension {
-        Extension::Bmp => {
-            match &mut data.bmp {
-                Some(bmp) => {
-                    bmp.compress(quality)
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Jpeg => {
-            match &mut data.jpeg {
-                Some(jpeg) => {
-                    jpeg.compress(quality)
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Png => {
-            match &mut data.png {
-                Some(png) => {
-                    png.compress(quality)
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Webp => {
-            match &mut data.webp {
-                Some(webp) => {
-                    webp.compress(quality)
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-    }
-}
-
-pub fn do_convert(original: &mut RusImg, to: &Extension) -> Result<RusImg, RusimgError> {
-    let (dynamic_image, filepath, metadata) = match original.extension {
-        Extension::Bmp => {
-            match &original.data.bmp {
-                Some(bmp) => (bmp.image.clone(), bmp.filepath_input.clone(), bmp.metadata_input.clone()),
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Jpeg => {
-            match &original.data.jpeg {
-                Some(jpeg) => (jpeg.image.clone(), jpeg.filepath_input.clone(), jpeg.metadata_input.clone()),
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Png => {
-            match &original.data.png {
-                Some(png) => (png.image.clone(), png.filepath_input.clone(), png.metadata_input.clone()),
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Webp => {
-            match &original.data.webp {
-                Some(webp) => (webp.image.clone(), webp.filepath_input.clone(), webp.metadata_input.clone()),
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-    };
-
-    match to {
-        Extension::Bmp => {
-            let bmp = bmp::BmpImage::import(dynamic_image, filepath, metadata)?;
-            Ok(RusImg {
-                extension: Extension::Bmp,
-                data: ImgData { bmp: Some(bmp), ..Default::default() },
-            })
-        },
-        Extension::Jpeg => {
-            let jpeg = jpeg::JpegImage::import(dynamic_image, filepath, metadata)?;
-            Ok(RusImg {
-                extension: Extension::Jpeg,
-                data: ImgData { jpeg: Some(jpeg), ..Default::default() },
-            })
-        },
-        Extension::Png => {
-            let png = png::PngImage::import(dynamic_image, filepath, metadata)?;
-            Ok(RusImg {
-                extension: Extension::Png,
-                data: ImgData { png: Some(png), ..Default::default() },
-            })
-        },
-        Extension::Webp => {
-            let webp = webp::WebpImage::import(dynamic_image, filepath, metadata)?;
-            Ok(RusImg {
-                extension: Extension::Webp,
-                data: ImgData { webp: Some(webp), ..Default::default() },
-            })
-        },
-    }
-}
-
-pub fn do_save_image(path: Option<PathBuf>, data: &mut ImgData, extension: &Extension, file_overwrite_ask: FileOverwriteAsk) -> Result<(RusimgStatus, Option<PathBuf>, PathBuf, u64, Option<u64>), RusimgError> {
-    match extension {
-        Extension::Bmp => {
-            match data.bmp {
-                Some(ref mut bmp) => {
-                    let status = bmp.save(path, &file_overwrite_ask)?;
-                    Ok((status,
-                        //bmp.filepath_output.clone().unwrap(), 
-                        bmp.filepath_output.clone().or(None),
-                        bmp.filepath_input.clone(), 
-                        bmp.metadata_input.len(), 
-                        bmp.metadata_output.as_ref().or(None).map(|m| m.len())))
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Jpeg => {
-            match data.jpeg {
-                Some(ref mut jpeg) => {
-                    let status = jpeg.save(path, &file_overwrite_ask)?;
-                    Ok((status,
-                        jpeg.filepath_output.clone().or(None),
-                        jpeg.filepath_input.clone(), 
-                        jpeg.metadata_input.len(), 
-                        jpeg.metadata_output.as_ref().or(None).map(|m| m.len())))
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Png => {
-            match data.png {
-                Some(ref mut png) => {
-                    let status = png.save(path, &file_overwrite_ask)?;
-                    Ok((status,
-                        png.filepath_output.clone().or(None),
-                        png.filepath_input.clone(), 
-                        png.metadata_input.len(), 
-                        png.metadata_output.as_ref().or(None).map(|m| m.len())))
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Webp => {
-            match data.webp {
-                Some(ref mut webp) => {
-                    let status = webp.save(path, &file_overwrite_ask)?;
-                    Ok((status,
-                        webp.filepath_output.clone().or(None),
-                        webp.filepath_input.clone(), 
-                        webp.metadata_input.len(), 
-                        webp.metadata_output.as_ref().or(None).map(|m| m.len())))
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-    }
-}
-
-pub fn do_view(image: &mut RusImg) -> Result<(), RusimgError> {
-    match image.extension {
-        Extension::Bmp => {
-            match &mut image.data.bmp {
-                Some(bmp) => {
-                    bmp.view()
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Jpeg => {
-            match &mut image.data.jpeg {
-                Some(jpeg) => {
-                    jpeg.view()
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Png => {
-            match &mut image.data.png {
-                Some(png) => {
-                    png.view()
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
-        Extension::Webp => {
-            match &mut image.data.webp {
-                Some(webp) => {
-                    webp.view()
-                },
-                None => return Err(RusimgError::ImageDataIsNone),
-            }
-        },
     }
 }
