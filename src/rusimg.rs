@@ -65,6 +65,7 @@ impl fmt::Display for RusimgError {
 pub enum RusimgStatus {
     Success,
     Cancel,
+    NotNeeded,
 }
 
 #[derive(Debug, Clone, Default)]

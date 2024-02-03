@@ -140,12 +140,16 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
     // ファイルを開く
     let mut image = rusimg::open_image(&image_file_path).map_err(rierr)?;
 
+    // 保存が必要か？
+    let mut save_required = false;
+
     // --convert -> 画像形式変換
     if let Some(ref c) = args.destination_extension {
         let extension = convert_str_to_extension(&c).map_err(rierr)?;
 
         // 変換
         image.convert(extension).map_err(rierr)?;
+        save_required = true;
     }
 
     // --trim -> トリミング
@@ -155,6 +159,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
         let trimmed_size = image.trim(trim.0.0, trim.0.1, trim.1.0, trim.1.1).map_err(rierr)?;
         if before_size != trimmed_size {
             println!("Trim: {}x{} -> {}x{}", before_size.width, before_size.height, trimmed_size.width, trimmed_size.height);
+            save_required = true;
         }
     }
 
@@ -164,6 +169,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
         let before_size = image.get_image_size().map_err(rierr)?;
         let after_size = image.resize(resize).map_err(rierr)?;
         println!("Resize: {}x{} -> {}x{}", before_size.width, before_size.height, after_size.width, after_size.height);
+        save_required = true;
     }
 
     // --grayscale -> グレースケール
@@ -171,6 +177,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
         // グレースケール
         image.grayscale().map_err(rierr)?;
         println!("Grayscale: Done.");
+        save_required = true;
     }
 
     // --quality -> 圧縮
@@ -178,23 +185,30 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
         // 圧縮
         image.compress(Some(q)).map_err(rierr)?;
         println!("Compress: Done.");
+        save_required = true;
     }
 
     // 出力
-    let output_path = match &args.destination_path {
-        Some(path) => Some(path.clone()),
-        None => None,
-    };
-    let (save_status, saved_filepath, opened_filepath, before_size, after_size)
-         = rusimg::do_save_image(output_path, &mut image.data, &image.extension, file_overwrite_ask).map_err(rierr)?;
-    save_print(opened_filepath, saved_filepath.clone(), before_size, after_size);
+    let save_status = if save_required == true {
+        let output_path = match &args.destination_path {
+            Some(path) => Some(path.clone()),
+            None => None,
+        };
+        let (save_status, saved_filepath, opened_filepath, before_size, after_size)
+            = rusimg::do_save_image(output_path, &mut image.data, &image.extension, file_overwrite_ask).map_err(rierr)?;
+        save_print(opened_filepath, saved_filepath.clone(), before_size, after_size);
 
-    // --delete -> 元ファイルの削除 (optinal)
-    if let Some(ref saved_filepath) = saved_filepath {
-        if args.delete && image_file_path != saved_filepath {
-            fs::remove_file(&image_file_path).map_err(ioerr)?;
+        // --delete -> 元ファイルの削除 (optinal)
+        if let Some(ref saved_filepath) = saved_filepath {
+            if args.delete && image_file_path != saved_filepath {
+                fs::remove_file(&image_file_path).map_err(ioerr)?;
+            }
         }
+        save_status
     }
+    else {
+        rusimg::RusimgStatus::NotNeeded
+    };
 
     // 表示
     if args.view {
@@ -240,6 +254,7 @@ fn main() -> Result<(), String> {
                 match status {
                     rusimg::RusimgStatus::Success => println!("{}", "Success.".green().bold()),
                     rusimg::RusimgStatus::Cancel => println!("{}", "Canceled.".yellow().bold()),
+                    rusimg::RusimgStatus::NotNeeded => {},
                 }
             },
             Err(e) => {
