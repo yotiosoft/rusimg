@@ -1,4 +1,4 @@
-pub mod imgprocessor;
+mod imgprocessor;
 
 use std::path::{Path, PathBuf};
 use std::fs::Metadata;
@@ -102,8 +102,14 @@ pub enum FileOverwriteAsk {
     AskEverytime,
 }
 
-pub fn do_open_image(path: &Path) -> Result<RusImg, RusimgError> {
+/// Open an image file and return a RusImg object.
+pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
     imgprocessor::do_open_image(path)
+}
+
+/// Only use by main.rs
+pub fn do_save_image(path: Option<PathBuf>, data: &mut ImgData, extension: &Extension, file_overwrite_ask: FileOverwriteAsk) -> Result<(RusimgStatus, Option<PathBuf>, PathBuf, u64, Option<u64>), RusimgError> {
+    imgprocessor::do_save_image(path, data, extension, file_overwrite_ask)
 }
 
 pub trait RusimgTrait {
@@ -181,16 +187,16 @@ impl RusImg {
     /// Resize an image.
     /// It must be called after open_image().
     /// Set ratio to 100 to keep the original size.
-    pub fn resize(&mut self, ratio: u8) -> Result<(), RusimgError> {
-        imgprocessor::do_resize(self, ratio)?;
-        Ok(())
+    pub fn resize(&mut self, ratio: u8) -> Result<ImgSize, RusimgError> {
+        let size = imgprocessor::do_resize(self, ratio)?;
+        Ok(size)
     }
 
     /// Trim an image.
     /// It must be called after open_image().
-    pub fn trim(&mut self, trim_x: u32, trim_y: u32, trim_w: u32, trim_h: u32) -> Result<(), RusimgError> {
-        imgprocessor::do_trim(self, (trim_x, trim_y), (trim_w, trim_h))?;
-        Ok(())
+    pub fn trim(&mut self, trim_x: u32, trim_y: u32, trim_w: u32, trim_h: u32) -> Result<ImgSize, RusimgError> {
+        let size = imgprocessor::do_trim(self, (trim_x, trim_y), (trim_w, trim_h))?;
+        Ok(size)
     }
 
     /// Grayscale an image.
