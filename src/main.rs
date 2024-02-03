@@ -152,13 +152,9 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
     if let Some(trim) = args.trim {
         // トリミング
         let before_size = rusimg::get_image_size(&image).map_err(rierr)?;
-        let trim_status = rusimg::trim(&mut image, (trim.0.0, trim.0.1), (trim.1.0, trim.1.1)).map_err(rierr)?;
-        match trim_status {
-            RusimgStatus::SizeChenged(size) => {
-                let (w, h) = (size.width, size.height);
-                println!("Trim: {}x{} -> {}x{}", before_size.width, before_size.height, w, h);
-            },
-            _ => {},
+        let trimmed_size = rusimg::trim(&mut image, (trim.0.0, trim.0.1), (trim.1.0, trim.1.1)).map_err(rierr)?;
+        if before_size != trimmed_size {
+            println!("Trim: {}x{} -> {}x{}", before_size.width, before_size.height, trimmed_size.width, trimmed_size.height);
         }
     }
 
@@ -186,7 +182,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
 
     // 出力
     let output_path = match &args.destination_path {
-        Some(path) => Some(path),
+        Some(path) => Some(path.clone()),
         None => None,
     };
     let (save_status, saved_filepath, opened_filepath, before_size, after_size)
