@@ -142,21 +142,21 @@ impl RusImg {
     /// It must be called after open_image().
     /// Set ratio to 100 to keep the original size.
     pub fn resize(&mut self, ratio: u8) -> Result<(), RusimgError> {
-        rusimg::resize(self, ratio)?;
+        do_resize(self, ratio)?;
         Ok(())
     }
 
     /// Trim an image.
     /// It must be called after open_image().
     pub fn trim(&mut self, trim_x: u32, trim_y: u32, trim_w: u32, trim_h: u32) -> Result<(), RusimgError> {
-        rusimg::trim(self, (trim_x, trim_y), (trim_w, trim_h))?;
+        do_trim(self, (trim_x, trim_y), (trim_w, trim_h))?;
         Ok(())
     }
 
     /// Grayscale an image.
     /// It must be called after open_image().
     pub fn grayscale(&mut self) -> Result<(), RusimgError> {
-        rusimg::grayscale(self)?;
+        do_grayscale(self)?;
         Ok(())
     }
 
@@ -164,21 +164,21 @@ impl RusImg {
     /// It must be called after open_image().
     /// Set quality to 100 to keep the original quality.
     pub fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {
-        rusimg::compress(&mut self.data, &self.extension, quality)?;
+        do_compress(&mut self.data, &self.extension, quality)?;
         Ok(())
     }
 
     /// Convert an image to another format.
     /// It must be called after open_image().
     pub fn convert(&mut self, new_extension: Extension) -> Result<(), RusimgError> {
-        rusimg::convert(self, &new_extension)?;
+        do_convert(self, &new_extension)?;
         Ok(())
     }
 
     /// View an image on the terminal.
     /// It must be called after open_image().
     pub fn view(&mut self) -> Result<(), RusimgError> {
-        rusimg::view(self)?;
+        do_view(self)?;
         Ok(())
     }
 
@@ -221,7 +221,7 @@ impl RusImg {
         } else {
             None
         };
-        _ = rusimg::save_image(path_buf, &mut self.data, &self.extension, FileOverwriteAsk::YesToAll)?;
+        _ = do_save_image(path_buf, &mut self.data, &self.extension, FileOverwriteAsk::YesToAll)?;
         Ok(())
     }
 }
