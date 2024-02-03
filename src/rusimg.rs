@@ -137,6 +137,96 @@ pub trait Rusimg {
     }
 }
 
+impl RusImg {
+    /// Resize an image.
+    /// It must be called after open_image().
+    /// Set ratio to 100 to keep the original size.
+    pub fn resize(&mut self, ratio: u8) -> Result<(), RusimgError> {
+        rusimg::resize(self, ratio)?;
+        Ok(())
+    }
+
+    /// Trim an image.
+    /// It must be called after open_image().
+    pub fn trim(&mut self, trim_x: u32, trim_y: u32, trim_w: u32, trim_h: u32) -> Result<(), RusimgError> {
+        rusimg::trim(self, (trim_x, trim_y), (trim_w, trim_h))?;
+        Ok(())
+    }
+
+    /// Grayscale an image.
+    /// It must be called after open_image().
+    pub fn grayscale(&mut self) -> Result<(), RusimgError> {
+        rusimg::grayscale(self)?;
+        Ok(())
+    }
+
+    /// Compress an image.
+    /// It must be called after open_image().
+    /// Set quality to 100 to keep the original quality.
+    pub fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {
+        rusimg::compress(&mut self.data, &self.extension, quality)?;
+        Ok(())
+    }
+
+    /// Convert an image to another format.
+    /// It must be called after open_image().
+    pub fn convert(&mut self, new_extension: Extension) -> Result<(), RusimgError> {
+        rusimg::convert(self, &new_extension)?;
+        Ok(())
+    }
+
+    /// View an image on the terminal.
+    /// It must be called after open_image().
+    pub fn view(&mut self) -> Result<(), RusimgError> {
+        rusimg::view(self)?;
+        Ok(())
+    }
+
+    /// Get a DynamicImage from an Img.
+    pub fn get_dynamic_image(&mut self) -> Result<DynamicImage, RusimgError> {
+        let dynamic_image = match self.extension {
+            Extension::Png => {
+                if self.data.png.is_none() {
+                    return Err(RusimgError::FailedToGetDynamicImage);
+                }
+                self.data.png.as_ref().unwrap().image.clone()
+            }
+            Extension::Jpeg => {
+                if self.data.jpeg.is_none() {
+                    return Err(RusimgError::FailedToGetDynamicImage);
+                }
+                self.data.jpeg.as_ref().unwrap().image.clone()
+            }
+            Extension::Bmp => {
+                if self.data.bmp.is_none() {
+                    return Err(RusimgError::FailedToGetDynamicImage);
+                }
+                self.data.bmp.as_ref().unwrap().image.clone()
+            }
+            Extension::Webp => {
+                if self.data.webp.is_none() {
+                    return Err(RusimgError::FailedToGetDynamicImage);
+                }
+                self.data.webp.as_ref().unwrap().image.clone()
+            }
+        };
+        Ok(dynamic_image)
+    }
+
+    /// Save an image to a file.
+    /// If path is None, the original file will be overwritten.
+    pub fn save_image(&mut self, path: Option<&str>) -> Result<(), RusimgError> {
+        let path_buf = if let Some(path) = path {
+            Some(PathBuf::from(path))
+        } else {
+            None
+        };
+        _ = rusimg::save_image(path_buf, &mut self.data, &self.extension, FileOverwriteAsk::YesToAll)?;
+        Ok(())
+    }
+}
+
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Extension {
     Bmp,
@@ -191,13 +281,13 @@ pub enum FileOverwriteAsk {
 }
 
 // 画像フォーマットを取得
-fn guess_image_format(image_buf: &[u8]) -> Result<image::ImageFormat, RusimgError> {
+fn do_guess_image_format(image_buf: &[u8]) -> Result<image::ImageFormat, RusimgError> {
     let format = image::guess_format(image_buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
     Ok(format)
 }
 
 // 画像サイズを取得
-pub fn get_image_size(img: &RusImg) -> Result<ImgSize, RusimgError> {
+pub fn do_get_image_size(img: &RusImg) -> Result<ImgSize, RusimgError> {
     match img.extension {
         Extension::Bmp => {
             if img.data.bmp.is_none() {
@@ -234,13 +324,13 @@ pub fn get_image_size(img: &RusImg) -> Result<ImgSize, RusimgError> {
     }
 }
 
-pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
+pub fn do_open_image(path: &Path) -> Result<RusImg, RusimgError> {
     let mut raw_data = std::fs::File::open(&path.to_path_buf()).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
     let mut buf = Vec::new();
     raw_data.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
     let metadata_input = raw_data.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
 
-    match guess_image_format(&buf)? {
+    match do_guess_image_format(&buf)? {
         ImageFormat::Bmp => {
             let bmp = bmp::BmpImage::open(path.to_path_buf(), buf, metadata_input)?;
             Ok(RusImg {
@@ -273,7 +363,7 @@ pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
     }
 }
 
-pub fn resize(source_image: &mut RusImg, resize_ratio: u8) -> Result<ImgSize, RusimgError> {
+pub fn do_resize(source_image: &mut RusImg, resize_ratio: u8) -> Result<ImgSize, RusimgError> {
     match source_image.extension {
         Extension::Bmp => {
             match &mut source_image.data.bmp {
@@ -310,7 +400,7 @@ pub fn resize(source_image: &mut RusImg, resize_ratio: u8) -> Result<ImgSize, Ru
     }
 }
 
-pub fn trim(image: &mut RusImg, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<ImgSize, RusimgError> {
+pub fn do_trim(image: &mut RusImg, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<ImgSize, RusimgError> {
     match image.extension {
         Extension::Bmp => {
             match &mut image.data.bmp {
@@ -347,7 +437,7 @@ pub fn trim(image: &mut RusImg, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Res
     }
 }
 
-pub fn grayscale(image: &mut RusImg) -> Result<(), RusimgError> {
+pub fn do_grayscale(image: &mut RusImg) -> Result<(), RusimgError> {
     match image.extension {
         Extension::Bmp => {
             match &mut image.data.bmp {
@@ -388,7 +478,7 @@ pub fn grayscale(image: &mut RusImg) -> Result<(), RusimgError> {
     }
 }
 
-pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>) -> Result<(), RusimgError> {
+pub fn do_compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>) -> Result<(), RusimgError> {
     match extension {
         Extension::Bmp => {
             match &mut data.bmp {
@@ -425,7 +515,7 @@ pub fn compress(data: &mut ImgData, extension: &Extension, quality: Option<f32>)
     }
 }
 
-pub fn convert(original: &mut RusImg, to: &Extension) -> Result<RusImg, RusimgError> {
+pub fn do_convert(original: &mut RusImg, to: &Extension) -> Result<RusImg, RusimgError> {
     let (dynamic_image, filepath, metadata) = match original.extension {
         Extension::Bmp => {
             match &original.data.bmp {
@@ -485,7 +575,7 @@ pub fn convert(original: &mut RusImg, to: &Extension) -> Result<RusImg, RusimgEr
     }
 }
 
-pub fn save_image(path: Option<PathBuf>, data: &mut ImgData, extension: &Extension, file_overwrite_ask: FileOverwriteAsk) -> Result<(RusimgStatus, Option<PathBuf>, PathBuf, u64, Option<u64>), RusimgError> {
+pub fn do_save_image(path: Option<PathBuf>, data: &mut ImgData, extension: &Extension, file_overwrite_ask: FileOverwriteAsk) -> Result<(RusimgStatus, Option<PathBuf>, PathBuf, u64, Option<u64>), RusimgError> {
     match extension {
         Extension::Bmp => {
             match data.bmp {
@@ -543,7 +633,7 @@ pub fn save_image(path: Option<PathBuf>, data: &mut ImgData, extension: &Extensi
     }
 }
 
-pub fn view(image: &mut RusImg) -> Result<(), RusimgError> {
+pub fn do_view(image: &mut RusImg) -> Result<(), RusimgError> {
     match image.extension {
         Extension::Bmp => {
             match &mut image.data.bmp {
