@@ -182,7 +182,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
 
     // 出力
     let output_path = match &args.destination_path {
-        Some(path) => Some(path),
+        Some(path) => Some(path.clone()),
         None => None,
     };
     let (save_status, saved_filepath, opened_filepath, before_size, after_size)

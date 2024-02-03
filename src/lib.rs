@@ -6,8 +6,9 @@ use image::DynamicImage;
 mod rusimg;
 
 /// Open an image file.
-pub fn open_image(path: &PathBuf) -> Result<RusImg, RusimgError> {
-    let img = rusimg::open_image(path)?;
+pub fn open_image(path: String) -> Result<RusImg, RusimgError> {
+    let path_buf = PathBuf::from(path);
+    let img = rusimg::open_image(&path_buf)?;
     Ok(img)
 }
 
@@ -86,7 +87,12 @@ pub fn get_dynamic_image(img: &RusImg) -> Result<DynamicImage, RusimgError> {
     Ok(dynamic_image)
 }
 
-pub fn save_image(img: &mut RusImg, path: Option<&PathBuf>) -> Result<(), RusimgError> {
-    _ = rusimg::save_image(path, &mut img.data, &img.extension, FileOverwriteAsk::YesToAll)?;
+pub fn save_image(img: &mut RusImg, path: Option<String>) -> Result<(), RusimgError> {
+    let path_buf = if let Some(path) = path {
+        Some(PathBuf::from(path))
+    } else {
+        None
+    };
+    _ = rusimg::save_image(path_buf, &mut img.data, &img.extension, FileOverwriteAsk::YesToAll)?;
     Ok(())
 }

@@ -74,24 +74,24 @@ pub enum RusimgStatus {
 pub trait Rusimg {
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
     fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
-    fn save(&mut self, path: Option<&PathBuf>, file_overwrite_ask: &FileOverwriteAsk) -> Result<RusimgStatus, RusimgError>;
+    fn save(&mut self, path: Option<PathBuf>, file_overwrite_ask: &FileOverwriteAsk) -> Result<RusimgStatus, RusimgError>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError>;
     fn resize(&mut self, resize_ratio: u8) -> Result<ImgSize, RusimgError>;
     fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<ImgSize, RusimgError>;
     fn grayscale(&mut self);
     fn view(&self) -> Result<(), RusimgError>;
 
-    fn save_filepath(source_filepath: &PathBuf, destination_filepath: Option<&PathBuf>, new_extension: &String) -> Result<PathBuf, RusimgError> {
+    fn save_filepath(source_filepath: &PathBuf, destination_filepath: Option<PathBuf>, new_extension: &String) -> Result<PathBuf, RusimgError> {
         if let Some(path) = destination_filepath {
-            if Path::new(path).is_dir() {
+            if Path::new(&path).is_dir() {
                 let filename = match Path::new(&source_filepath).file_name() {
                     Some(filename) => filename,
                     None => return Err(RusimgError::FailedToGetFilename(source_filepath.clone())),
                 };
-                Ok(Path::new(path).join(filename).with_extension(new_extension))
+                Ok(Path::new(&path).join(filename).with_extension(new_extension))
             }
             else {
-                Ok(path.clone())
+                Ok(path)
             }
         }
         else {
@@ -485,7 +485,7 @@ pub fn convert(original: &mut RusImg, to: &Extension) -> Result<RusImg, RusimgEr
     }
 }
 
-pub fn save_image(path: Option<&PathBuf>, data: &mut ImgData, extension: &Extension, file_overwrite_ask: FileOverwriteAsk) -> Result<(RusimgStatus, Option<PathBuf>, PathBuf, u64, Option<u64>), RusimgError> {
+pub fn save_image(path: Option<PathBuf>, data: &mut ImgData, extension: &Extension, file_overwrite_ask: FileOverwriteAsk) -> Result<(RusimgStatus, Option<PathBuf>, PathBuf, u64, Option<u64>), RusimgError> {
     match extension {
         Extension::Bmp => {
             match data.bmp {
