@@ -173,6 +173,11 @@ pub trait RusimgTrait {
 }
 
 impl RusImg {
+    /// Get image size.
+    pub fn get_image_size(&self) -> Result<ImgSize, RusimgError> {
+        imgprocessor::do_get_image_size(self)
+    }
+
     /// Resize an image.
     /// It must be called after open_image().
     /// Set ratio to 100 to keep the original size.
