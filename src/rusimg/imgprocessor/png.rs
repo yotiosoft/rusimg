@@ -60,7 +60,7 @@ impl RusimgTrait for PngImage {
     }
 
     fn save(&mut self, path: Option<PathBuf>) -> Result<(), RusimgError> {
-        let save_path = Self::save_filepath(&self.filepath_input, path, &"png".to_string())?;
+        let save_path = Self::save_filepath(&self, &self.filepath_input, path, &"png".to_string())?;
         
         // image_bytes == None の場合、DynamicImage を 保存
         if self.image_bytes.is_none() {

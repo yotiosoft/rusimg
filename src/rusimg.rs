@@ -63,7 +63,7 @@ impl fmt::Display for RusimgError {
 
 pub struct RusImg {
     pub extension: Extension,
-    pub data: ImgData,
+    pub data: Box<ImgData>,
 }
 
 #[derive(Debug, Clone, PartialEq, Copy, Default)]

@@ -9,44 +9,8 @@ use std::fs::Metadata;
 use std::io::Read;
 use super::{RusImg, ImgSize, RusimgError, Extension, SaveStatus};
 
-use bmp::BmpImage;
-use jpeg::JpegImage;
-use png::PngImage;
-use webp::WebpImage;
-
 pub struct ImgData {
-    pub image_struct: ImageStruct
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct ImageStruct {
-    image: DynamicImage,
-    image_bytes: Option<Vec<u8>>,
-    size: ImgSize,
-    operations_count: Option<u32>,
-    extension_str: Option<String>,
-    pub metadata_input: Option<Metadata>,
-    pub metadata_output: Option<Metadata>,
-    pub filepath_input: PathBuf,
-    pub filepath_output: Option<PathBuf>,
-}
-
-impl Default for ImgData {
-    fn default() -> Self {
-        Self {
-            image_struct: ImageStruct {
-                image: DynamicImage::new_rgb8(0, 0),
-                image_bytes: None,
-                size: ImgSize::new(0, 0),
-                operations_count: None,
-                extension_str: None,
-                metadata_input: None,
-                metadata_output: None,
-                filepath_input: PathBuf::new(),
-                filepath_output: None,
-            }
-        }
-    }
+    pub image_struct: (dyn RusimgTrait),
 }
 
 pub trait RusimgTrait {
