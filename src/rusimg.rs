@@ -306,3 +306,23 @@ impl fmt::Display for Extension {
         }
     }
 }
+impl Extension {
+    pub fn from_str(s: &str) -> Result<Self, RusimgError> {
+        match s.to_ascii_lowercase().as_str() {
+            "bmp" => Ok(Extension::Bmp),
+            "jpeg" | "jpg" => Ok(Extension::Jpeg),
+            "png" => Ok(Extension::Png),
+            "webp" => Ok(Extension::Webp),
+            _ => Err(RusimgError::UnsupportedFileExtension),
+        }
+    }
+
+    pub fn to_image_format(&self) -> image::ImageFormat {
+        match self {
+            Extension::Bmp => image::ImageFormat::Bmp,
+            Extension::Jpeg => image::ImageFormat::Jpeg,
+            Extension::Png => image::ImageFormat::Png,
+            Extension::Webp => image::ImageFormat::WebP,
+        }
+    }
+}
