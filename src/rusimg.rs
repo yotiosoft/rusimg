@@ -228,6 +228,7 @@ impl RusImg {
                 let webp = webp::WebpImage::import(dynamic_image, filepath, metadata)?;
                 Box::new(webp)
             },
+            Extension::Extended(s) => return Err(RusimgError::UnsupportedFileExtension),
         };
 
         self.extension = new_extension;
@@ -289,6 +290,7 @@ pub enum Extension {
     Jpeg,
     Png,
     Webp,
+    Extended(String),
 }
 impl fmt::Display for Extension {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -297,26 +299,7 @@ impl fmt::Display for Extension {
             Extension::Jpeg => write!(f, "jpeg"),
             Extension::Png => write!(f, "png"),
             Extension::Webp => write!(f, "webp"),
-        }
-    }
-}
-impl Extension {
-    pub fn from_str(s: &str) -> Result<Self, RusimgError> {
-        match s.to_ascii_lowercase().as_str() {
-            "bmp" => Ok(Extension::Bmp),
-            "jpeg" | "jpg" => Ok(Extension::Jpeg),
-            "png" => Ok(Extension::Png),
-            "webp" => Ok(Extension::Webp),
-            _ => Err(RusimgError::UnsupportedFileExtension),
-        }
-    }
-
-    pub fn to_image_format(&self) -> image::ImageFormat {
-        match self {
-            Extension::Bmp => image::ImageFormat::Bmp,
-            Extension::Jpeg => image::ImageFormat::Jpeg,
-            Extension::Png => image::ImageFormat::Png,
-            Extension::Webp => image::ImageFormat::WebP,
+            Extension::Extended(s) => write!(f, "{}", s),
         }
     }
 }
