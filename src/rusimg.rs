@@ -85,7 +85,9 @@ pub trait RusimgTrait {
 
     fn get_dynamic_image(&mut self) -> Result<DynamicImage, RusimgError>;
     fn get_source_filepath(&self) -> PathBuf;
-    fn get_metadata(&self) -> Metadata;
+    fn get_destination_filepath(&self) -> Option<PathBuf>;
+    fn get_metadata_src(&self) -> Metadata;
+    fn get_metadata_dest(&self) -> Option<Metadata>;
     fn get_size(&self) -> ImgSize;
 
     fn save_filepath(&self, source_filepath: &PathBuf, destination_filepath: Option<PathBuf>, new_extension: &String) -> Result<PathBuf, RusimgError> {
@@ -209,7 +211,7 @@ impl RusImg {
     pub fn convert(&mut self, new_extension: Extension) -> Result<(), RusimgError> {
         let dynamic_image = self.data.image_struct.get_dynamic_image()?;
         let filepath = self.data.image_struct.get_source_filepath();
-        let metadata = self.data.image_struct.get_metadata();
+        let metadata = self.data.image_struct.get_metadata_src();
 
         let new_image = match new_extension {
             Extension::Bmp => {
@@ -239,8 +241,7 @@ impl RusImg {
     /// View an image on the terminal.
     /// It must be called after open_image().
     pub fn view(&mut self) -> Result<(), RusimgError> {
-        self.view()?;
-        Ok(())
+        self.data.image_struct.view()
     }
 
     /// Get a DynamicImage from an Img.
@@ -267,6 +268,13 @@ impl RusImg {
             None => None,
         };
         self.data.image_struct.save(path_buf)?;
+
+        let ret = SaveStatus {
+            output_path: self.data.image_struct.get_destination_filepath().clone().or(None),
+            before_filesize: self.data.image_struct.get_metadata_src().len(),
+            after_filesize: self.data.image_struct.get_metadata_dest().as_ref().or(None).map(|m| m.len())
+        };
+        Ok(ret)
     }
 }
 

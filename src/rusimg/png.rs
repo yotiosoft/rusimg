@@ -192,8 +192,16 @@ impl RusimgTrait for PngImage {
         self.filepath_input.clone()
     }
 
-    fn get_metadata(&self) -> Metadata {
+    fn get_destination_filepath(&self) -> Option<PathBuf> {
+        self.filepath_output.clone()
+    }
+
+    fn get_metadata_src(&self) -> Metadata {
         self.metadata_input.clone()
+    }
+
+    fn get_metadata_dest(&self) -> Option<Metadata> {
+        self.metadata_output.clone()
     }
 
     fn get_size(&self) -> ImgSize {
