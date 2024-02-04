@@ -19,7 +19,7 @@ pub trait RusimgTrait {
     fn grayscale(&mut self);
     fn view(&self) -> Result<(), RusimgError>;
 
-    fn save_filepath(source_filepath: &PathBuf, destination_filepath: Option<PathBuf>, new_extension: &String) -> Result<PathBuf, RusimgError> {
+    fn save_filepath(&self, source_filepath: &PathBuf, destination_filepath: Option<PathBuf>, new_extension: &String) -> Result<PathBuf, RusimgError> {
         if let Some(path) = destination_filepath {
             if Path::new(&path).is_dir() {
                 let filename = match Path::new(&source_filepath).file_name() {

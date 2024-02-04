@@ -2,7 +2,10 @@ mod imgprocessor;
 
 use std::path::{Path, PathBuf};
 use std::fmt;
+use std::any::Any;
 use image::DynamicImage;
+
+use self::imgprocessor::RusimgTrait;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RusimgError {
@@ -61,10 +64,7 @@ impl fmt::Display for RusimgError {
 
 #[derive(Debug, Clone, Default)]
 pub struct ImgData {
-    pub bmp: Option<imgprocessor::bmp::BmpImage>,
-    pub jpeg: Option<imgprocessor::jpeg::JpegImage>,
-    pub png: Option<imgprocessor::png::PngImage>,
-    pub webp: Option<imgprocessor::webp::WebpImage>,
+    pub image: Box<(dyn Any + Send + Sync + 'static)>,
 }
 
 #[derive(Debug, Clone)]
