@@ -3,7 +3,7 @@ use std::fs::Metadata;
 use std::path::PathBuf;
 use image::DynamicImage;
 
-use super::{RusimgTrait, RusimgError, RusimgStatus, ImgSize};
+use super::{RusimgTrait, RusimgError, ImgSize};
 
 #[derive(Debug, Clone)]
 pub struct PngImage {
@@ -59,7 +59,7 @@ impl RusimgTrait for PngImage {
         })
     }
 
-    fn save(&mut self, path: Option<PathBuf>) -> Result<RusimgStatus, RusimgError> {
+    fn save(&mut self, path: Option<PathBuf>) -> Result<(), RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"png".to_string())?;
         
         // image_bytes == None の場合、DynamicImage を 保存
@@ -76,7 +76,7 @@ impl RusimgTrait for PngImage {
 
         self.filepath_output = Some(save_path);
 
-        Ok(RusimgStatus::Success)
+        Ok(())
     }
 
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {

@@ -5,7 +5,7 @@ use std::fs::Metadata;
 use std::io::Write;
 use std::path::PathBuf;
 
-use super::{RusimgTrait, RusimgError, ImgSize, RusimgStatus};
+use super::{RusimgTrait, RusimgError, ImgSize};
 
 #[derive(Debug, Clone)]
 pub struct JpegImage {
@@ -56,7 +56,7 @@ impl RusimgTrait for JpegImage {
         })
     }
 
-    fn save(&mut self, path: Option<PathBuf>) -> Result<RusimgStatus, RusimgError> {
+    fn save(&mut self, path: Option<PathBuf>) -> Result<(), RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &self.extension_str)?;
         
         // image_bytes == None の場合、DynamicImage を 保存
@@ -73,7 +73,7 @@ impl RusimgTrait for JpegImage {
 
         self.filepath_output = Some(save_path);
 
-        Ok(RusimgStatus::Success)
+        Ok(())
     }
 
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {

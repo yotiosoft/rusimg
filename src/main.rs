@@ -32,6 +32,13 @@ pub enum FileOverwriteAsk {
     AskEverytime,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum RusimgStatus {
+    Success,
+    Cancel,
+    NotNeeded,
+}
+
 fn get_files_in_dir(dir_path: &PathBuf, recursive: bool) -> Result<Vec<PathBuf>, String> {
     let mut files = fs::read_dir(&dir_path).expect("cannot read directory");
     let mut ret = Vec::new();
@@ -164,7 +171,7 @@ fn save_print(before_path: &PathBuf, after_path: &Option<PathBuf>, before_size: 
     }
 }
 
-fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::RusimgStatus, ProcessingError> {
+fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<RusimgStatus, ProcessingError> {
     let rierr = |e: RusimgError| ProcessingError::RusimgError(e);
     let ioerr = |e: std::io::Error| ProcessingError::IOError(e.to_string());
     let argerr = |e: String| ProcessingError::ArgError(e);
@@ -253,7 +260,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
 
         // ファイルの存在チェック
         if !check_file_exists(&output_path, &file_overwrite_ask) {
-            rusimg::RusimgStatus::Cancel
+            RusimgStatus::Cancel
         }
         else {
             // 保存
@@ -268,11 +275,11 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
                     fs::remove_file(&image_file_path).map_err(ioerr)?;
                 }
             }
-            save_status.status  // -> save_status
+            RusimgStatus::Success
         }
     }
     else {
-        rusimg::RusimgStatus::NotNeeded
+        RusimgStatus::NotNeeded
     };
 
     // 表示
@@ -317,9 +324,9 @@ fn main() -> Result<(), String> {
         match process(&args, &image_file_path) {
             Ok(status) => {
                 match status {
-                    rusimg::RusimgStatus::Success => println!("{}", "Success.".green().bold()),
-                    rusimg::RusimgStatus::Cancel => println!("{}", "Canceled.".yellow().bold()),
-                    rusimg::RusimgStatus::NotNeeded => {},
+                    RusimgStatus::Success => println!("{}", "Success.".green().bold()),
+                    RusimgStatus::Cancel => println!("{}", "Canceled.".yellow().bold()),
+                    RusimgStatus::NotNeeded => {},
                 }
             },
             Err(e) => {

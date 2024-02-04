@@ -4,7 +4,7 @@ use std::fs::Metadata;
 use std::io::Write;
 use std::path::{PathBuf, Path};
 
-use super::{RusimgTrait, RusimgError, RusimgStatus, ImgSize};
+use super::{RusimgTrait, RusimgError, ImgSize};
 
 #[derive(Debug, Clone)]
 pub struct WebpImage {
@@ -62,7 +62,7 @@ impl RusimgTrait for WebpImage {
         }
     }
 
-    fn save(&mut self, path: Option<PathBuf>) -> Result<RusimgStatus, RusimgError> {
+    fn save(&mut self, path: Option<PathBuf>) -> Result<(), RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"webp".to_string())?;
 
         // 元が webp かつ操作回数が 0 なら encode しない
@@ -74,7 +74,7 @@ impl RusimgTrait for WebpImage {
             self.metadata_output = Some(file.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
             self.filepath_output = Some(save_path);
 
-            return Ok(RusimgStatus::Success);
+            return Ok(());
         }
 
         // quality
@@ -94,7 +94,7 @@ impl RusimgTrait for WebpImage {
         self.metadata_output = Some(file.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
         self.filepath_output = Some(save_path);
 
-        Ok(RusimgStatus::Success)
+        Ok(())
     }
 
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {

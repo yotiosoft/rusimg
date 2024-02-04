@@ -3,7 +3,7 @@ use image::DynamicImage;
 use std::fs::Metadata;
 use std::path::PathBuf;
 
-use super::{RusimgTrait, RusimgError, RusimgStatus, ImgSize};
+use super::{RusimgTrait, RusimgError, ImgSize};
 
 #[derive(Debug, Clone)]
 pub struct BmpImage {
@@ -43,13 +43,13 @@ impl RusimgTrait for BmpImage {
         })
     }
 
-    fn save(&mut self, path: Option<PathBuf>) -> Result<RusimgStatus, RusimgError> {
+    fn save(&mut self, path: Option<PathBuf>) -> Result<(), RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"bmp".to_string())?;
         self.image.to_rgba8().save(&save_path).map_err(|e| RusimgError::FailedToSaveImage(e.to_string()))?;
         self.metadata_output = Some(std::fs::metadata(&save_path).map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
         self.filepath_output = Some(save_path);
 
-        Ok(RusimgStatus::Success)
+        Ok(())
     }
 
     fn compress(&mut self, _quality: Option<f32>) -> Result<(), RusimgError> {

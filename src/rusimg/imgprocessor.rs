@@ -7,12 +7,12 @@ use std::path::{Path, PathBuf};
 use image::{ImageFormat, DynamicImage};
 use std::fs::Metadata;
 use std::io::Read;
-use super::{RusImg, ImgSize, ImgData, RusimgError, RusimgStatus, Extension, SaveStatus};
+use super::{RusImg, ImgSize, ImgData, RusimgError, Extension, SaveStatus};
 
 pub trait RusimgTrait {
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
     fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
-    fn save(&mut self, path: Option<PathBuf>) -> Result<RusimgStatus, RusimgError>;
+    fn save(&mut self, path: Option<PathBuf>) -> Result<(), RusimgError>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError>;
     fn resize(&mut self, resize_ratio: u8) -> Result<ImgSize, RusimgError>;
     fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<ImgSize, RusimgError>;
@@ -338,9 +338,8 @@ pub fn do_save_image(path: Option<PathBuf>, data: &mut ImgData, extension: &Exte
         Extension::Bmp => {
             match data.bmp {
                 Some(ref mut bmp) => {
-                    let status = bmp.save(path)?;
+                    bmp.save(path)?;
                     let ret = SaveStatus {
-                        status: status, 
                         output_path: bmp.filepath_output.clone().or(None),
                         before_filesize: bmp.metadata_input.len(), 
                         after_filesize: bmp.metadata_output.as_ref().or(None).map(|m| m.len())
@@ -353,9 +352,8 @@ pub fn do_save_image(path: Option<PathBuf>, data: &mut ImgData, extension: &Exte
         Extension::Jpeg => {
             match data.jpeg {
                 Some(ref mut jpeg) => {
-                    let status = jpeg.save(path)?;
+                    jpeg.save(path)?;
                     let ret = SaveStatus {
-                        status: status, 
                         output_path: jpeg.filepath_output.clone().or(None),
                         before_filesize: jpeg.metadata_input.len(), 
                         after_filesize: jpeg.metadata_output.as_ref().or(None).map(|m| m.len())
@@ -368,9 +366,8 @@ pub fn do_save_image(path: Option<PathBuf>, data: &mut ImgData, extension: &Exte
         Extension::Png => {
             match data.png {
                 Some(ref mut png) => {
-                    let status = png.save(path)?;
+                    png.save(path)?;
                     let ret = SaveStatus {
-                        status: status, 
                         output_path: png.filepath_output.clone().or(None),
                         before_filesize: png.metadata_input.len(), 
                         after_filesize: png.metadata_output.as_ref().or(None).map(|m| m.len())
@@ -383,9 +380,8 @@ pub fn do_save_image(path: Option<PathBuf>, data: &mut ImgData, extension: &Exte
         Extension::Webp => {
             match data.webp {
                 Some(ref mut webp) => {
-                    let status = webp.save(path)?;
+                    webp.save(path)?;
                     let ret = SaveStatus {
-                        status: status, 
                         output_path: webp.filepath_output.clone().or(None),
                         before_filesize: webp.metadata_input.len(), 
                         after_filesize: webp.metadata_output.as_ref().or(None).map(|m| m.len())

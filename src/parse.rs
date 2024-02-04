@@ -32,8 +32,8 @@ struct Args {
     #[arg(short, long)]
     output: Option<PathBuf>,
 
-    /// Name to be appended to the destination file name
-    /// (e.g. [$ rusimg image.jpg -a _output] -> image_output.jpg)
+    /// Name to be appended to the source file name
+    /// (e.g. image.jpg -> image_output.jpg)
     #[arg(short, long)]
     append: Option<String>,
 

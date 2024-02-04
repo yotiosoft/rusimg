@@ -59,13 +59,6 @@ impl fmt::Display for RusimgError {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum RusimgStatus {
-    Success,
-    Cancel,
-    NotNeeded,
-}
-
 #[derive(Debug, Clone, Default)]
 pub struct ImgData {
     pub bmp: Option<imgprocessor::bmp::BmpImage>,
@@ -96,7 +89,6 @@ impl ImgSize {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SaveStatus {
-    pub status: RusimgStatus,
     pub output_path: Option<PathBuf>,
     pub before_filesize: u64,
     pub after_filesize: Option<u64>,
