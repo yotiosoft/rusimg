@@ -15,7 +15,7 @@ pub struct BmpImage {
     pub filepath_output: Option<PathBuf>,
 }
 
-impl RusimgTrait for BmpImage {
+impl<'a> RusimgTrait <'a> for BmpImage {
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> {
         let size = ImgSize { width: image.width() as usize, height: image.height() as usize };
 

@@ -20,7 +20,7 @@ pub struct JpegImage {
     pub filepath_output: Option<PathBuf>,
 }
 
-impl RusimgTrait for JpegImage {
+impl<'a> RusimgTrait <'a> for JpegImage {
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> {
         let size = ImgSize { width: image.width() as usize, height: image.height() as usize };
 

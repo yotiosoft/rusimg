@@ -20,7 +20,7 @@ pub struct WebpImage {
     pub filepath_output: Option<PathBuf>,
 }
 
-impl RusimgTrait for WebpImage {
+impl<'a> RusimgTrait <'a> for WebpImage {
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> {
         let (width, height) = (image.width() as usize, image.height() as usize);
 

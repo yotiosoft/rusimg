@@ -66,16 +66,16 @@ impl fmt::Display for RusimgError {
     }
 }
 
-pub struct RusImg {
+pub struct RusImg<'a> {
     pub extension: Extension,
-    pub data: Box<ImgData>,
+    pub data: Box<ImgData<'a>>,
 }
 
-pub struct ImgData {
-    pub image_struct: Box<(dyn RusimgTrait)>,
+pub struct ImgData<'a> {
+    pub image_struct: &'a Box<(dyn RusimgTrait<'a>)>,
 }
 
-pub trait RusimgTrait {
+pub trait RusimgTrait<'a> {
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
     fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
     fn save(&mut self, path: Option<PathBuf>) -> Result<(), RusimgError>;
@@ -149,7 +149,7 @@ pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
     match guess_image_format(&buf)? {
         image::ImageFormat::Bmp => {
             let image = bmp::BmpImage::open(path.to_path_buf(), buf, metadata_input)?;
-            let data = ImgData { image_struct: Box::new(image) };
+            let data = ImgData { image_struct: &Box::new(image) };
             Ok(RusImg { extension: Extension::Bmp, data: Box::new(data) })
         },
         image::ImageFormat::Jpeg => {
@@ -173,7 +173,7 @@ pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
 
 /// Open an image file and return a DynamicImage object.
 /// Programmers can set the image format trait manually.
-pub fn open_image_external_format<R: RusimgTrait>(path: &Path) -> Result<RusImg, RusimgError> {
+pub fn open_image_external_format<'a, R: RusimgTrait<'a>>(path: &Path) -> Result<RusImg<'a>, RusimgError> {
     let mut raw_data = std::fs::File::open(&path.to_path_buf()).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
     let mut buf = Vec::new();
     raw_data.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
@@ -184,7 +184,7 @@ pub fn open_image_external_format<R: RusimgTrait>(path: &Path) -> Result<RusImg,
     Ok(RusImg { extension: Extension::External(image.get_extension_str()), data: Box::new(data) })
 }
 
-impl RusImg {
+impl<'a> RusImg<'a> {
     /// Get image size.
     pub fn get_image_size(&self) -> Result<ImgSize, RusimgError> {
         let size = self.data.image_struct.get_size();
@@ -259,7 +259,7 @@ impl RusImg {
     /// And replace the original image with the new one.
     /// It must be called after open_image_external_format().
     /// Programmers can set the image format trait manually.
-    pub fn convert_external_format<R: RusimgTrait>(&mut self) -> Result<(), RusimgError> {
+    pub fn convert_external_format<R: RusimgTrait<'a>>(&mut self) -> Result<(), RusimgError> {
         let dynamic_image = self.data.image_struct.get_dynamic_image()?;
         let filepath = self.data.image_struct.get_source_filepath();
         let metadata = self.data.image_struct.get_metadata_src();
