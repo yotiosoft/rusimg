@@ -3,7 +3,6 @@ mod imgprocessor;
 use std::path::{Path, PathBuf};
 use std::fmt;
 use image::DynamicImage;
-use std::io::Write;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RusimgError {
