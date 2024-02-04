@@ -228,7 +228,7 @@ impl RusImg {
                 let webp = webp::WebpImage::import(dynamic_image, filepath, metadata)?;
                 Box::new(webp)
             },
-            Extension::Extended(s) => return Err(RusimgError::UnsupportedFileExtension),
+            Extension::ExternalFormat(s) => return Err(RusimgError::UnsupportedFileExtension),
         };
 
         self.extension = new_extension;
@@ -290,7 +290,7 @@ pub enum Extension {
     Jpeg,
     Png,
     Webp,
-    Extended(String),
+    ExternalFormat(String),
 }
 impl fmt::Display for Extension {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -299,7 +299,7 @@ impl fmt::Display for Extension {
             Extension::Jpeg => write!(f, "jpeg"),
             Extension::Png => write!(f, "png"),
             Extension::Webp => write!(f, "webp"),
-            Extension::Extended(s) => write!(f, "{}", s),
+            Extension::ExternalFormat(s) => write!(f, "{}", s),
         }
     }
 }
