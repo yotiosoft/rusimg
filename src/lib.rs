@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use rusimg::RusimgError;
 use rusimg::*;
 
-mod rusimg;
+pub mod rusimg;
 
 /// Open an image file.
 pub fn open_image(path: &str) -> Result<RusImg, RusimgError> {
