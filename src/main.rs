@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::fs;
 use std::fmt;
+use std::io::{stdout, Write};
 use glob::glob;
 use parse::ArgStruct;
 use rusimg::RusimgError;
@@ -22,6 +23,13 @@ impl fmt::Display for ProcessingError {
             ProcessingError::ArgError(e) => write!(f, "{}", e),
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum FileOverwriteAsk {
+    YesToAll,
+    NoToAll,
+    AskEverytime,
 }
 
 fn get_files_in_dir(dir_path: &PathBuf, recursive: bool) -> Result<Vec<PathBuf>, String> {
@@ -95,8 +103,46 @@ fn get_extension(path: &Path) -> Result<rusimg::Extension, RusimgError> {
     }
 }
 
+// ファイルの存在チェック
+fn check_file_exists(path: &PathBuf, file_overwrite_ask: &FileOverwriteAsk) -> bool {
+    // ファイルの存在チェック
+    // ファイルが存在する場合、上書きするかどうかを確認
+    if Path::new(path).exists() {
+        print!("The image file \"{}\" already exists.", path.display());
+        match file_overwrite_ask {
+            FileOverwriteAsk::YesToAll => {
+                println!(" -> Overwrite it.");
+                return true
+            },
+            FileOverwriteAsk::NoToAll => {
+                println!(" -> Skip it.");
+                return false
+            },
+            FileOverwriteAsk::AskEverytime => {},
+        }
+
+        print!(" Do you want to overwrite it? [y/N]: ");
+        loop {
+            stdout().flush().unwrap();
+
+            let mut input = String::new();
+            std::io::stdin().read_line(&mut input).unwrap();
+            if input.trim().to_ascii_lowercase() == "y" || input.trim().to_ascii_lowercase() == "yes" {
+                return true;
+            }
+            else if input.trim().to_ascii_lowercase() == "n" || input.trim().to_ascii_lowercase() == "no" || input.trim() == "" {
+                return false;
+            }
+            else {
+                print!("Please enter y or n: ");
+            }
+        }
+    }
+    return true;
+}
+
 // 保存先などの表示
-fn save_print(before_path: PathBuf, after_path: Option<PathBuf>, before_size: u64, after_size: Option<u64>) {
+fn save_print(before_path: &PathBuf, after_path: &Option<PathBuf>, before_size: u64, after_size: Option<u64>) {
     match (after_path, after_size) {
         (Some(after_path), Some(after_size)) => {
             if before_path == after_path {
@@ -125,9 +171,9 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
 
     // ファイルの上書き確認オプション
     let file_overwrite_ask = match (args.yes, args.no) {
-        (true, false) => Some(rusimg::FileOverwriteAsk::YesToAll),
-        (false, true) => Some(rusimg::FileOverwriteAsk::NoToAll),
-        (false, false) => Some(rusimg::FileOverwriteAsk::AskEverytime),
+        (true, false) => Some(FileOverwriteAsk::YesToAll),
+        (false, true) => Some(FileOverwriteAsk::NoToAll),
+        (false, false) => Some(FileOverwriteAsk::AskEverytime),
         (true, true) => None,
     };
     let file_overwrite_ask = if let Some(ref _c) = file_overwrite_ask {
@@ -190,6 +236,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
 
     // 出力
     let save_status = if save_required == true {
+        println!("{}", image.extension.to_string());
         // 出力先パスを決定
         let mut output_path = match &args.destination_path {
             Some(path) => path.clone(),                                                             // If --output is specified, use it
@@ -204,19 +251,25 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
             output_path = PathBuf::from(output_path_tmp);
         }
 
-        // 保存
-        let (save_status, saved_filepath, opened_filepath, before_size, after_size)
-            = rusimg::do_save_image(Some(output_path), &mut image.data, &image.extension, file_overwrite_ask).map_err(rierr)?;
-        // 保存先などの表示
-        save_print(opened_filepath, saved_filepath.clone(), before_size, after_size);
-
-        // --delete -> 元ファイルの削除 (optinal)
-        if let Some(ref saved_filepath) = saved_filepath {
-            if args.delete && image_file_path != saved_filepath {
-                fs::remove_file(&image_file_path).map_err(ioerr)?;
-            }
+        // ファイルの存在チェック
+        if !check_file_exists(&output_path, &file_overwrite_ask) {
+            rusimg::RusimgStatus::Cancel
         }
-        save_status
+        else {
+            // 保存
+            let save_status = image.save_image(output_path.to_str()).map_err(rierr)?;
+            // 保存先などの表示
+            save_print(&image.get_input_filepath(), &save_status.output_path, 
+                            save_status.before_filesize, save_status.after_filesize);
+
+            // --delete -> 元ファイルの削除 (optinal)
+            if let Some(ref saved_filepath) = save_status.output_path {
+                if args.delete && image_file_path != saved_filepath {
+                    fs::remove_file(&image_file_path).map_err(ioerr)?;
+                }
+            }
+            save_status.status  // -> save_status
+        }
     }
     else {
         rusimg::RusimgStatus::NotNeeded

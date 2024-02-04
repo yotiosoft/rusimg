@@ -4,8 +4,7 @@ use std::fs::Metadata;
 use std::io::Write;
 use std::path::{PathBuf, Path};
 
-use crate::rusimg::RusimgTrait;
-use super::{RusimgError, RusimgStatus, ImgSize};
+use super::{RusimgTrait, RusimgError, RusimgStatus, ImgSize};
 
 #[derive(Debug, Clone)]
 pub struct WebpImage {
@@ -63,13 +62,8 @@ impl RusimgTrait for WebpImage {
         }
     }
 
-    fn save(&mut self, path: Option<PathBuf>, file_overwrite_ask: &super::FileOverwriteAsk) -> Result<RusimgStatus, RusimgError> {
+    fn save(&mut self, path: Option<PathBuf>) -> Result<RusimgStatus, RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"webp".to_string())?;
-
-        // ファイルが存在するか？＆上書き確認
-        if Self::check_file_exists(&save_path, &file_overwrite_ask) == false {
-            return Ok(RusimgStatus::Cancel);
-        }
 
         // 元が webp かつ操作回数が 0 なら encode しない
         let source_is_webp = Path::new(&self.filepath_input).extension().and_then(|s| s.to_str()).unwrap_or("").to_string() == "webp";

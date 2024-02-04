@@ -3,9 +3,7 @@ use image::DynamicImage;
 use std::fs::Metadata;
 use std::path::PathBuf;
 
-use crate::rusimg::RusimgTrait;
-use super::{RusimgError, RusimgStatus};
-use super::ImgSize;
+use super::{RusimgTrait, RusimgError, RusimgStatus, ImgSize};
 
 #[derive(Debug, Clone)]
 pub struct BmpImage {
@@ -45,13 +43,8 @@ impl RusimgTrait for BmpImage {
         })
     }
 
-    fn save(&mut self, path: Option<PathBuf>, file_overwrite_ask: &super::FileOverwriteAsk) -> Result<RusimgStatus, RusimgError> {
+    fn save(&mut self, path: Option<PathBuf>) -> Result<RusimgStatus, RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"bmp".to_string())?;
-        // ファイルが存在するか？＆上書き確認
-        if Self::check_file_exists(&save_path, &file_overwrite_ask) == false {
-            return Ok(RusimgStatus::Cancel);
-        }
-        
         self.image.to_rgba8().save(&save_path).map_err(|e| RusimgError::FailedToSaveImage(e.to_string()))?;
         self.metadata_output = Some(std::fs::metadata(&save_path).map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
         self.filepath_output = Some(save_path);

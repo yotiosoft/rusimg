@@ -1,10 +1,9 @@
 mod imgprocessor;
 
 use std::path::{Path, PathBuf};
-use std::fs::Metadata;
 use std::fmt;
 use image::DynamicImage;
-use std::io::{stdout, Write};
+use std::io::Write;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RusimgError {
@@ -97,86 +96,16 @@ impl ImgSize {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum FileOverwriteAsk {
-    YesToAll,
-    NoToAll,
-    AskEverytime,
+pub struct SaveStatus {
+    pub status: RusimgStatus,
+    pub output_path: Option<PathBuf>,
+    pub before_filesize: u64,
+    pub after_filesize: Option<u64>,
 }
 
 /// Open an image file and return a RusImg object.
 pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
     imgprocessor::do_open_image(path)
-}
-
-/// Only use by main.rs
-pub fn do_save_image(path: Option<PathBuf>, data: &mut ImgData, extension: &Extension, file_overwrite_ask: FileOverwriteAsk) -> Result<(RusimgStatus, Option<PathBuf>, PathBuf, u64, Option<u64>), RusimgError> {
-    imgprocessor::do_save_image(path, data, extension, file_overwrite_ask)
-}
-
-pub trait RusimgTrait {
-    fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
-    fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
-    fn save(&mut self, path: Option<PathBuf>, file_overwrite_ask: &FileOverwriteAsk) -> Result<RusimgStatus, RusimgError>;
-    fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError>;
-    fn resize(&mut self, resize_ratio: u8) -> Result<ImgSize, RusimgError>;
-    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<ImgSize, RusimgError>;
-    fn grayscale(&mut self);
-    fn view(&self) -> Result<(), RusimgError>;
-
-    fn save_filepath(source_filepath: &PathBuf, destination_filepath: Option<PathBuf>, new_extension: &String) -> Result<PathBuf, RusimgError> {
-        if let Some(path) = destination_filepath {
-            if Path::new(&path).is_dir() {
-                let filename = match Path::new(&source_filepath).file_name() {
-                    Some(filename) => filename,
-                    None => return Err(RusimgError::FailedToGetFilename(source_filepath.clone())),
-                };
-                Ok(Path::new(&path).join(filename).with_extension(new_extension))
-            }
-            else {
-                Ok(path)
-            }
-        }
-        else {
-            Ok(Path::new(&source_filepath).with_extension(new_extension))
-        }
-    }
-
-    fn check_file_exists(path: &PathBuf, file_overwrite_ask: &FileOverwriteAsk) -> bool {
-        // ファイルの存在チェック
-        // ファイルが存在する場合、上書きするかどうかを確認
-        if Path::new(path).exists() {
-            print!("The image file \"{}\" already exists.", path.display());
-            match file_overwrite_ask {
-                FileOverwriteAsk::YesToAll => {
-                    println!(" -> Overwrite it.");
-                    return true
-                },
-                FileOverwriteAsk::NoToAll => {
-                    println!(" -> Skip it.");
-                    return false
-                },
-                FileOverwriteAsk::AskEverytime => {},
-            }
-
-            print!(" Do you want to overwrite it? [y/N]: ");
-            loop {
-                stdout().flush().unwrap();
-
-                let mut input = String::new();
-                std::io::stdin().read_line(&mut input).unwrap();
-                if input.trim().to_ascii_lowercase() == "y" || input.trim().to_ascii_lowercase() == "yes" {
-                    return true;
-                }
-                else if input.trim().to_ascii_lowercase() == "n" || input.trim().to_ascii_lowercase() == "no" || input.trim() == "" {
-                    return false;
-                }
-                else {
-                    print!("Please enter y or n: ");
-                }
-            }
-        }
-        return true;
-    }
 }
 
 impl RusImg {
@@ -216,10 +145,18 @@ impl RusImg {
     }
 
     /// Convert an image to another format.
+    /// And replace the original image with the new one.
     /// It must be called after open_image().
     pub fn convert(&mut self, new_extension: Extension) -> Result<(), RusimgError> {
-        imgprocessor::do_convert(self, &new_extension)?;
-        Ok(())
+        let new_rusimg = imgprocessor::do_convert(self, &new_extension);
+        match new_rusimg {
+            Ok(new_rusimg) => {
+                self.extension = new_extension;
+                self.data = new_rusimg.data;
+                Ok(())
+            },
+            Err(e) => Err(e),
+        }
     }
 
     /// View an image on the terminal.
@@ -277,14 +214,14 @@ impl RusImg {
 
     /// Save an image to a file.
     /// If path is None, the original file will be overwritten.
-    pub fn save_image(&mut self, path: Option<&str>) -> Result<(), RusimgError> {
+    pub fn save_image(&mut self, path: Option<&str>) -> Result<SaveStatus, RusimgError> {
         let path_buf = if let Some(path) = path {
             Some(PathBuf::from(path))
         } else {
             None
         };
-        _ = imgprocessor::do_save_image(path_buf, &mut self.data, &self.extension, FileOverwriteAsk::YesToAll)?;
-        Ok(())
+        let ret = imgprocessor::do_save_image(path_buf, &mut self.data, &self.extension)?;
+        Ok(ret)
     }
 }
 

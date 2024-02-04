@@ -3,8 +3,7 @@ use std::fs::Metadata;
 use std::path::PathBuf;
 use image::DynamicImage;
 
-use crate::rusimg::RusimgTrait;
-use super::{RusimgError, RusimgStatus, ImgSize};
+use super::{RusimgTrait, RusimgError, RusimgStatus, ImgSize};
 
 #[derive(Debug, Clone)]
 pub struct PngImage {
@@ -60,13 +59,8 @@ impl RusimgTrait for PngImage {
         })
     }
 
-    fn save(&mut self, path: Option<PathBuf>, file_overwrite_ask: &super::FileOverwriteAsk) -> Result<RusimgStatus, RusimgError> {
+    fn save(&mut self, path: Option<PathBuf>) -> Result<RusimgStatus, RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &"png".to_string())?;
-
-        // ファイルが存在するか？＆上書き確認
-        if Self::check_file_exists(&save_path, &file_overwrite_ask) == false {
-            return Ok(RusimgStatus::Cancel);
-        }
         
         // image_bytes == None の場合、DynamicImage を 保存
         if self.image_bytes.is_none() {

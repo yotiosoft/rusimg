@@ -5,10 +5,7 @@ use std::fs::Metadata;
 use std::io::Write;
 use std::path::PathBuf;
 
-use crate::rusimg::RusimgTrait;
-use super::RusimgError;
-use super::ImgSize;
-use super::RusimgStatus;
+use super::{RusimgTrait, RusimgError, ImgSize, RusimgStatus};
 
 #[derive(Debug, Clone)]
 pub struct JpegImage {
@@ -59,13 +56,8 @@ impl RusimgTrait for JpegImage {
         })
     }
 
-    fn save(&mut self, path: Option<PathBuf>, file_overwrite_ask: &super::FileOverwriteAsk) -> Result<RusimgStatus, RusimgError> {
+    fn save(&mut self, path: Option<PathBuf>) -> Result<RusimgStatus, RusimgError> {
         let save_path = Self::save_filepath(&self.filepath_input, path, &self.extension_str)?;
-
-        // ファイルが存在するか？＆上書き確認
-        if Self::check_file_exists(&save_path, &file_overwrite_ask) == false {
-            return Ok(RusimgStatus::Cancel);
-        }
         
         // image_bytes == None の場合、DynamicImage を 保存
         if self.image_bytes.is_none() {
