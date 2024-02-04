@@ -260,6 +260,21 @@ impl RusImg {
         Ok(dynamic_image)
     }
 
+    /// Get file extension.
+    pub fn get_extension(&self) -> Extension {
+        self.extension.clone()
+    }
+
+    /// Get input file path.
+    pub fn get_input_filepath(&self) -> PathBuf {
+        match self.extension {
+            Extension::Png => self.data.png.as_ref().unwrap().filepath_input.clone(),
+            Extension::Jpeg => self.data.jpeg.as_ref().unwrap().filepath_input.clone(),
+            Extension::Bmp => self.data.bmp.as_ref().unwrap().filepath_input.clone(),
+            Extension::Webp => self.data.webp.as_ref().unwrap().filepath_input.clone(),
+        }
+    }
+
     /// Save an image to a file.
     /// If path is None, the original file will be overwritten.
     pub fn save_image(&mut self, path: Option<&str>) -> Result<(), RusimgError> {

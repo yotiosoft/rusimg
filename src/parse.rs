@@ -6,6 +6,7 @@ pub struct ArgStruct {
     pub souce_path: Option<Vec<PathBuf>>,
     pub destination_path: Option<PathBuf>,
     pub destination_extension: Option<String>,
+    pub destination_append_name: Option<String>,
     pub recursive: bool,
     pub quality: Option<f32>,
     pub delete: bool,
@@ -30,6 +31,11 @@ struct Args {
     /// Destination file path (file name or directory path)
     #[arg(short, long)]
     output: Option<PathBuf>,
+
+    /// Name to be appended to the destination file name
+    /// (e.g. [$ rusimg image.jpg -a _output] -> image_output.jpg)
+    #[arg(short, long)]
+    append: Option<String>,
 
     /// Destination file extension (e.g. jpeg, png, webp, bmp)
     #[arg(short, long)]
@@ -106,6 +112,7 @@ pub fn parser() -> ArgStruct {
         souce_path: args.source,
         destination_path: args.output,
         destination_extension: args.convert,
+        destination_append_name: args.append,
         recursive: args.recursive,
         quality: args.quality,
         delete: args.delete,

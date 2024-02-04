@@ -190,12 +190,24 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<rusimg::Rusimg
 
     // 出力
     let save_status = if save_required == true {
-        let output_path = match &args.destination_path {
-            Some(path) => Some(path.clone()),
-            None => None,
+        // 出力先パスを決定
+        let mut output_path = match &args.destination_path {
+            Some(path) => path.clone(),                                                             // If --output is specified, use it
+            None => Path::new(&image.get_input_filepath()).with_extension(image.extension.to_string()),       // If not, use the input filepath as the input file
         };
+        // append_name が指定されている場合、ファイル名に追加
+        if let Some(append_name) = &args.destination_append_name {
+            let mut output_path_tmp = output_path.file_stem().unwrap().to_str().unwrap().to_string();
+            output_path_tmp.push_str(append_name);
+            output_path_tmp.push_str(".");
+            output_path_tmp.push_str(&image.extension.to_string());
+            output_path = PathBuf::from(output_path_tmp);
+        }
+
+        // 保存
         let (save_status, saved_filepath, opened_filepath, before_size, after_size)
-            = rusimg::do_save_image(output_path, &mut image.data, &image.extension, file_overwrite_ask).map_err(rierr)?;
+            = rusimg::do_save_image(Some(output_path), &mut image.data, &image.extension, file_overwrite_ask).map_err(rierr)?;
+        // 保存先などの表示
         save_print(opened_filepath, saved_filepath.clone(), before_size, after_size);
 
         // --delete -> 元ファイルの削除 (optinal)
