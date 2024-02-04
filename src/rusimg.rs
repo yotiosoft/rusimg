@@ -1,10 +1,13 @@
-mod imgprocessor;
+mod bmp;
+mod jpeg;
+mod png;
+mod webp;
 
+use std::fs::Metadata;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::fmt;
 use image::DynamicImage;
-
-use self::imgprocessor::ImgData;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RusimgError {
@@ -66,6 +69,44 @@ pub struct RusImg {
     pub data: Box<ImgData>,
 }
 
+pub struct ImgData {
+    pub image_struct: Box<(dyn RusimgTrait)>,
+}
+
+pub trait RusimgTrait {
+    fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
+    fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
+    fn save(&mut self, path: Option<PathBuf>) -> Result<(), RusimgError>;
+    fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError>;
+    fn resize(&mut self, resize_ratio: u8) -> Result<ImgSize, RusimgError>;
+    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<ImgSize, RusimgError>;
+    fn grayscale(&mut self);
+    fn view(&self) -> Result<(), RusimgError>;
+
+    fn get_dynamic_image(&mut self) -> Result<DynamicImage, RusimgError>;
+    fn get_source_filepath(&self) -> PathBuf;
+    fn get_metadata(&self) -> Metadata;
+    fn get_size(&self) -> ImgSize;
+
+    fn save_filepath(&self, source_filepath: &PathBuf, destination_filepath: Option<PathBuf>, new_extension: &String) -> Result<PathBuf, RusimgError> {
+        if let Some(path) = destination_filepath {
+            if Path::new(&path).is_dir() {
+                let filename = match Path::new(&source_filepath).file_name() {
+                    Some(filename) => filename,
+                    None => return Err(RusimgError::FailedToGetFilename(source_filepath.clone())),
+                };
+                Ok(Path::new(&path).join(filename).with_extension(new_extension))
+            }
+            else {
+                Ok(path)
+            }
+        }
+        else {
+            Ok(Path::new(&source_filepath).with_extension(new_extension))
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Copy, Default)]
 pub struct ImgSize {
     pub width: usize,
@@ -87,36 +128,70 @@ pub struct SaveStatus {
     pub after_filesize: Option<u64>,
 }
 
+// 画像フォーマットを取得
+fn guess_image_format(image_buf: &[u8]) -> Result<image::ImageFormat, RusimgError> {
+    let format = image::guess_format(image_buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
+    Ok(format)
+}
+
 /// Open an image file and return a RusImg object.
 pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
-    imgprocessor::do_open_image(path)
+    let mut raw_data = std::fs::File::open(&path.to_path_buf()).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
+    let mut buf = Vec::new();
+    raw_data.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
+    let metadata_input = raw_data.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
+
+    match guess_image_format(&buf)? {
+        image::ImageFormat::Bmp => {
+            let image = bmp::BmpImage::open(path.to_path_buf(), buf, metadata_input)?;
+            let data = ImgData { image_struct: Box::new(image) };
+            Ok(RusImg { extension: Extension::Bmp, data: Box::new(data) })
+        },
+        image::ImageFormat::Jpeg => {
+            let image = jpeg::JpegImage::open(path.to_path_buf(), buf, metadata_input)?;
+            let data = ImgData { image_struct: Box::new(image) };
+            Ok(RusImg { extension: Extension::Jpeg, data: Box::new(data) })
+        },
+        image::ImageFormat::Png => {
+            let image = png::PngImage::open(path.to_path_buf(), buf, metadata_input)?;
+            let data = ImgData { image_struct: Box::new(image) };
+            Ok(RusImg { extension: Extension::Png, data: Box::new(data) })
+        },
+        image::ImageFormat::WebP => {
+            let image = webp::WebpImage::open(path.to_path_buf(), buf, metadata_input)?;
+            let data = ImgData { image_struct: Box::new(image) };
+            Ok(RusImg { extension: Extension::Webp, data: Box::new(data) })
+        },
+        _ => Err(RusimgError::UnsupportedFileExtension),
+    }
 }
 
 impl RusImg {
     /// Get image size.
     pub fn get_image_size(&self) -> Result<ImgSize, RusimgError> {
-        imgprocessor::do_get_image_size(self)
+        let size = self.data.image_struct.get_size();
+        Ok(size)
     }
 
     /// Resize an image.
     /// It must be called after open_image().
     /// Set ratio to 100 to keep the original size.
     pub fn resize(&mut self, ratio: u8) -> Result<ImgSize, RusimgError> {
-        let size = imgprocessor::do_resize(self, ratio)?;
+        let size = self.data.image_struct.resize(ratio)?;
         Ok(size)
     }
 
     /// Trim an image.
     /// It must be called after open_image().
     pub fn trim(&mut self, trim_x: u32, trim_y: u32, trim_w: u32, trim_h: u32) -> Result<ImgSize, RusimgError> {
-        let size = imgprocessor::do_trim(self, (trim_x, trim_y), (trim_w, trim_h))?;
+        let size = self.data.image_struct.trim((trim_x, trim_y), (trim_w, trim_h))?;
         Ok(size)
     }
 
     /// Grayscale an image.
     /// It must be called after open_image().
     pub fn grayscale(&mut self) -> Result<(), RusimgError> {
-        imgprocessor::do_grayscale(self);
+        self.data.image_struct.grayscale();
         Ok(())
     }
 
@@ -124,7 +199,7 @@ impl RusImg {
     /// It must be called after open_image().
     /// Set quality to 100 to keep the original quality.
     pub fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {
-        imgprocessor::do_compress(&mut self.data, &self.extension, quality)?;
+        self.data.image_struct.compress(quality)?;
         Ok(())
     }
 
@@ -132,52 +207,45 @@ impl RusImg {
     /// And replace the original image with the new one.
     /// It must be called after open_image().
     pub fn convert(&mut self, new_extension: Extension) -> Result<(), RusimgError> {
-        let new_rusimg = imgprocessor::do_convert(self, &new_extension);
-        match new_rusimg {
-            Ok(new_rusimg) => {
-                self.extension = new_extension;
-                self.data = new_rusimg.data;
-                Ok(())
+        let dynamic_image = self.data.image_struct.get_dynamic_image()?;
+        let filepath = self.data.image_struct.get_source_filepath();
+        let metadata = self.data.image_struct.get_metadata();
+
+        let new_image = match new_extension {
+            Extension::Bmp => {
+                let bmp = bmp::BmpImage::import(dynamic_image, filepath, metadata)?;
+                ImgData { image_struct: Box::new(bmp) }
             },
-            Err(e) => Err(e),
-        }
+            Extension::Jpeg => {
+                let jpeg = jpeg::JpegImage::import(dynamic_image, filepath, metadata)?;
+                ImgData { image_struct: Box::new(jpeg) }
+            },
+            Extension::Png => {
+                let png = png::PngImage::import(dynamic_image, filepath, metadata)?;
+                ImgData { image_struct: Box::new(png) }
+            },
+            Extension::Webp => {
+                let webp = webp::WebpImage::import(dynamic_image, filepath, metadata)?;
+                ImgData { image_struct: Box::new(webp) }
+            },
+        };
+
+        self.extension = new_extension;
+        self.data = Box::new(new_image);
+
+        Ok(())
     }
 
     /// View an image on the terminal.
     /// It must be called after open_image().
     pub fn view(&mut self) -> Result<(), RusimgError> {
-        imgprocessor::do_view(self)?;
+        self.view()?;
         Ok(())
     }
 
     /// Get a DynamicImage from an Img.
     pub fn get_dynamic_image(&mut self) -> Result<DynamicImage, RusimgError> {
-        let dynamic_image = match self.extension {
-            Extension::Png => {
-                if self.data.png.is_none() {
-                    return Err(RusimgError::FailedToGetDynamicImage);
-                }
-                self.data.png.as_ref().unwrap().image.clone()
-            }
-            Extension::Jpeg => {
-                if self.data.jpeg.is_none() {
-                    return Err(RusimgError::FailedToGetDynamicImage);
-                }
-                self.data.jpeg.as_ref().unwrap().image.clone()
-            }
-            Extension::Bmp => {
-                if self.data.bmp.is_none() {
-                    return Err(RusimgError::FailedToGetDynamicImage);
-                }
-                self.data.bmp.as_ref().unwrap().image.clone()
-            }
-            Extension::Webp => {
-                if self.data.webp.is_none() {
-                    return Err(RusimgError::FailedToGetDynamicImage);
-                }
-                self.data.webp.as_ref().unwrap().image.clone()
-            }
-        };
+        let dynamic_image = self.data.image_struct.get_dynamic_image()?;
         Ok(dynamic_image)
     }
 
@@ -188,24 +256,17 @@ impl RusImg {
 
     /// Get input file path.
     pub fn get_input_filepath(&self) -> PathBuf {
-        match self.extension {
-            Extension::Png => self.data.png.as_ref().unwrap().filepath_input.clone(),
-            Extension::Jpeg => self.data.jpeg.as_ref().unwrap().filepath_input.clone(),
-            Extension::Bmp => self.data.bmp.as_ref().unwrap().filepath_input.clone(),
-            Extension::Webp => self.data.webp.as_ref().unwrap().filepath_input.clone(),
-        }
+        self.data.image_struct.get_source_filepath()
     }
 
     /// Save an image to a file.
     /// If path is None, the original file will be overwritten.
     pub fn save_image(&mut self, path: Option<&str>) -> Result<SaveStatus, RusimgError> {
-        let path_buf = if let Some(path) = path {
-            Some(PathBuf::from(path))
-        } else {
-            None
+        let path_buf = match path {
+            Some(p) => Some(PathBuf::from(p)),
+            None => None,
         };
-        let ret = imgprocessor::do_save_image(path_buf, &mut self.data, &self.extension)?;
-        Ok(ret)
+        self.data.image_struct.save(path_buf)?;
     }
 }
 

@@ -22,11 +22,10 @@ impl RusimgTrait for BmpImage {
         Ok(Self {
             image,
             size,
-            metadata_input: Some(source_metadata),
+            metadata_input: source_metadata,
             metadata_output: None,
             filepath_input: source_path,
             filepath_output: None,
-            ..Default::default()
         })
     }
 
@@ -37,11 +36,10 @@ impl RusimgTrait for BmpImage {
         Ok(Self {
             image,
             size,
-            metadata_input: Some(metadata),
+            metadata_input: metadata,
             metadata_output: None,
             filepath_input: path,
             filepath_output: None,
-            ..Default::default()
         })
     }
 
@@ -109,5 +107,21 @@ impl RusimgTrait for BmpImage {
         viuer::print(&self.image, &conf).map_err(|e| RusimgError::FailedToViewImage(e.to_string()))?;
 
         Ok(())
+    }
+    
+    fn get_dynamic_image(&mut self) -> Result<DynamicImage, RusimgError> {
+        Ok(self.image.clone())
+    }
+
+    fn get_source_filepath(&self) -> PathBuf {
+        self.filepath_input.clone()
+    }
+
+    fn get_metadata(&self) -> Metadata {
+        self.metadata_input.clone()
+    }
+
+    fn get_size(&self) -> ImgSize {
+        self.size
     }
 }

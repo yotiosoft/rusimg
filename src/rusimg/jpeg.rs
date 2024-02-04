@@ -152,4 +152,20 @@ impl RusimgTrait for JpegImage {
 
         Ok(())
     }
+
+    fn get_dynamic_image(&mut self) -> Result<DynamicImage, RusimgError> {
+        Ok(self.image.clone())
+    }
+
+    fn get_source_filepath(&self) -> PathBuf {
+        self.filepath_input.clone()
+    }
+
+    fn get_metadata(&self) -> Metadata {
+        self.metadata_input.clone()
+    }
+
+    fn get_size(&self) -> ImgSize {
+        self.size
+    }
 }
