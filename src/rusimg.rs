@@ -83,6 +83,8 @@ pub trait RusimgTrait {
     fn grayscale(&mut self);
     fn view(&self) -> Result<(), RusimgError>;
 
+    fn set_dynamic_image(&mut self, image: DynamicImage) -> Result<(), RusimgError>;
+
     fn get_dynamic_image(&mut self) -> Result<DynamicImage, RusimgError>;
     fn get_source_filepath(&self) -> PathBuf;
     fn get_destination_filepath(&self) -> Option<PathBuf>;
@@ -242,6 +244,12 @@ impl RusImg {
     /// It must be called after open_image().
     pub fn view(&mut self) -> Result<(), RusimgError> {
         self.data.image_struct.view()
+    }
+
+    /// Set a DynamicImage to an Img.
+    pub fn set_dynamic_image(&mut self, image: DynamicImage) -> Result<(), RusimgError> {
+        self.data.image_struct.set_dynamic_image(image)?;
+        Ok(())
     }
 
     /// Get a DynamicImage from an Img.
