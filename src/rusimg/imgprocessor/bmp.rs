@@ -53,7 +53,7 @@ impl RusimgTrait for BmpImage {
     }
 
     fn compress(&mut self, _quality: Option<f32>) -> Result<(), RusimgError> {
-        Err(RusimgError::BMPImagesCannotBeCompressed)
+        Err(RusimgError::ImageFormatCannotBeCompressed)
     }
 
     fn resize(&mut self, resize_ratio: u8) -> Result<ImgSize, RusimgError> {
