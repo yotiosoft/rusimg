@@ -132,4 +132,8 @@ impl RusimgTrait for BmpImage {
     fn get_size(&self) -> ImgSize {
         self.size
     }
+
+    fn get_extension_str(&self) -> String {
+        "bmp".to_string()
+    }
 }

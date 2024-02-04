@@ -28,6 +28,7 @@ pub enum RusimgError {
     InvalidTrimXY,
     ImageFormatCannotBeCompressed,
     UnsupportedFileExtension,
+    UseExternalExtensionFunction,
     ImageDataIsNone,
     FailedToGetDynamicImage,
 }
@@ -58,6 +59,7 @@ impl fmt::Display for RusimgError {
             RusimgError::InvalidTrimXY => write!(f, "Invalid trim XY"),
             RusimgError::ImageFormatCannotBeCompressed => write!(f, "this image format cannot be compressed"),
             RusimgError::UnsupportedFileExtension => write!(f, "Unsupported file extension"),
+            RusimgError::UseExternalExtensionFunction => write!(f, "Use external extension's function (e.g. open_image_external_format)"),
             RusimgError::ImageDataIsNone => write!(f, "Image data is None"),
             RusimgError::FailedToGetDynamicImage => write!(f, "Failed to get dynamic image"),
         }
@@ -89,6 +91,7 @@ pub trait RusimgTrait {
     fn get_metadata_src(&self) -> Metadata;
     fn get_metadata_dest(&self) -> Option<Metadata>;
     fn get_size(&self) -> ImgSize;
+    fn get_extension_str(&self) -> String;
 
     fn save_filepath(&self, source_filepath: &PathBuf, destination_filepath: Option<PathBuf>, new_extension: &String) -> Result<PathBuf, RusimgError> {
         if let Some(path) = destination_filepath {
@@ -168,6 +171,19 @@ pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
     }
 }
 
+/// Open an image file and return a DynamicImage object.
+/// Programmers can set the image format trait manually.
+pub fn open_image_external_format<R: RusimgTrait>(path: &Path) -> Result<RusImg, RusimgError> {
+    let mut raw_data = std::fs::File::open(&path.to_path_buf()).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
+    let mut buf = Vec::new();
+    raw_data.read_to_end(&mut buf).map_err(|e| RusimgError::FailedToReadFile(e.to_string()))?;
+    let metadata_input = raw_data.metadata().map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?;
+
+    let image = R::open(path.to_path_buf(), buf, metadata_input)?;
+    let data = ImgData { image_struct: Box::new(image) };
+    Ok(RusImg { extension: Extension::External(image.get_extension_str()), data: Box::new(data) })
+}
+
 impl RusImg {
     /// Get image size.
     pub fn get_image_size(&self) -> Result<ImgSize, RusimgError> {
@@ -230,10 +246,27 @@ impl RusImg {
                 let webp = webp::WebpImage::import(dynamic_image, filepath, metadata)?;
                 ImgData { image_struct: Box::new(webp) }
             },
+            Extension::External(s) => return Err(RusimgError::UseExternalExtensionFunction),
         };
 
         self.extension = new_extension;
         self.data = Box::new(new_image);
+
+        Ok(())
+    }
+
+    /// Convert an image to another format.
+    /// And replace the original image with the new one.
+    /// It must be called after open_image_external_format().
+    /// Programmers can set the image format trait manually.
+    pub fn convert_external_format<R: RusimgTrait>(&mut self) -> Result<(), RusimgError> {
+        let dynamic_image = self.data.image_struct.get_dynamic_image()?;
+        let filepath = self.data.image_struct.get_source_filepath();
+        let metadata = self.data.image_struct.get_metadata_src();
+
+        let image = R::import(dynamic_image, filepath, metadata)?;
+        let data = ImgData { image_struct: Box::new(image) };
+        self.data = Box::new(data);
 
         Ok(())
     }
@@ -285,6 +318,7 @@ pub enum Extension {
     Jpeg,
     Png,
     Webp,
+    External(String),
 }
 impl fmt::Display for Extension {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -293,26 +327,7 @@ impl fmt::Display for Extension {
             Extension::Jpeg => write!(f, "jpeg"),
             Extension::Png => write!(f, "png"),
             Extension::Webp => write!(f, "webp"),
-        }
-    }
-}
-impl Extension {
-    pub fn from_str(s: &str) -> Result<Self, RusimgError> {
-        match s.to_ascii_lowercase().as_str() {
-            "bmp" => Ok(Extension::Bmp),
-            "jpeg" | "jpg" => Ok(Extension::Jpeg),
-            "png" => Ok(Extension::Png),
-            "webp" => Ok(Extension::Webp),
-            _ => Err(RusimgError::UnsupportedFileExtension),
-        }
-    }
-
-    pub fn to_image_format(&self) -> image::ImageFormat {
-        match self {
-            Extension::Bmp => image::ImageFormat::Bmp,
-            Extension::Jpeg => image::ImageFormat::Jpeg,
-            Extension::Png => image::ImageFormat::Png,
-            Extension::Webp => image::ImageFormat::WebP,
+            Extension::External(s) => write!(f, "{}", s),
         }
     }
 }

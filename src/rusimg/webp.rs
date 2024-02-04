@@ -183,4 +183,8 @@ impl RusimgTrait for WebpImage {
     fn get_size(&self) -> ImgSize {
         ImgSize::new(self.width, self.height)
     }
+
+    fn get_extension_str(&self) -> String {
+        "webp".to_string()
+    }
 }
