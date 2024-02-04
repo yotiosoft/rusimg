@@ -184,6 +184,11 @@ impl RusimgTrait for PngImage {
         Ok(())
     }
 
+    fn set_dynamic_image(&mut self, image: DynamicImage) -> Result<(), RusimgError> {
+        self.image = image;
+        Ok(())
+    }
+
     fn get_dynamic_image(&mut self) -> Result<DynamicImage, RusimgError> {
         Ok(self.image.clone())
     }
