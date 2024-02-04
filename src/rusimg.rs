@@ -2,10 +2,9 @@ mod imgprocessor;
 
 use std::path::{Path, PathBuf};
 use std::fmt;
-use std::any::Any;
 use image::DynamicImage;
 
-use self::imgprocessor::RusimgTrait;
+use self::imgprocessor::ImgData;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RusimgError {
@@ -62,18 +61,12 @@ impl fmt::Display for RusimgError {
     }
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct ImgData {
-    pub image: Box<(dyn Any + Send + Sync + 'static)>,
-}
-
-#[derive(Debug, Clone)]
 pub struct RusImg {
     pub extension: Extension,
     pub data: ImgData,
 }
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Copy, Default)]
 pub struct ImgSize {
     pub width: usize,
     pub height: usize,
@@ -123,7 +116,7 @@ impl RusImg {
     /// Grayscale an image.
     /// It must be called after open_image().
     pub fn grayscale(&mut self) -> Result<(), RusimgError> {
-        imgprocessor::do_grayscale(self)?;
+        imgprocessor::do_grayscale(self);
         Ok(())
     }
 

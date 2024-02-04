@@ -5,20 +5,9 @@ use std::fs::Metadata;
 use std::io::Write;
 use std::path::PathBuf;
 
-use super::{RusimgTrait, RusimgError, ImgSize};
+use super::{ImageStruct, RusimgTrait, RusimgError, ImgSize};
 
-#[derive(Debug, Clone)]
-pub struct JpegImage {
-    pub image: DynamicImage,
-    image_bytes: Option<Vec<u8>>,
-    size: ImgSize,
-    operations_count: u32,
-    extension_str: String,
-    pub metadata_input: Metadata,
-    pub metadata_output: Option<Metadata>,
-    pub filepath_input: PathBuf,
-    pub filepath_output: Option<PathBuf>,
-}
+pub type JpegImage = ImageStruct;
 
 impl RusimgTrait for JpegImage {
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> {

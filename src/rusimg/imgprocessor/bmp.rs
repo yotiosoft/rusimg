@@ -3,17 +3,9 @@ use image::DynamicImage;
 use std::fs::Metadata;
 use std::path::PathBuf;
 
-use super::{RusimgTrait, RusimgError, ImgSize};
+use super::{ImageStruct, ImgSize, RusimgError, RusimgTrait};
 
-#[derive(Debug, Clone)]
-pub struct BmpImage {
-    pub image: DynamicImage,
-    size: ImgSize,
-    pub metadata_input: Metadata,
-    pub metadata_output: Option<Metadata>,
-    pub filepath_input: PathBuf,
-    pub filepath_output: Option<PathBuf>,
-}
+pub type BmpImage = ImageStruct;
 
 impl RusimgTrait for BmpImage {
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> {
@@ -22,10 +14,11 @@ impl RusimgTrait for BmpImage {
         Ok(Self {
             image,
             size,
-            metadata_input: source_metadata,
+            metadata_input: Some(source_metadata),
             metadata_output: None,
             filepath_input: source_path,
             filepath_output: None,
+            ..Default::default()
         })
     }
 
@@ -36,10 +29,11 @@ impl RusimgTrait for BmpImage {
         Ok(Self {
             image,
             size,
-            metadata_input: metadata,
+            metadata_input: Some(metadata),
             metadata_output: None,
             filepath_input: path,
             filepath_output: None,
+            ..Default::default()
         })
     }
 
