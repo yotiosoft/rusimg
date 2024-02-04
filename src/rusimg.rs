@@ -66,11 +66,7 @@ impl fmt::Display for RusimgError {
 
 pub struct RusImg {
     pub extension: Extension,
-    pub data: Box<ImgData>,
-}
-
-pub struct ImgData {
-    pub image_struct: Box<(dyn RusimgTrait)>,
+    pub data: Box<(dyn RusimgTrait)>,
 }
 
 pub trait RusimgTrait {
@@ -148,23 +144,23 @@ pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
     match guess_image_format(&buf)? {
         image::ImageFormat::Bmp => {
             let image = bmp::BmpImage::open(path.to_path_buf(), buf, metadata_input)?;
-            let data = ImgData { image_struct: Box::new(image) };
-            Ok(RusImg { extension: Extension::Bmp, data: Box::new(data) })
+            let data = Box::new(image);
+            Ok(RusImg { extension: Extension::Bmp, data: data })
         },
         image::ImageFormat::Jpeg => {
             let image = jpeg::JpegImage::open(path.to_path_buf(), buf, metadata_input)?;
-            let data = ImgData { image_struct: Box::new(image) };
-            Ok(RusImg { extension: Extension::Jpeg, data: Box::new(data) })
+            let data = Box::new(image);
+            Ok(RusImg { extension: Extension::Jpeg, data: data })
         },
         image::ImageFormat::Png => {
             let image = png::PngImage::open(path.to_path_buf(), buf, metadata_input)?;
-            let data = ImgData { image_struct: Box::new(image) };
-            Ok(RusImg { extension: Extension::Png, data: Box::new(data) })
+            let data = Box::new(image);
+            Ok(RusImg { extension: Extension::Png, data: data })
         },
         image::ImageFormat::WebP => {
             let image = webp::WebpImage::open(path.to_path_buf(), buf, metadata_input)?;
-            let data = ImgData { image_struct: Box::new(image) };
-            Ok(RusImg { extension: Extension::Webp, data: Box::new(data) })
+            let data = Box::new(image);
+            Ok(RusImg { extension: Extension::Webp, data: data })
         },
         _ => Err(RusimgError::UnsupportedFileExtension),
     }
@@ -173,7 +169,7 @@ pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
 impl RusImg {
     /// Get image size.
     pub fn get_image_size(&self) -> Result<ImgSize, RusimgError> {
-        let size = self.data.image_struct.get_size();
+        let size = self.data.get_size();
         Ok(size)
     }
 
@@ -181,21 +177,21 @@ impl RusImg {
     /// It must be called after open_image().
     /// Set ratio to 100 to keep the original size.
     pub fn resize(&mut self, ratio: u8) -> Result<ImgSize, RusimgError> {
-        let size = self.data.image_struct.resize(ratio)?;
+        let size = self.data.resize(ratio)?;
         Ok(size)
     }
 
     /// Trim an image.
     /// It must be called after open_image().
     pub fn trim(&mut self, trim_x: u32, trim_y: u32, trim_w: u32, trim_h: u32) -> Result<ImgSize, RusimgError> {
-        let size = self.data.image_struct.trim((trim_x, trim_y), (trim_w, trim_h))?;
+        let size = self.data.trim((trim_x, trim_y), (trim_w, trim_h))?;
         Ok(size)
     }
 
     /// Grayscale an image.
     /// It must be called after open_image().
     pub fn grayscale(&mut self) -> Result<(), RusimgError> {
-        self.data.image_struct.grayscale();
+        self.data.grayscale();
         Ok(())
     }
 
@@ -203,7 +199,7 @@ impl RusImg {
     /// It must be called after open_image().
     /// Set quality to 100 to keep the original quality.
     pub fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {
-        self.data.image_struct.compress(quality)?;
+        self.data.compress(quality)?;
         Ok(())
     }
 
@@ -211,31 +207,31 @@ impl RusImg {
     /// And replace the original image with the new one.
     /// It must be called after open_image().
     pub fn convert(&mut self, new_extension: Extension) -> Result<(), RusimgError> {
-        let dynamic_image = self.data.image_struct.get_dynamic_image()?;
-        let filepath = self.data.image_struct.get_source_filepath();
-        let metadata = self.data.image_struct.get_metadata_src();
+        let dynamic_image = self.data.get_dynamic_image()?;
+        let filepath = self.data.get_source_filepath();
+        let metadata = self.data.get_metadata_src();
 
-        let new_image = match new_extension {
+        let new_image: Box<(dyn RusimgTrait)> = match new_extension {
             Extension::Bmp => {
                 let bmp = bmp::BmpImage::import(dynamic_image, filepath, metadata)?;
-                ImgData { image_struct: Box::new(bmp) }
+                Box::new(bmp)
             },
             Extension::Jpeg => {
                 let jpeg = jpeg::JpegImage::import(dynamic_image, filepath, metadata)?;
-                ImgData { image_struct: Box::new(jpeg) }
+                Box::new(jpeg)
             },
             Extension::Png => {
                 let png = png::PngImage::import(dynamic_image, filepath, metadata)?;
-                ImgData { image_struct: Box::new(png) }
+                Box::new(png)
             },
             Extension::Webp => {
                 let webp = webp::WebpImage::import(dynamic_image, filepath, metadata)?;
-                ImgData { image_struct: Box::new(webp) }
+                Box::new(webp)
             },
         };
 
         self.extension = new_extension;
-        self.data = Box::new(new_image);
+        self.data = new_image;
 
         Ok(())
     }
@@ -243,18 +239,18 @@ impl RusImg {
     /// View an image on the terminal.
     /// It must be called after open_image().
     pub fn view(&mut self) -> Result<(), RusimgError> {
-        self.data.image_struct.view()
+        self.data.view()
     }
 
     /// Set a DynamicImage to an Img.
     pub fn set_dynamic_image(&mut self, image: DynamicImage) -> Result<(), RusimgError> {
-        self.data.image_struct.set_dynamic_image(image)?;
+        self.data.set_dynamic_image(image)?;
         Ok(())
     }
 
     /// Get a DynamicImage from an Img.
     pub fn get_dynamic_image(&mut self) -> Result<DynamicImage, RusimgError> {
-        let dynamic_image = self.data.image_struct.get_dynamic_image()?;
+        let dynamic_image = self.data.get_dynamic_image()?;
         Ok(dynamic_image)
     }
 
@@ -265,7 +261,7 @@ impl RusImg {
 
     /// Get input file path.
     pub fn get_input_filepath(&self) -> PathBuf {
-        self.data.image_struct.get_source_filepath()
+        self.data.get_source_filepath()
     }
 
     /// Save an image to a file.
@@ -275,12 +271,12 @@ impl RusImg {
             Some(p) => Some(PathBuf::from(p)),
             None => None,
         };
-        self.data.image_struct.save(path_buf)?;
+        self.data.save(path_buf)?;
 
         let ret = SaveStatus {
-            output_path: self.data.image_struct.get_destination_filepath().clone().or(None),
-            before_filesize: self.data.image_struct.get_metadata_src().len(),
-            after_filesize: self.data.image_struct.get_metadata_dest().as_ref().or(None).map(|m| m.len())
+            output_path: self.data.get_destination_filepath().clone().or(None),
+            before_filesize: self.data.get_metadata_src().len(),
+            after_filesize: self.data.get_metadata_dest().as_ref().or(None).map(|m| m.len())
         };
         Ok(ret)
     }
