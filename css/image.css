@@ -1,0 +1,24 @@
+.picture-wrap {
+    width: 100%;
+    display: flex;
+	justify-content: center;
+    flex-wrap: wrap;
+}
+
+picture {
+    margin: 20px;
+}
+
+source {
+    max-width: 100%;
+    width: 600px;
+    max-height: 500px;
+    width: auto;
+}
+
+img {
+    max-width: 100%;
+    width: 600px;
+    max-height: 500px;
+    width: auto;
+}

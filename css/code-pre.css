@@ -1,0 +1,22 @@
+/* For Google Code Prettiffy */
+
+.prettyprint {
+    text-align: left;
+    border-radius: 10px;
+    padding-top: 20px;
+    padding-left: 10px;
+
+    font-family: "Source Code Pro", monospace;
+}
+
+.prettyprint ol {
+    padding: 10px;
+}
+
+.prettyprint ol li {
+    padding-left: 10px;
+}
+
+.prettyprint ol.linenums > li {
+	list-style-type: decimal; 
+}

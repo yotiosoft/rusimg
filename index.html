@@ -1,11 +1,128 @@
-<html>
-<head>
-    <title>Rusimg</title>
-    <!--<link rel="stylesheet" href="css/style.css">-->
-</head>
+<!DOCUTYPE HTML>
+<html lang="ja">
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-174934210-1"></script>
+ 
 
-<h1>
-    Welcome to Rusimg Page!
-</h1>
+    <meta charset="utf8">
+    <link rel="stylesheet" href="css/style.css" media="screen and (min-width: 768px)">
+    <link rel="stylesheet" href="css/style_m.css" media="screen and (max-width: 767px)">
+    <link rel="stylesheet" href="css/header.css" media="screen and (min-width: 768px)">
+    <link rel="stylesheet" href="css/header_m.css" media="screen and (max-width: 767px)">
+    <link rel="stylesheet" href="css/headings.css">
+    <link rel="stylesheet" href="css/content.css">
+    <link rel="stylesheet" href="css/image.css">
+    <link rel="icon" type="image/png" href="/img/logo/yotiosoft32.png">
+    <title>10th anniversary - YotioSoft</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
+    <!--Google Code Prettify-->
+    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js?lang=none&skin=desert"></script>
+    <link rel="stylesheet" href="/css/code-pre.css">
+
+    <script src="js/jquery-3.5.1.min.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/side.js"></script>
+    <script src="js/jump.js"></script>
+  </head>
+
+  <body>
+    <div id="wrap">
+      <header>
+        <div id="headers">
+          <div id="header"></div>
+        </div>
+      </header>
+      
+      <div class="pageheader" id="pegeheader_id" style="background: #00bfff;">
+        <div class="pageheader_wrap" id="particles">
+          <div class="pageheader_title">Rusimg : A image processing CLI tool written by Rust.</div>
+          <div class="pageheader_summary" style="max-width: 400px; margin-top: 10px">
+            <!-- bash command -->
+            <pre class="prettyprint sunburst">
+$ cargo install rusimg
+            </pre>
+          </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+        <script src="js/particles.js"></script>
+      </div>
+
+      <div id="under-header"></div>
+
+      <div class="main_wrap">
+        <div id="sidebar">
+          <div id="sticked">
+            <div id="sidebar_menu">
+              <div id="sidebar_h">
+                <a href="#introduction">Summary</a>
+              </div>
+              <div id="sidebar_h">
+                <a href="#history">Features</a>
+              </div>
+              <div id="sidebar_h">
+                <a href="#conclusion">How to get ?</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="content" class="content">
+
+          <div class="column">
+            <div id="introduction"></div>
+            <div class="content_h1_ja">
+              Summary
+            </div>
+            <div class="content_sub">
+              <div class="text">
+                <p>2024年1月6日、YotioSoft は10周年を迎えました。</p>
+                <p>なにか記念作品的なものを用意しようと思ったのですが、考えが至らなかったため</p>
+                <p>過去の記事やアーカイブを漁りつつ10年間を振り返る的なページを作成しました。ぜひご覧下さい。</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="column">
+            <div id="history"></div>
+            <div id="2014"></div>
+            <div class="content_h1">
+              Features
+            </div>
+
+            <div class="content_main">
+              <div class="content_h2">
+                <div class="content_h2_box" style="background-color: #00bfff;"></div>
+                <div class="content">
+                  <div class="title">Feature A</div>
+                  <div class="date">2014/01/06</div>
+                </div>
+              </div>
+              <div class="content_sub">
+                <div class="picture-wrap">
+                  <picture>
+                    <source srcset="/img/sc/20140106.webp" type="image/webp">
+                    <img src="/img/sc/20140106.png" alt="2014-01-06" width="100%">
+                  </picture>
+                </div>
+
+                <div class="text">
+                  <p>ふと思い立ってサイトを立ち上げました。</p>
+                  <p>開設当初のスクリーンショットは残っていませんが、当初は「YtaniSoft@HSP」というサイト名でした。</p>
+                </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <footer class="footer_class">
+        <div id="footer"></div>
+      </footer>
+    </div>
+  </body>
 
 </html>

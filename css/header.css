@@ -1,0 +1,204 @@
+/* ヘッダ */
+#headers {
+  position: relative;
+}
+
+#header {
+  background-color: #313131;
+  padding: 10px;
+}
+
+#fixed_subheader {
+  box-sizing: border-box;
+  color: white;
+  width: 100%;
+  z-index: 10;
+}
+
+.menu-fixed {
+  position: fixed;
+  top: 0;
+}
+
+#unfixed {
+  box-sizing: border-box;
+  height: 100px;
+  padding: 15px 30px;
+  background-color: #313131;
+  color: white;
+  width: 100%;
+  z-index: 10;
+}
+
+#unfixed_mini {
+  box-sizing: border-box;
+  height: 62px;
+  padding: 15px 30px;
+  background-color: #313131;
+  color: white;
+  width: 100%;
+  z-index: 10;
+}
+
+#header_wrap {
+  width: 1190px;
+  max-width: 100%;
+  margin: 0px auto;
+  overflow: hidden;
+}
+
+#header_logo {
+  height: 32px;
+  float: left;
+  line-height: 32px;
+  font-size: 22px;
+  display: flex;
+  font-family: 'Nunito Sans', sans-serif;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+#header_menu_line {
+  width: 100%;
+  float: left;
+  margin-top: 8px;
+
+  font-size: 14px;
+  line-height: 45px;
+  text-decoration: none;
+}
+
+#header_menu_left {
+  float: left;
+  display: flex;
+  position: relative;
+}
+
+#header_menu_right {
+  float: right;
+  display: flex;
+}
+
+/* メニューボタン */
+.menu_button_wrap {
+  position:relative;
+}
+
+.menu_button {
+  height: 45px;
+
+  background-color: #313131;
+  -webkit-transition: all 0.3s ease;
+  -moz-transition: all 0.3s ease;
+  -o-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+
+  text-align: center;
+
+  color: #ffffff;
+  display: flex;
+}
+
+.menu_button_font {
+  margin: 0px 10px 0px 10px;
+}
+
+.menu_button .link{
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.menu_button:hover {
+  background-color: #bbbbbb;
+}
+
+.menu_button_wrap:hover
+.menu_button {
+  background-color: #bbbbbb;
+}
+
+.menu_right_button {
+  width:	32px;
+  height: 45px;
+  overflow: hidden;
+  position:	relative;
+
+  line-height: 45px;
+  color:	#FFFFFF;
+  font-size: 16px;
+
+  -webkit-transition:	all 0.3s ease;
+  transition:	all 0.3s ease;
+
+  margin: 0px 5px 0px 5px;
+}
+.menu_right_button:hover {
+  width:	100px;
+  background-color:	rgb(0, 162, 232);
+
+  -webkit-transition:	all 0.3s ease;
+  transition:	all 0.3s ease;
+}
+.menu_right_button .mask {
+  width: 50%;	/* 画像の半分の大きさにする */
+  height:	100%;
+  position:	absolute;
+  top:	0;
+  left:	5px;
+  margin-left:	100%;	/* 枠の左に置いて表示させない */
+  background-color:	rgba(0,162,232,0.4);
+  -webkit-transition:	all 0.3s ease;
+  transition:	all 0.3s ease;
+}
+.menu_right_button:hover .mask {
+    margin-left: 40px;	/* 右にずらして表示する */
+}
+.menu_right_button img {
+  -webkit-transition:	all 0.3s ease;
+    transition:	all 0.3s ease;
+
+  position: absolute;
+  top: 6px;
+}
+
+/* サブメニュー */
+.header-submenu {
+  position: fixed; 
+  background-color: #ffffff;
+  display: none;
+  margin-top: 0px;
+}
+
+.header-submenu a {
+  color: #fff;
+}
+
+@media (hover: hover) {
+  .menu_button_wrap:hover
+  .header-submenu {
+    display: block;
+  }
+}
+@media (hover: none) {
+  .menu_button_wrap:hover
+  {
+    /* 何もしない（タッチ画面ではサブメニューを表示しない） */ 
+  }
+}
+.submenu-button {
+  background-color: #bbbbbb;
+}
+.submenu-button:hover {
+  background-color: #dadada;
+}
+.submenu-button p {
+  margin-left: 10px;
+}
+
+#under-header {
+  margin-top: 30px;
+}
+#under-header-top {
+  margin-top: 130px;
+}

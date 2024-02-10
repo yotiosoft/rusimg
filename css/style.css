@@ -1,0 +1,434 @@
+/* 全体に対して */
+* {
+  margin: 0px;
+  padding: 0px;
+}
+
+html, body {
+  font-family: 'Noto Sans JP', 
+  sans-serif;
+
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+
+  margin: 0;
+
+  background-color: #eeeeee;
+}
+
+ol {
+  margin-left: 20px;
+}
+
+table {
+  display: block;
+  white-space:nowrap;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+
+#wrap {
+  overflow: hidden;
+
+  min-height: 100vh;
+  position: relative;
+  padding-bottom: 120px;
+  box-sizing: border-box;
+}
+
+a.anchor{
+  display: block;
+  padding-top: 100px;
+  margin-top: -100px;
+}
+
+/* パンくずリスト */
+.navibar_wrap {
+  width: 100%;
+  height: 20px;
+  background-color: #dfe6e9;
+  margin-bottom: 30px;
+}
+
+.navibar {
+  width: 1200px;
+  max-width: 100%;
+  padding-left: 10px;
+  margin: 0px auto;
+
+  color: #313131;
+  font-size: 14px;
+}
+
+.navibar a {
+  color: #b2bec3;
+  font-size: 14px;
+  text-decoration: none;
+
+  -webkit-transition: all 0.3s ease;
+  -moz-transition: all 0.3s ease;
+  -o-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+
+  line-height: 20px;
+}
+
+.navibar a:hover {
+  color: #313131;
+}
+
+.breadcrumbs li::after{
+  content: '>';
+  display: inline-block;
+  padding: 0 10px;
+}
+
+.breadcrumbs li:last-child::after{
+  display: none;
+}
+
+.arrow {
+  color: #b2bec3;
+  margin: 0px 5px 0px 5px;
+}
+
+/* ページのタイトルと説明 */
+.pageheader {
+  width: 100%;
+  height: 250px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+
+  font-family: 'Work Sans', sans-serif;
+}
+
+.pageheader_wrap {
+  width: 100%;
+
+  position: relative;
+  margin: 0px auto;
+  vertical-align: middle;
+
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-bottom: 10px;
+
+  letter-spacing: 2px;
+
+  overflow: hidden;  
+  .pageheader_title {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-100%);
+    color: #fff;
+    z-index: 1;
+    width: 100%;
+  }
+
+  .pageheader_summary {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-0%);
+    color: #fff;
+    z-index: 1;
+    width: 100%;
+  }
+}
+
+.pageheader_logo_wrap {
+  max-width: 100%;
+
+  text-align: center;
+
+  position: relative;
+  margin: 0px auto;
+
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.pageheader_title {
+  color: #FFFFFF;
+  font-size: 32px;
+  height: 40px;
+  line-height: 30px;
+
+  font-weight: bold;
+
+  letter-spacing: 1px;
+}
+
+.pageheader_summary {
+  color: #FFFFFF;
+  font-size: 20px;
+  height: 30px;
+  line-height: 20px;
+}
+
+/* メインとなるコンテンツ */
+.main_wrap {
+  max-width: 100%;
+  margin: 0px auto;
+  display: -webkit-flex;
+  display: flex;
+  justify-content: center;
+}
+
+#fullcolumn {
+  position: relative;
+  width: 100%;
+  height: auto;
+}
+
+.box-1190x390:before {
+  content: "";
+  display: block;
+  padding-top: 30%;
+  margin-bottom: 30px;
+}
+
+.inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#fullcolumn p {
+  line-height:1.5em;
+}
+
+#fullcolumn img {
+  width: 100%;
+}
+
+#sidebar {
+  width: 150px;
+  margin-left: 10px;
+  position: relative;
+  padding-top: 10px;
+  z-index: 1;
+}
+
+#sticked {
+  width: 100%;
+  /*border: dashed 1px #999;*/
+}
+
+#sidebar_menu {
+  width: 100%;
+  color: #313131;
+  margin-bottom: 30px;
+}
+
+#sidebar_h {
+  min-height: 20px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #313131;
+  margin-bottom: 10px;
+}
+
+#sidebar_links {
+  margin-top: 5px;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+#sidebar_menu li {
+  margin-top: 5px;
+  margin-left: 1px;
+  list-style: none;
+}
+
+#sidebar_menu li a {
+  color: #313131;
+  text-decoration: none;
+
+  -webkit-transition: all 0.3s ease;
+  -moz-transition: all 0.3s ease;
+  -o-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+}
+
+#sidebar_menu a:hover {
+  color: #5bd1d7;
+}
+
+.column {
+  margin-bottom: 50px;
+}
+
+#sidebar_h a {
+  color: #313131;
+  text-decoration: none;
+
+  -webkit-transition: all 0.3s ease;
+  -moz-transition: all 0.3s ease;
+  -o-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+}
+
+/* フッター */
+.footer_class,
+.push {
+  width: 100%;
+  height: 80px;
+  background-color: #313131;
+  color: white;
+
+  position: absolute;
+  bottom: 0;
+
+  z-index: 10;
+}
+
+#footer_wrap {
+  width: 1200px;
+  max-width: 100%;
+  height: 100%;
+  display: flex;
+  margin: 0px auto;
+  padding-left: 10px;
+  padding-right: 10px;
+  overflow: hidden;
+
+  justify-content: center;
+  align-items: center;
+}
+
+#footer_logo {
+  height: 50px;
+  display: flex;
+}
+
+#footer_logo_name_and_catchcopy {
+  height: 50px;
+  margin-left: 10px;
+  text-align: left;
+}
+
+#footer_logo_name {
+  height: 30px;
+  font-size: 26px;
+  line-height: 30px;
+}
+
+#footer_logo_catchcopy {
+  height: 20px;
+  font-size: 12px;
+  line-height: 30px;
+}
+
+#footer_copyright {
+  font-size: 12px;
+  line-height: 20px;
+
+  font-family: "Arial",
+    "Noto Sans CJK JP",
+    "Segoe UI",
+    Roboto,
+    "YuGothic", YuGothic,
+    "Hiragino Sans",
+    "メイリオ", Meiryo,
+    "VL PGothic",
+    "Droid Sans Japanese", "Droid Sans",
+    "Takaoゴシック","TakaoGothic",
+    "ＭＳ Ｐゴシック", "MS PGothic",
+    sans-serif;
+}
+
+#footer_up {
+  margin-right: 0px;
+  float: right;
+  min-height: 100%;
+  display: flex; 
+  justify-content: center;
+  align-items: center;
+}
+
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
+  display: block;
+}
+
+.icontxt img {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 5px;
+  margin-top: -3px;
+}
+.icontxt .txt {
+  display: inline-block;
+  vertical-align: middle;
+  width: 250px;
+}
+
+.icontxt-nomargin img {
+  display: inline-block;
+  vertical-align: middle;
+  margin-top: -3px;
+}
+.icontxt-nomargin .txt {
+  display: inline-block;
+  vertical-align: middle;
+  width: 250px;
+}
+
+.imgtxt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.imgtxt picture {
+  margin-right: 20px;
+  max-width: 40%;
+}
+.imgtxt img {
+  margin-right: 20px;
+}
+
+.bottom-space {
+  margin-bottom: 100px;
+}
+
+.line-row {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.mini-box {
+  background-color: #ccc;
+  border-radius: 5px;
+  padding: 5px 5px 5px 5px;
+  display: inline;
+}
+.mini-box-black-wide {
+  background-color: #333;
+  border-radius: 5px;
+  padding: 10px 10px 10px 10px;
+  color: #fff;
+  display: inline;
+  top: 10px;
+}
+
+.link-column {
+  margin: 0px 0px 50px 0px;
+}
+
+.content-img {
+  max-width: 70%;
+}
+
+.flex-buttons {
+  display: flex;
+  flex-wrap: wrap;
+}

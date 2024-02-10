@@ -1,0 +1,35 @@
+/* インライン要素の見出し */
+.inline-heading-wrap {
+    min-height: 60px;
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.inline-heading-en {
+    float: left;
+    height: 40px;
+    margin: 10px 10px 10px 0px;
+
+    font-size: 36px;
+    line-height: 40px;
+    font-family: 'Renner*', sans-serif;
+    font-weight: 300;
+    letter-spacing: 3px;
+}
+
+.inline-heading-jp {
+    float: left;
+    height: 40px;
+    margin: 10px 10px 10px 0px;
+
+    border-left: 1px solid gray;
+    padding-left: 10px;
+    
+    font-size: 18px;
+    color: #666666;
+    line-height: 40px;
+    letter-spacing: 1px;
+}
+
