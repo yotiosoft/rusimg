@@ -59,13 +59,13 @@ $ cargo install rusimg
           <div id="sticked">
             <div id="sidebar_menu">
               <div id="sidebar_h">
-                <a href="#introduction">Summary</a>
+                <a href="#summary">Summary</a>
               </div>
               <div id="sidebar_h">
-                <a href="#history">Features</a>
+                <a href="#features">Features</a>
               </div>
               <div id="sidebar_h">
-                <a href="#conclusion">How to get ?</a>
+                <a href="#how-to-get">How to get ?</a>
               </div>
             </div>
           </div>
@@ -74,15 +74,15 @@ $ cargo install rusimg
         <div id="content" class="content">
 
           <div class="column">
-            <div id="introduction"></div>
+            <div id="summary"></div>
             <div class="content_h1_ja">
               Summary
             </div>
             <div class="content_sub">
               <div class="text">
-                <p>2024年1月6日、YotioSoft は10周年を迎えました。</p>
-                <p>なにか記念作品的なものを用意しようと思ったのですが、考えが至らなかったため</p>
-                <p>過去の記事やアーカイブを漁りつつ10年間を振り返る的なページを作成しました。ぜひご覧下さい。</p>
+                <p>Rusimg is a image processing CLI tool written by Rust.</p>
+                <p>It can be used to process images in various ways, such as resizing, trimming, compressing, converting formats, and more.</p>
+                <p>Futhermore, Rusimg can be used as a library, so you can use it in your Rust project.</p>
               </div>
             </div>
           </div>
@@ -98,21 +98,24 @@ $ cargo install rusimg
               <div class="content_h2">
                 <div class="content_h2_box" style="background-color: #00bfff;"></div>
                 <div class="content">
-                  <div class="title">Feature A</div>
-                  <div class="date">2014/01/06</div>
+                    <div class="title">Converting</div>
+                    <div class="title-summary">Supports: BMP, JPEG, PNG, WebP</div>
                 </div>
               </div>
               <div class="content_sub">
+                <!--
                 <div class="picture-wrap">
                   <picture>
-                    <source srcset="/img/sc/20140106.webp" type="image/webp">
-                    <img src="/img/sc/20140106.png" alt="2014-01-06" width="100%">
+                        <source srcset="/img/sc/20140106.webp" type="image/webp">
+                        <img src="/img/sc/20140106.png" alt="2014-01-06" width="100%">
                   </picture>
                 </div>
+                -->
 
                 <div class="text">
-                  <p>ふと思い立ってサイトを立ち上げました。</p>
-                  <p>開設当初のスクリーンショットは残っていませんが、当初は「YtaniSoft@HSP」というサイト名でした。</p>
+                    <p>Converts the format of the image.</p>
+                    <p>Supports conversion to BMP, JPEG, PNG, and WebP.</p>
+                    <p>And more, Rusimg library can be added new formats as extension.</p>
                 </div>
             </div>
           </div>

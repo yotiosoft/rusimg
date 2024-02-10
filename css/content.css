@@ -58,7 +58,7 @@
     font-size: 26px;
 }
 
-.content_h2 .content .date {
+.content_h2 .content .title-summary {
     font-size: 14px;
     margin-left: 2px;
 }
@@ -93,6 +93,10 @@
 
 #content_sub2 {
     margin-left: 15px;
+}
+
+.text {
+    margin: 20px 0px 10px 10px;
 }
 
 #content a {
