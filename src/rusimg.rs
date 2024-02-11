@@ -135,7 +135,6 @@ fn guess_image_format(image_buf: &[u8]) -> Result<image::ImageFormat, RusimgErro
 }
 
 /// Open an image file and return a RusImg object.
-#[allow(unused_must_use)]
 pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
     let mut raw_data = std::fs::File::open(&path.to_path_buf()).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
     let mut buf = Vec::new();
@@ -169,7 +168,6 @@ pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
 
 impl RusImg {
     /// Get image size.
-    #[allow(unused_must_use)]
     pub fn get_image_size(&self) -> Result<ImgSize, RusimgError> {
         let size = self.data.get_size();
         Ok(size)
@@ -178,7 +176,6 @@ impl RusImg {
     /// Resize an image.
     /// It must be called after open_image().
     /// Set ratio to 100 to keep the original size.
-    #[allow(unused_must_use)]
     pub fn resize(&mut self, ratio: u8) -> Result<ImgSize, RusimgError> {
         let size = self.data.resize(ratio)?;
         Ok(size)
@@ -186,7 +183,6 @@ impl RusImg {
 
     /// Trim an image.
     /// It must be called after open_image().
-    #[allow(unused_must_use)]
     pub fn trim(&mut self, trim_x: u32, trim_y: u32, trim_w: u32, trim_h: u32) -> Result<ImgSize, RusimgError> {
         let size = self.data.trim((trim_x, trim_y), (trim_w, trim_h))?;
         Ok(size)
@@ -194,7 +190,6 @@ impl RusImg {
 
     /// Grayscale an image.
     /// It must be called after open_image().
-    #[allow(unused_must_use)]
     pub fn grayscale(&mut self) -> Result<(), RusimgError> {
         self.data.grayscale();
         Ok(())
@@ -203,7 +198,6 @@ impl RusImg {
     /// Compress an image.
     /// It must be called after open_image().
     /// Set quality to 100 to keep the original quality.
-    #[allow(unused_must_use)]
     pub fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {
         self.data.compress(quality)?;
         Ok(())
@@ -212,7 +206,6 @@ impl RusImg {
     /// Convert an image to another format.
     /// And replace the original image with the new one.
     /// It must be called after open_image().
-    #[allow(unused_must_use)]
     pub fn convert(&mut self, new_extension: Extension) -> Result<(), RusimgError> {
         let dynamic_image = self.data.get_dynamic_image()?;
         let filepath = self.data.get_source_filepath();
@@ -246,40 +239,34 @@ impl RusImg {
 
     /// View an image on the terminal.
     /// It must be called after open_image().
-    #[allow(unused_must_use)]
     pub fn view(&mut self) -> Result<(), RusimgError> {
         self.data.view()
     }
 
     /// Set a DynamicImage to an Img.
-    #[allow(unused_must_use)]
     pub fn set_dynamic_image(&mut self, image: DynamicImage) -> Result<(), RusimgError> {
         self.data.set_dynamic_image(image)?;
         Ok(())
     }
 
     /// Get a DynamicImage from an Img.
-    #[allow(unused_must_use)]
     pub fn get_dynamic_image(&mut self) -> Result<DynamicImage, RusimgError> {
         let dynamic_image = self.data.get_dynamic_image()?;
         Ok(dynamic_image)
     }
 
     /// Get file extension.
-    #[allow(unused_must_use)]
     pub fn get_extension(&self) -> Extension {
         self.extension.clone()
     }
 
     /// Get input file path.
-    #[allow(unused_must_use)]
     pub fn get_input_filepath(&self) -> PathBuf {
         self.data.get_source_filepath()
     }
 
     /// Save an image to a file.
     /// If path is None, the original file will be overwritten.
-    #[allow(unused_must_use)]
     pub fn save_image(&mut self, path: Option<&str>) -> Result<SaveStatus, RusimgError> {
         let path_buf = match path {
             Some(p) => Some(PathBuf::from(p)),
