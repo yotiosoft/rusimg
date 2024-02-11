@@ -199,6 +199,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<RusimgStatus, 
     // --convert -> 画像形式変換
     if let Some(ref c) = args.destination_extension {
         let extension = convert_str_to_extension(&c).map_err(rierr)?;
+        println!("Convert: {} -> {}", image.extension.to_string(), extension.to_string());
 
         // 変換
         image.convert(extension).map_err(rierr)?;
@@ -243,7 +244,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<RusimgStatus, 
 
     // 出力
     let save_status = if save_required == true {
-        println!("{}", image.extension.to_string());
+        println!("Save as {}...", image.extension.to_string());
         // 出力先パスを決定
         let mut output_path = match &args.destination_path {
             Some(path) => path.clone(),                                                             // If --output is specified, use it
