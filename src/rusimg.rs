@@ -1,6 +1,10 @@
+#[cfg(feature="bmp")]
 mod bmp;
+#[cfg(feature="jpeg")]
 mod jpeg;
+#[cfg(feature="png")]
 mod png;
+#[cfg(feature="webp")]
 mod webp;
 
 use std::fs::Metadata;
@@ -133,6 +137,48 @@ fn guess_image_format(image_buf: &[u8]) -> Result<image::ImageFormat, RusimgErro
     Ok(format)
 }
 
+/// Open specified image file format and return a RusImg object.
+#[cfg(feature="bmp")]
+pub fn open_bmp_image(path: &Path, buf: Vec<u8>, metadata_input: Metadata) -> Result<RusImg, RusimgError> {
+    let image = bmp::BmpImage::open(path.to_path_buf(), buf, metadata_input)?;
+    let data = Box::new(image);
+    Ok(RusImg { extension: Extension::Bmp, data: data })
+}
+#[cfg(not(feature="bmp"))]
+pub fn open_bmp_image(_path: &Path, _buf: Vec<u8>, _metadata_input: Metadata) -> Result<RusImg, RusimgError> {
+    Err(RusimgError::UnsupportedFileExtension)
+}
+#[cfg(feature="jpeg")]
+pub fn open_jpeg_image(path: &Path, buf: Vec<u8>, metadata_input: Metadata) -> Result<RusImg, RusimgError> {
+    let image = jpeg::JpegImage::open(path.to_path_buf(), buf, metadata_input)?;
+    let data = Box::new(image);
+    Ok(RusImg { extension: Extension::Jpeg, data: data })
+}
+#[cfg(not(feature="jpeg"))]
+pub fn open_jpeg_image(_path: &Path, _buf: Vec<u8>, _metadata_input: Metadata) -> Result<RusImg, RusimgError> {
+    Err(RusimgError::UnsupportedFileExtension)
+}
+#[cfg(feature="png")]
+pub fn open_png_image(path: &Path, buf: Vec<u8>, metadata_input: Metadata) -> Result<RusImg, RusimgError> {
+    let image = png::PngImage::open(path.to_path_buf(), buf, metadata_input)?;
+    let data = Box::new(image);
+    Ok(RusImg { extension: Extension::Png, data: data })
+}
+#[cfg(not(feature="png"))]
+pub fn open_png_image(_path: &Path, _buf: Vec<u8>, _metadata_input: Metadata) -> Result<RusImg, RusimgError> {
+    Err(RusimgError::UnsupportedFileExtension)
+}
+#[cfg(feature="webp")]
+pub fn open_webp_image(path: &Path, buf: Vec<u8>, metadata_input: Metadata) -> Result<RusImg, RusimgError> {
+    let image = webp::WebpImage::open(path.to_path_buf(), buf, metadata_input)?;
+    let data = Box::new(image);
+    Ok(RusImg { extension: Extension::Webp, data: data })
+}
+#[cfg(not(feature="webp"))]
+pub fn open_webp_image(_path: &Path, _buf: Vec<u8>, _metadata_input: Metadata) -> Result<RusImg, RusimgError> {
+    Err(RusimgError::UnsupportedFileExtension)
+}
+
 /// Open an image file and return a RusImg object.
 pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
     let mut raw_data = std::fs::File::open(&path.to_path_buf()).map_err(|e| RusimgError::FailedToOpenFile(e.to_string()))?;
@@ -142,27 +188,57 @@ pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
 
     match guess_image_format(&buf)? {
         image::ImageFormat::Bmp => {
-            let image = bmp::BmpImage::open(path.to_path_buf(), buf, metadata_input)?;
-            let data = Box::new(image);
-            Ok(RusImg { extension: Extension::Bmp, data: data })
+            open_bmp_image(path, buf, metadata_input)
         },
         image::ImageFormat::Jpeg => {
-            let image = jpeg::JpegImage::open(path.to_path_buf(), buf, metadata_input)?;
-            let data = Box::new(image);
-            Ok(RusImg { extension: Extension::Jpeg, data: data })
+            open_jpeg_image(path, buf, metadata_input)
         },
         image::ImageFormat::Png => {
-            let image = png::PngImage::open(path.to_path_buf(), buf, metadata_input)?;
-            let data = Box::new(image);
-            Ok(RusImg { extension: Extension::Png, data: data })
+            open_png_image(path, buf, metadata_input)
         },
         image::ImageFormat::WebP => {
-            let image = webp::WebpImage::open(path.to_path_buf(), buf, metadata_input)?;
-            let data = Box::new(image);
-            Ok(RusImg { extension: Extension::Webp, data: data })
+            open_webp_image(path, buf, metadata_input)
         },
         _ => Err(RusimgError::UnsupportedFileExtension),
     }
+}
+
+/// Converter interfaces
+#[cfg(feature="bmp")]
+pub fn convert_to_bmp_image(dynamic_image: DynamicImage, filepath: PathBuf, metadata: Metadata) -> Result<Box<(dyn RusimgTrait)>, RusimgError> {
+    let bmp = bmp::BmpImage::import(dynamic_image, filepath, metadata)?;
+    Ok(Box::new(bmp))
+}
+#[cfg(not(feature="bmp"))]
+pub fn convert_to_bmp_image(_dynamic_image: DynamicImage, _filepath: PathBuf, _metadata: Metadata) -> Result<Box<(dyn RusimgTrait)>, RusimgError> {
+    Err(RusimgError::UnsupportedFileExtension)
+}
+#[cfg(feature="jpeg")]
+pub fn convert_to_jpeg_image(dynamic_image: DynamicImage, filepath: PathBuf, metadata: Metadata) -> Result<Box<(dyn RusimgTrait)>, RusimgError> {
+    let jpeg = jpeg::JpegImage::import(dynamic_image, filepath, metadata)?;
+    Ok(Box::new(jpeg))
+}
+#[cfg(not(feature="jpeg"))]
+pub fn convert_to_jpeg_image(_dynamic_image: DynamicImage, _filepath: PathBuf, _metadata: Metadata) -> Result<Box<(dyn RusimgTrait)>, RusimgError> {
+    Err(RusimgError::UnsupportedFileExtension)
+}
+#[cfg(feature="png")]
+pub fn convert_to_png_image(dynamic_image: DynamicImage, filepath: PathBuf, metadata: Metadata) -> Result<Box<(dyn RusimgTrait)>, RusimgError> {
+    let png = png::PngImage::import(dynamic_image, filepath, metadata)?;
+    Ok(Box::new(png))
+}
+#[cfg(not(feature="png"))]
+pub fn convert_to_png_image(_dynamic_image: DynamicImage, _filepath: PathBuf, _metadata: Metadata) -> Result<Box<(dyn RusimgTrait)>, RusimgError> {
+    Err(RusimgError::UnsupportedFileExtension)
+}
+#[cfg(feature="webp")]
+pub fn convert_to_webp_image(dynamic_image: DynamicImage, filepath: PathBuf, metadata: Metadata) -> Result<Box<(dyn RusimgTrait)>, RusimgError> {
+    let webp = webp::WebpImage::import(dynamic_image, filepath, metadata)?;
+    Ok(Box::new(webp))
+}
+#[cfg(not(feature="webp"))]
+pub fn convert_to_webp_image(_dynamic_image: DynamicImage, _filepath: PathBuf, _metadata: Metadata) -> Result<Box<(dyn RusimgTrait)>, RusimgError> {
+    Err(RusimgError::UnsupportedFileExtension)
 }
 
 impl RusImg {
@@ -212,20 +288,16 @@ impl RusImg {
 
         let new_image: Box<(dyn RusimgTrait)> = match new_extension {
             Extension::Bmp => {
-                let bmp = bmp::BmpImage::import(dynamic_image, filepath, metadata)?;
-                Box::new(bmp)
+                convert_to_bmp_image(dynamic_image, filepath, metadata)?
             },
             Extension::Jpeg => {
-                let jpeg = jpeg::JpegImage::import(dynamic_image, filepath, metadata)?;
-                Box::new(jpeg)
+                convert_to_jpeg_image(dynamic_image, filepath, metadata)?
             },
             Extension::Png => {
-                let png = png::PngImage::import(dynamic_image, filepath, metadata)?;
-                Box::new(png)
+                convert_to_png_image(dynamic_image, filepath, metadata)?
             },
             Extension::Webp => {
-                let webp = webp::WebpImage::import(dynamic_image, filepath, metadata)?;
-                Box::new(webp)
+                convert_to_webp_image(dynamic_image, filepath, metadata)?
             },
             Extension::ExternalFormat(s) => return Err(RusimgError::UnsupportedFileExtension),
         };
