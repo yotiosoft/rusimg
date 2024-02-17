@@ -5,11 +5,19 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+name = "rusimg"
+path = "src/lib.rs"
+
 [dependencies]
 image = "0.24.5"
 mozjpeg = "0.9.4"
 oxipng = "8.0.0"
 webp = "0.2.2"
+
+[[example]]
+name = "rusimg"
+path = "src/main.rs"
 
 [dev-dependencies]
 clap = { version = "4.1.8", features = ["derive"] }
@@ -17,11 +25,3 @@ regex = "1.7.2"
 viuer = "0.6.2"
 glob = "0.3.1"
 colored = "2.0.4"
-
-[lib]
-name = "librusimg"
-path = "src/lib.rs"
-
-[[example]]
-name = "rusimg"
-path = "src/main.rs"
