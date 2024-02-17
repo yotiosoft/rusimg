@@ -77,7 +77,6 @@ pub trait RusimgTrait {
     fn resize(&mut self, resize_ratio: u8) -> Result<ImgSize, RusimgError>;
     fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<ImgSize, RusimgError>;
     fn grayscale(&mut self);
-    fn view(&self) -> Result<(), RusimgError>;
 
     fn set_dynamic_image(&mut self, image: DynamicImage) -> Result<(), RusimgError>;
 
@@ -235,12 +234,6 @@ impl RusImg {
         self.data = new_image;
 
         Ok(())
-    }
-
-    /// View an image on the terminal.
-    /// It must be called after open_image().
-    pub fn view(&mut self) -> Result<(), RusimgError> {
-        self.data.view()
     }
 
     /// Set a DynamicImage to an Img.

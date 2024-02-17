@@ -145,21 +145,6 @@ impl RusimgTrait for WebpImage {
         self.operations_count += 1;
     }
 
-    fn view(&self) -> Result<(), RusimgError> {
-        let conf_width = self.width as f64 / std::cmp::max(self.width, self.height) as f64 * 100 as f64;
-        let conf_height = self.height as f64 / std::cmp::max(self.width, self.height) as f64 as f64 * 50 as f64;
-        let conf = viuer::Config {
-            absolute_offset: false,
-            width: Some(conf_width as u32),
-            height: Some(conf_height as u32),    
-            ..Default::default()
-        };
-
-        viuer::print(&self.image, &conf).map_err(|e| RusimgError::FailedToViewImage(e.to_string()))?;
-
-        Ok(())
-    }
-
     fn set_dynamic_image(&mut self, image: DynamicImage) -> Result<(), RusimgError> {
         self.image = image;
         Ok(())
