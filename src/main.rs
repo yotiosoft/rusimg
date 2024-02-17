@@ -3,6 +3,7 @@ use std::fs;
 use std::fmt;
 use std::io::{stdout, Write};
 use glob::glob;
+use image::DynamicImage;
 use parse::ArgStruct;
 use rusimg::RusimgError;
 use colored::*;
@@ -171,6 +172,24 @@ fn save_print(before_path: &PathBuf, after_path: &Option<PathBuf>, before_size: 
     }
 }
 
+// viuer で表示
+fn view(image: &DynamicImage) -> Result<(), RusimgError> {
+    let width = image.width();
+    let height = image.height();
+    let conf_width = width as f64 / std::cmp::max(width, height) as f64 * 100 as f64;
+    let conf_height = height as f64 / std::cmp::max(width, height) as f64 as f64 * 50 as f64;
+    let conf = viuer::Config {
+        absolute_offset: false,
+        width: Some(conf_width as u32),
+        height: Some(conf_height as u32),    
+        ..Default::default()
+    };
+
+    viuer::print(&image, &conf).map_err(|e| RusimgError::FailedToViewImage(e.to_string()))?;
+
+    Ok(())
+}
+
 fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<RusimgStatus, ProcessingError> {
     let rierr = |e: RusimgError| ProcessingError::RusimgError(e);
     let ioerr = |e: std::io::Error| ProcessingError::IOError(e.to_string());
@@ -283,9 +302,9 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<RusimgStatus, 
         RusimgStatus::NotNeeded
     };
 
-    // 表示
+    // 表示 (viuer)
     if args.view {
-        image.view().map_err(rierr)?;
+        view(&image.get_dynamic_image().map_err(rierr)?).map_err(rierr)?;
     }
 
     Ok(save_status)
