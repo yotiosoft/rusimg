@@ -39,7 +39,7 @@ impl RusimgTrait for WebpImage {
     }
 
     fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> {
-        let webp_decoder = webp::Decoder::new(&image_buf).decode();
+        let webp_decoder = dep_webp::Decoder::new(&image_buf).decode();
         if let Some(webp_decoder) = webp_decoder {
             let image = webp_decoder.to_image();
             let (width, height) = (image.width() as usize, image.height() as usize);
@@ -86,7 +86,7 @@ impl RusimgTrait for WebpImage {
         };
        
         // DynamicImage を （圧縮＆）保存
-        let encoded_webp = webp::Encoder::from_rgba(&self.image.to_rgba8(), self.image.width(), self.image.height()).encode(quality);
+        let encoded_webp = dep_webp::Encoder::from_rgba(&self.image.to_rgba8(), self.image.width(), self.image.height()).encode(quality);
 
         let mut file = std::fs::File::create(&save_path).map_err(|e| RusimgError::FailedToCreateFile(e.to_string()))?;
         file.write_all(&encoded_webp.as_bytes()).map_err(|e| RusimgError::FailedToWriteFIle(e.to_string()))?;
