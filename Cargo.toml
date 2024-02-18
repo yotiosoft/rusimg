@@ -22,13 +22,13 @@ mozjpeg = { version = "0.9.4", optional = true }
 oxipng = { version = "8.0.0", optional = true }
 dep_webp = { version = "0.2.2", optional = true, package = "webp" }
 
-[[example]]
-name = "rusimg"
-path = "src/main.rs"
-
-[dev-dependencies]
 clap = { version = "4.1.8", features = ["derive"] }
 regex = "1.7.2"
 viuer = "0.6.2"
 glob = "0.3.1"
 colored = "2.0.4"
+
+[[bin]]
+name = "rusimg"
+path = "src/bin/rusimg.rs"
+required-features = ["clap", "regex", "viuer", "glob", "colored"]

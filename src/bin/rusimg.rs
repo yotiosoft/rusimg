@@ -5,11 +5,12 @@ use std::io::{stdout, Write};
 use glob::glob;
 use image::DynamicImage;
 use parse::ArgStruct;
-use rusimg::RusimgError;
 use colored::*;
 
+extern crate rusimg;
+use rusimg::rusimg::RusimgError;
+#[path = "./rusimg/parse.rs"]
 mod parse;
-mod rusimg;
 
 pub enum ProcessingError {
     RusimgError(RusimgError),
