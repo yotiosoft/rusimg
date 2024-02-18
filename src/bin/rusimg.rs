@@ -91,7 +91,7 @@ fn get_files_by_wildcard(source_path: &PathBuf) -> Result<Vec<PathBuf>, String> 
 fn convert_str_to_extension(extension_str: &str) -> Result<rusimg::rusimg::Extension, RusimgError> {
     match extension_str {
         "bmp" => Ok(rusimg::rusimg::Extension::Bmp),
-        "jpg" | "jpeg" | "jfif" => Ok(rusimg::Extension::Jpeg),
+        "jpg" | "jpeg" | "jfif" => Ok(rusimg::rusimg::Extension::Jpeg),
         "png" => Ok(rusimg::rusimg::Extension::Png),
         "webp" => Ok(rusimg::rusimg::Extension::Webp),
         _ => Err(RusimgError::UnsupportedFileExtension),
@@ -211,7 +211,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<RusimgStatus, 
     };
 
     // ファイルを開く
-    let mut image = rusimg::open_image(&image_file_path.to_str()).map_err(rierr)?;
+    let mut image = rusimg::open_image(&image_file_path.to_str().unwrap()).map_err(rierr)?;
 
     // 保存が必要か？
     let mut save_required = false;
