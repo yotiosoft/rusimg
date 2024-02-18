@@ -7,7 +7,8 @@ use image::DynamicImage;
 use parse::ArgStruct;
 use colored::*;
 
-extern crate rusimg;
+#[path = "../rusimg.rs"]
+mod rusimg;
 use rusimg::rusimg::RusimgError;
 use rusimg::rusimg::Extension;
 #[path = "./rusimg/parse.rs"]
