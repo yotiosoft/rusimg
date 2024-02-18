@@ -9,6 +9,7 @@ use colored::*;
 
 extern crate rusimg;
 use rusimg::rusimg::RusimgError;
+use rusimg::rusimg::Extension;
 #[path = "./rusimg/parse.rs"]
 mod parse;
 
