@@ -299,7 +299,7 @@ impl RusImg {
             Extension::Webp => {
                 convert_to_webp_image(dynamic_image, filepath, metadata)?
             },
-            Extension::ExternalFormat(s) => return Err(RusimgError::UnsupportedFileExtension),
+            Extension::ExternalFormat(_) => return Err(RusimgError::UnsupportedFileExtension),
         };
 
         self.extension = new_extension;
