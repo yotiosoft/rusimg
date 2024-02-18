@@ -2,6 +2,7 @@
 name = "rusimg"
 version = "0.1.0"
 edition = "2021"
+autobins = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -31,4 +32,4 @@ path = "src/lib.rs"
 [[bin]]
 name = "rusimg"
 path = "src/bin/rusimg.rs"
-default-features = ["clap", "regex", "viuer", "glob", "colored"]
+required-features = ["clap", "regex", "viuer", "glob", "colored"]
