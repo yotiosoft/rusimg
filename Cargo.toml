@@ -32,4 +32,4 @@ path = "src/lib.rs"
 [[bin]]
 name = "rusimg"
 path = "src/bin/rusimg.rs"
-required-features = ["clap", "regex", "viuer", "glob", "colored"]
+required-features = ["bmp", "jpeg", "png", "webp", "clap", "regex", "viuer", "glob", "colored"]
