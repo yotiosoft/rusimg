@@ -24,7 +24,7 @@ bmp = []
 jpeg = ["mozjpeg"]
 png = ["oxipng"]
 webp = ["dep_webp"]
-binary = ["clap", "regex", "viuer", "glob", "colored"]
+app = ["clap", "regex", "viuer", "glob", "colored"]
 
 [lib]
 name = "rusimg"
@@ -33,4 +33,4 @@ path = "src/lib.rs"
 [[bin]]
 name = "rusimg"
 path = "src/bin/rusimg.rs"
-required-features = ["binary"]
+required-features = ["app"]
