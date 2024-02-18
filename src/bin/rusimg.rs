@@ -9,7 +9,6 @@ use colored::*;
 
 extern crate rusimg;
 use rusimg::rusimg::RusimgError;
-use rusimg::rusimg::Extension;
 #[path = "./rusimg/parse.rs"]
 mod parse;
 
@@ -89,24 +88,24 @@ fn get_files_by_wildcard(source_path: &PathBuf) -> Result<Vec<PathBuf>, String> 
 }
 
 // 拡張子に.を含まない
-fn convert_str_to_extension(extension_str: &str) -> Result<rusimg::Extension, RusimgError> {
+fn convert_str_to_extension(extension_str: &str) -> Result<rusimg::rusimg::Extension, RusimgError> {
     match extension_str {
-        "bmp" => Ok(rusimg::Extension::Bmp),
+        "bmp" => Ok(rusimg::rusimg::Extension::Bmp),
         "jpg" | "jpeg" | "jfif" => Ok(rusimg::Extension::Jpeg),
-        "png" => Ok(rusimg::Extension::Png),
-        "webp" => Ok(rusimg::Extension::Webp),
+        "png" => Ok(rusimg::rusimg::Extension::Png),
+        "webp" => Ok(rusimg::rusimg::Extension::Webp),
         _ => Err(RusimgError::UnsupportedFileExtension),
     }
 }
 
 // 拡張子に.を含む
-fn get_extension(path: &Path) -> Result<rusimg::Extension, RusimgError> {
+fn get_extension(path: &Path) -> Result<rusimg::rusimg::Extension, RusimgError> {
     let path = path.to_str().ok_or(RusimgError::FailedToConvertPathToString)?.to_ascii_lowercase();
     match Path::new(&path).extension().and_then(|s| s.to_str()) {
-        Some("bmp") => Ok(rusimg::Extension::Bmp),
-        Some("jpg") | Some("jpeg") | Some("jfif") => Ok(rusimg::Extension::Jpeg),
-        Some("png") => Ok(rusimg::Extension::Png),
-        Some("webp") => Ok(rusimg::Extension::Webp),
+        Some("bmp") => Ok(rusimg::rusimg::Extension::Bmp),
+        Some("jpg") | Some("jpeg") | Some("jfif") => Ok(rusimg::rusimg::Extension::Jpeg),
+        Some("png") => Ok(rusimg::rusimg::Extension::Png),
+        Some("webp") => Ok(rusimg::rusimg::Extension::Webp),
         _ => {
             Err(RusimgError::UnsupportedFileExtension)
         },
@@ -212,7 +211,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<RusimgStatus, 
     };
 
     // ファイルを開く
-    let mut image = rusimg::open_image(&image_file_path).map_err(rierr)?;
+    let mut image = rusimg::open_image(&image_file_path.to_str()).map_err(rierr)?;
 
     // 保存が必要か？
     let mut save_required = false;
