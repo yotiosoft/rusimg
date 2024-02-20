@@ -131,6 +131,26 @@ pub struct SaveStatus {
     pub after_filesize: Option<u64>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum Extension {
+    Bmp,
+    Jpeg,
+    Png,
+    Webp,
+    ExternalFormat(String),
+}
+impl fmt::Display for Extension {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Extension::Bmp => write!(f, "bmp"),
+            Extension::Jpeg => write!(f, "jpeg"),
+            Extension::Png => write!(f, "png"),
+            Extension::Webp => write!(f, "webp"),
+            Extension::ExternalFormat(s) => write!(f, "{}", s),
+        }
+    }
+}
+
 // 画像フォーマットを取得
 fn guess_image_format(image_buf: &[u8]) -> Result<image::ImageFormat, RusimgError> {
     let format = image::guess_format(image_buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
@@ -345,26 +365,5 @@ impl RusImg {
             after_filesize: self.data.get_metadata_dest().as_ref().or(None).map(|m| m.len())
         };
         Ok(ret)
-    }
-}
-
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Extension {
-    Bmp,
-    Jpeg,
-    Png,
-    Webp,
-    ExternalFormat(String),
-}
-impl fmt::Display for Extension {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Extension::Bmp => write!(f, "bmp"),
-            Extension::Jpeg => write!(f, "jpeg"),
-            Extension::Png => write!(f, "png"),
-            Extension::Webp => write!(f, "webp"),
-            Extension::ExternalFormat(s) => write!(f, "{}", s),
-        }
     }
 }
