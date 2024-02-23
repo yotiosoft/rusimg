@@ -7,9 +7,7 @@ use image::DynamicImage;
 use parse::ArgStruct;
 use colored::*;
 
-extern crate rusimg;
 use rusimg::rusimg::RusimgError;
-#[path = "./rusimg/parse.rs"]
 mod parse;
 
 pub enum ProcessingError {

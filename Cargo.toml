@@ -26,11 +26,7 @@ png = ["oxipng"]
 webp = ["dep_webp"]
 app = ["clap", "regex", "viuer", "glob", "colored"]
 
-[lib]
-name = "rusimg"
-path = "src/lib.rs"
-
 [[bin]]
 name = "rusimg"
-path = "src/bin/rusimg.rs"
+path = "src/main.rs"
 required-features = ["app"]
