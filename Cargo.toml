@@ -1,6 +1,9 @@
 [package]
 name = "rusimg"
 version = "0.1.0"
+authors = ["yotio <yotio@yotiosoft.com>"]
+description = "A image processing CLI-tool/library for bmp, jpeg, png and webp."
+license = "MIT"
 edition = "2021"
 autobins = true
 
