@@ -1,23 +1,24 @@
 # rusimg
 
-コマンドライン上で画像処理を行える Rust 製の CLI ツールです。  
+A tool to run DeepL translations on command line written by Rust.
 
-## インストール方法
+## Install
 
-準備中
+```bash
+$ cargo install rusimg
+```
 
-## 利用方法
-
-### オプション
+## Binary
+### Options
 
 |オプション|内容|
 |--|--|
-|-o, --output|出力先ディレクトリ or 出力ファイル名を指定|
-|-c, --convert|画像変換（jpeg, png, webp, bmp）|
-|-r, --resize|画像のリサイズ（拡大率で指定：(0, 100]）|
-|-t, --trim|画像のトリミング|
+|-o, --output|Specify output directory or output file name.|
+|-c, --convert|Image Conversion.（jpeg, png, webp, bmp）|
+|-r, --resize|Image resizing. (specified by scaling factor: (0, 100])|
+|-t, --trim|Image cropping.|
 
-### 画像変換
+### Image Conversion: options
 
 |形式|オプション|
 |--|--|
