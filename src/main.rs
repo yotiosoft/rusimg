@@ -6,6 +6,7 @@ use glob::glob;
 use image::DynamicImage;
 use parse::ArgStruct;
 use colored::*;
+use std::thread;
 
 use rusimg::RusimgError;
 mod parse;
