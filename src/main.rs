@@ -40,6 +40,11 @@ pub enum RusimgStatus {
     NotNeeded,
 }
 
+struct ThreadResult {
+    status: bool,
+    outputs: Vec<String>,
+}
+
 fn get_files_in_dir(dir_path: &PathBuf, recursive: bool) -> Result<Vec<PathBuf>, String> {
     let mut files = fs::read_dir(&dir_path).expect("cannot read directory");
     let mut ret = Vec::new();
@@ -340,20 +345,24 @@ fn main() -> Result<(), String> {
         count = count + 1;
         let processing_str = format!("[{}/{}] Processing: {}", count, total_image_count, &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
         println!("{}", processing_str.yellow().bold());
-
-        match process(&args, &image_file_path) {
-            Ok(status) => {
-                match status {
-                    RusimgStatus::Success => println!("{}", "Success.".green().bold()),
-                    RusimgStatus::Cancel => println!("{}", "Canceled.".yellow().bold()),
-                    RusimgStatus::NotNeeded => {},
-                }
-            },
-            Err(e) => {
-                println!("{}: {}", "Error".red(), e.to_string());
-                error_count = error_count + 1;
-            },
-        }
+        
+        let thread = std::thread::spawn(move || {
+            match process(&args, &image_file_path) {
+                Ok(status) => {
+                    let ret_str = match status {
+                        RusimgStatus::Success => println!("{}", "Success.".green().bold()),
+                        RusimgStatus::Cancel => println!("{}", "Canceled.".yellow().bold()),
+                        RusimgStatus::NotNeeded => {},
+                    }
+                    return ThreadResult { status: true, outputs: vec![image_file_path.to_str().unwrap().to_string()] };
+                },
+                Err(e) => {
+                    println!("{}: {}", "Error".red(), e.to_string());
+                    error_count = error_count + 1;
+                    false
+                },
+            }
+        });
     }
 
     if error_count > 0 {
