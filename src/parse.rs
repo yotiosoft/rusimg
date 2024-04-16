@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use clap::Parser;
 use regex::Regex;
 
+#[derive(Debug, Clone)]
 pub struct ArgStruct {
     pub souce_path: Option<Vec<PathBuf>>,
     pub destination_path: Option<PathBuf>,

@@ -341,28 +341,34 @@ fn main() -> Result<(), String> {
     // 各画像に対する処理
     let mut error_count = 0;
     let mut count = 0;
+    let mut threads_vec = Vec::new();
     for image_file_path in image_files {
         count = count + 1;
         let processing_str = format!("[{}/{}] Processing: {}", count, total_image_count, &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
         println!("{}", processing_str.yellow().bold());
         
+        let args_clone = args.clone();
         let thread = std::thread::spawn(move || {
-            match process(&args, &image_file_path) {
+            match process(&args_clone, &image_file_path) {
                 Ok(status) => {
                     let ret_str = match status {
                         RusimgStatus::Success => println!("{}", "Success.".green().bold()),
                         RusimgStatus::Cancel => println!("{}", "Canceled.".yellow().bold()),
                         RusimgStatus::NotNeeded => {},
-                    }
+                    };
                     return ThreadResult { status: true, outputs: vec![image_file_path.to_str().unwrap().to_string()] };
                 },
                 Err(e) => {
                     println!("{}: {}", "Error".red(), e.to_string());
                     error_count = error_count + 1;
-                    false
+                    return ThreadResult { status: false, outputs: vec![image_file_path.to_str().unwrap().to_string()] };
                 },
             }
         });
+        threads_vec.push(thread);
+    }
+    for thread in threads_vec {
+        thread.join().unwrap();
     }
 
     if error_count > 0 {
