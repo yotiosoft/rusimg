@@ -29,16 +29,23 @@ impl fmt::Display for ProcessingError {
 
 // result status
 #[derive(Debug, Clone, PartialEq)]
-pub enum FileOverwriteAsk {
+enum FileOverwriteAsk {
     YesToAll,
     NoToAll,
     AskEverytime,
 }
+enum AskResult {
+    Overwrite,
+    AllOverwrite,
+    Skip,
+    AllSkip,
+}
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum RusimgStatus {
+enum RusimgStatus {
     Success,
     Cancel,
+    Asking,
     NotNeeded,
 }
 
@@ -67,6 +74,8 @@ struct SaveResult {
     output_path: Option<PathBuf>,
     before_filesize: u64,
     after_filesize: Option<u64>,
+    overwrite: bool,
+    skip: bool,
     delete: bool,
 }
 struct ThreadResult {
@@ -76,6 +85,7 @@ struct ThreadResult {
     resize_result: Option<ResizeResult>,
     grayscale_result: Option<GrayscaleResult>,
     compress_result: Option<CompressResult>,
+    asking_file_overwrite: bool,
     save_result: SaveResult,
 }
 
@@ -151,7 +161,7 @@ fn get_extension(path: &Path) -> Result<rusimg::Extension, RusimgError> {
 }
 
 // ファイルの存在チェック
-fn check_file_exists(path: &PathBuf, file_overwrite_ask: &FileOverwriteAsk) -> bool {
+fn check_file_exists(path: &PathBuf, file_overwrite_ask: &FileOverwriteAsk) -> OverwriteResult {
     // ファイルの存在チェック
     // ファイルが存在する場合、上書きするかどうかを確認
     if Path::new(path).exists() {
@@ -159,11 +169,11 @@ fn check_file_exists(path: &PathBuf, file_overwrite_ask: &FileOverwriteAsk) -> b
         match file_overwrite_ask {
             FileOverwriteAsk::YesToAll => {
                 println!(" -> Overwrite it.");
-                return true
+                return OverwriteResult::AllOverwrite;
             },
             FileOverwriteAsk::NoToAll => {
                 println!(" -> Skip it.");
-                return false
+                return OverwriteResult::AllSkip;
             },
             FileOverwriteAsk::AskEverytime => {},
         }
@@ -175,10 +185,10 @@ fn check_file_exists(path: &PathBuf, file_overwrite_ask: &FileOverwriteAsk) -> b
             let mut input = String::new();
             std::io::stdin().read_line(&mut input).unwrap();
             if input.trim().to_ascii_lowercase() == "y" || input.trim().to_ascii_lowercase() == "yes" {
-                return true;
+                return OverwriteResult::Overwrite;
             }
             else if input.trim().to_ascii_lowercase() == "n" || input.trim().to_ascii_lowercase() == "no" || input.trim() == "" {
-                return false;
+                return OverwriteResult::Skip;
             }
             else {
                 print!("Please enter y or n: ");
@@ -350,11 +360,12 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
         }
 
         // ファイルの存在チェック
-        if !check_file_exists(&output_path, &file_overwrite_ask) {
+        if Path::new(&output_path).exists() {
+        //if !check_file_exists(&output_path, &file_overwrite_ask) {
             SaveResult {
-                status: RusimgStatus::Cancel,
+                status: RusimgStatus::Asking,
                 input_path: image.get_input_filepath(),
-                output_path: None,
+                output_path: output_path.clone(),
                 before_filesize: 0,
                 after_filesize: None,
                 delete: false,
@@ -496,6 +507,40 @@ fn main() -> Result<(), String> {
                         }
                         println!("{}", "Success.".green().bold())
                     },
+                    RusimgStatus::Asking => {
+                        match check_file_exists(&thread_results.save_result.output_path.unwrap(), &FileOverwriteAsk::AskEverytime) {
+                            OverwriteResult::Overwrite => {
+                                // 保存
+                                let save_status = image.save_image(output_path.to_str()).map_err(rierr)?;
+
+                                // --delete -> 元ファイルの削除 (optinal)
+                                let delete = if let Some(ref saved_filepath) = save_status.output_path {
+                                    if args.delete && image_file_path != saved_filepath {
+                                        fs::remove_file(&image_file_path).map_err(ioerr)?;
+                                        true
+                                    }
+                                    else {
+                                        false
+                                    }
+                                }
+                                else {
+                                    false
+                                };
+
+                                // 保存先などの表示
+                                save_print(&image.get_input_filepath(), &save_status.output_path,
+                                    save_status.before_filesize, save_status.after_filesize);
+
+                                if delete {
+                                    println!("Delete source file: {}", image.get_input_filepath().display());
+                                }
+                                println!("{}", "Success.".green().bold())
+                            },
+                            Overwrite::Skip => {
+                                println!("{}", "Canceled.".yellow().bold());
+                            },
+                        }
+                    }
                     RusimgStatus::Cancel => println!("{}", "Canceled.".yellow().bold()),
                     RusimgStatus::NotNeeded => {},
                 };
