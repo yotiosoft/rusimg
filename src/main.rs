@@ -482,7 +482,7 @@ fn main() -> Result<(), String> {
 
                 // 表示 (viuer)
                 if let Some(viuer_image) = thread_results.viuer_image {
-                    view(&viuer_image).ok_or(ProcessingError::RusimgError(RusimgError::FailedToViewImage("Failed to view image.".to_string())))?;
+                    view(&viuer_image).map_err(|e| e.to_string())?;
                 }
 
                 match thread_results.save_result.status {
