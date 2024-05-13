@@ -63,7 +63,10 @@ struct CompressResult {
 }
 struct SaveResult {
     status: RusimgStatus,
-    save_extension: rusimg::Extension,
+    input_path: PathBuf,
+    output_path: Option<PathBuf>,
+    before_filesize: u64,
+    after_filesize: Option<u64>,
     delete: bool,
 }
 struct ThreadResult {
@@ -355,16 +358,16 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
         if !check_file_exists(&output_path, &file_overwrite_ask) {
             SaveResult {
                 status: RusimgStatus::Cancel,
-                save_extension: image.extension.clone(),
+                input_path: image.get_input_filepath(),
+                output_path: None,
+                before_filesize: 0,
+                after_filesize: None,
                 delete: false,
             }
         }
         else {
             // 保存
             let save_status = image.save_image(output_path.to_str()).map_err(rierr)?;
-            // 保存先などの表示
-            save_print(&image.get_input_filepath(), &save_status.output_path, 
-                            save_status.before_filesize, save_status.after_filesize);
 
             // --delete -> 元ファイルの削除 (optinal)
             let delete = if let Some(ref saved_filepath) = save_status.output_path {
@@ -382,7 +385,10 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
 
             SaveResult {
                 status: RusimgStatus::Success,
-                save_extension: image.extension.clone(),
+                input_path: image.get_input_filepath(),
+                output_path: save_status.output_path,
+                before_filesize: save_status.before_filesize,
+                after_filesize: save_status.after_filesize,
                 delete: delete,
             }
         }
@@ -390,7 +396,10 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
     else {
         SaveResult {
             status: RusimgStatus::NotNeeded,
-            save_extension: image.extension.clone(),
+            input_path: image.get_input_filepath(),
+            output_path: None,
+            before_filesize: 0,
+            after_filesize: None,
             delete: false,
         }
     };
@@ -474,8 +483,12 @@ fn main() -> Result<(), String> {
                 }
                 match thread_results.save_result.status {
                     RusimgStatus::Success => {
+                        // 保存先などの表示
+                        save_print(&thread_results.save_result.input_path, &thread_results.save_result.output_path,
+                            thread_results.save_result.before_filesize, thread_results.save_result.after_filesize);
+
                         if thread_results.save_result.delete {
-                            println!("Delete: {}", thread_results.save_result.save_extension.to_string());
+                            println!("Delete source file: {}", thread_results.save_result.input_path.display());
                         }
                         println!("{}", "Success.".green().bold())
                     },
