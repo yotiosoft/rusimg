@@ -70,6 +70,7 @@ struct SaveResult {
     delete: bool,
 }
 struct ThreadResult {
+    viuer_image: Option<DynamicImage>,
     convert_result: Option<ConvertResult>,
     trim_result: Option<TrimResult>,
     resize_result: Option<ResizeResult>,
@@ -398,12 +399,15 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
         }
     };
 
-    // 表示 (viuer)
-    if args.view {
-        view(&image.get_dynamic_image().map_err(rierr)?).map_err(rierr)?;
+    let viure_image = if args.view {
+        Some(image.get_dynamic_image().map_err(rierr)?)
     }
+    else {
+        None
+    };
 
     let thread_results = ThreadResult {
+        viuer_image: viure_image,
         convert_result: convert_result,
         trim_result: trim_result,
         resize_result: resize_result,
@@ -475,6 +479,12 @@ fn main() -> Result<(), String> {
                         println!("Compress: Done.");
                     }
                 }
+
+                // 表示 (viuer)
+                if let Some(viuer_image) = thread_results.viuer_image {
+                    view(&viuer_image).ok_or(ProcessingError::RusimgError(RusimgError::FailedToViewImage("Failed to view image.".to_string())))?;
+                }
+
                 match thread_results.save_result.status {
                     RusimgStatus::Success => {
                         // 保存先などの表示
