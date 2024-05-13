@@ -6,7 +6,6 @@ use glob::glob;
 use image::DynamicImage;
 use parse::ArgStruct;
 use colored::*;
-use std::thread;
 
 use rusimg::RusimgError;
 mod parse;
@@ -87,7 +86,6 @@ struct SaveResult {
     output_path: Option<PathBuf>,
     before_filesize: u64,
     after_filesize: Option<u64>,
-    ask_result: ExistsCheckResult,
     delete: bool,
 }
 struct ThreadResult {
@@ -278,21 +276,6 @@ fn process(thread_task: ThreadTask) -> Result<ThreadResult, ProcessingError> {
 
     let rierr = |e: RusimgError| ProcessingError::RusimgError(e);
     let ioerr = |e: std::io::Error| ProcessingError::IOError(e.to_string());
-    let argerr = |e: String| ProcessingError::ArgError(e);
-
-    // ファイルの上書き確認オプション
-    let file_overwrite_ask = match (args.yes, args.no) {
-        (true, false) => Some(FileOverwriteAsk::YesToAll),
-        (false, true) => Some(FileOverwriteAsk::NoToAll),
-        (false, false) => Some(FileOverwriteAsk::AskEverytime),
-        (true, true) => None,
-    };
-    let file_overwrite_ask = if let Some(ref _c) = file_overwrite_ask {
-        file_overwrite_ask.unwrap()
-    }
-    else {
-        return Err(argerr("Cannot specify both --yes and --no.".to_string()))?;
-    };
 
     // ファイルを開く
     let mut image = rusimg::open_image(&image_file_path).map_err(rierr)?;
@@ -301,7 +284,7 @@ fn process(thread_task: ThreadTask) -> Result<ThreadResult, ProcessingError> {
     let mut save_required = false;
 
     // --convert -> 画像形式変換
-    let convert_result = if let Some(ref c) = args.destination_extension {
+    let convert_result = if let Some(_c) = args.destination_extension {
         let extension = thread_task.extension;
 
         // 変換
@@ -389,9 +372,6 @@ fn process(thread_task: ThreadTask) -> Result<ThreadResult, ProcessingError> {
 
     // 出力
     let save_status = if save_required == true {
-        // 出力先パスを決定
-        let mut output_path = output_file_path.unwrap();
-
         // ファイルの存在チェック
         match ask_result {
             AskResult::Overwrite => {
@@ -411,7 +391,6 @@ fn process(thread_task: ThreadTask) -> Result<ThreadResult, ProcessingError> {
                         output_path: None,
                         before_filesize: 0,
                         after_filesize: None,
-                        ask_result: ExistsCheckResult::AllSkip,
                         delete: false,
                     },
                 });
@@ -420,6 +399,9 @@ fn process(thread_task: ThreadTask) -> Result<ThreadResult, ProcessingError> {
                 // そのまま保存へ
             },
         }
+
+        // 出力先パス
+        let output_path = output_file_path.unwrap();
 
         // 保存
         let save_status = image.save_image(output_path.to_str()).map_err(rierr)?;
@@ -444,7 +426,6 @@ fn process(thread_task: ThreadTask) -> Result<ThreadResult, ProcessingError> {
             output_path: save_status.output_path,
             before_filesize: save_status.before_filesize,
             after_filesize: save_status.after_filesize,
-            ask_result: ExistsCheckResult::NoProblem,
             delete: delete,
         }
     }
@@ -455,7 +436,6 @@ fn process(thread_task: ThreadTask) -> Result<ThreadResult, ProcessingError> {
             output_path: None,
             before_filesize: 0,
             after_filesize: None,
-            ask_result: ExistsCheckResult::NoProblem,
             delete: false,
         }
     };
@@ -477,6 +457,17 @@ fn main() -> Result<(), String> {
     // 引数のパース
     let args = parse::parser();
 
+    // 上書きが必要な場合、毎回確認するかどうか
+    let file_overwrite_ask = if args.yes {
+        FileOverwriteAsk::YesToAll
+    }
+    else if args.no {
+        FileOverwriteAsk::NoToAll
+    }
+    else {
+        FileOverwriteAsk::AskEverytime
+    };
+
     // 作業ディレクトリの指定（default: current dir）
     let source_paths = args.souce_path.clone().or(Some(vec![PathBuf::from(".")])).unwrap();
     let mut thread_tasks = Vec::new();
@@ -493,7 +484,7 @@ fn main() -> Result<(), String> {
             let output_path = get_output_path(&args, &image_file, &extension);
 
             // 出力先が既に存在する場合、上書きするかどうかを確認
-            let ask_result = match check_file_exists(&output_path, &FileOverwriteAsk::AskEverytime) {
+            let ask_result = match check_file_exists(&output_path, &file_overwrite_ask) {
                 ExistsCheckResult::AllOverwrite => {
                     println!("{}: {}", "Overwrite".bold(), output_path.display());
                     AskResult::Overwrite
@@ -540,7 +531,6 @@ fn main() -> Result<(), String> {
         let processing_str = format!("[{}/{}] Processing: {}", count, total_image_count, &Path::new(&thread_task.input_path).file_name().unwrap().to_str().unwrap());
         println!("{}", processing_str.yellow().bold());
         
-        let args_clone = args.clone();
         let thread = std::thread::spawn(move || {
             process(thread_task)
         });
