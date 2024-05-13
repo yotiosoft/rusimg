@@ -586,7 +586,7 @@ fn main() -> Result<(), String> {
                         println!("{}", "Success.".green().bold())
                     },
                     RusimgStatus::Cancel => println!("{}", "Canceled.".yellow().bold()),
-                    RusimgStatus::NotNeeded => {},
+                    RusimgStatus::NotNeeded => println!("{}", "Nothing to do.".yellow().bold()),
                 };
             }
             Err(e) => {
