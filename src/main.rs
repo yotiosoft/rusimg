@@ -34,11 +34,11 @@ enum FileOverwriteAsk {
     NoToAll,
     AskEverytime,
 }
-enum AskResult {
-    Overwrite,
+enum ExistsCheckResult {
     AllOverwrite,
-    Skip,
     AllSkip,
+    NeedToAsk,
+    NoProblem,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -74,8 +74,7 @@ struct SaveResult {
     output_path: Option<PathBuf>,
     before_filesize: u64,
     after_filesize: Option<u64>,
-    overwrite: bool,
-    skip: bool,
+    ask_result: ExistsCheckResult,
     delete: bool,
 }
 struct ThreadResult {
@@ -161,41 +160,43 @@ fn get_extension(path: &Path) -> Result<rusimg::Extension, RusimgError> {
 }
 
 // ファイルの存在チェック
-fn check_file_exists(path: &PathBuf, file_overwrite_ask: &FileOverwriteAsk) -> OverwriteResult {
+fn check_file_exists(path: &PathBuf, file_overwrite_ask: &FileOverwriteAsk) -> ExistsCheckResult {
     // ファイルの存在チェック
     // ファイルが存在する場合、上書きするかどうかを確認
     if Path::new(path).exists() {
         print!("The image file \"{}\" already exists.", path.display());
         match file_overwrite_ask {
             FileOverwriteAsk::YesToAll => {
-                println!(" -> Overwrite it.");
-                return OverwriteResult::AllOverwrite;
+                return ExistsCheckResult::AllOverwrite;
             },
             FileOverwriteAsk::NoToAll => {
-                println!(" -> Skip it.");
-                return OverwriteResult::AllSkip;
+                return ExistsCheckResult::AllSkip;
             },
-            FileOverwriteAsk::AskEverytime => {},
-        }
-
-        print!(" Do you want to overwrite it? [y/N]: ");
-        loop {
-            stdout().flush().unwrap();
-
-            let mut input = String::new();
-            std::io::stdin().read_line(&mut input).unwrap();
-            if input.trim().to_ascii_lowercase() == "y" || input.trim().to_ascii_lowercase() == "yes" {
-                return OverwriteResult::Overwrite;
-            }
-            else if input.trim().to_ascii_lowercase() == "n" || input.trim().to_ascii_lowercase() == "no" || input.trim() == "" {
-                return OverwriteResult::Skip;
-            }
-            else {
-                print!("Please enter y or n: ");
-            }
+            FileOverwriteAsk::AskEverytime => {
+                return ExistsCheckResult::NeedToAsk;
+            },
         }
     }
-    return true;
+    return ExistsCheckResult::NoProblem;
+}
+
+fn ask_file_exists() -> bool {
+    print!(" Do you want to overwrite it? [y/N]: ");
+    loop {
+        stdout().flush().unwrap();
+
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).unwrap();
+        if input.trim().to_ascii_lowercase() == "y" || input.trim().to_ascii_lowercase() == "yes" {
+            return true;
+        }
+        else if input.trim().to_ascii_lowercase() == "n" || input.trim().to_ascii_lowercase() == "no" || input.trim() == "" {
+            return false;
+        }
+        else {
+            print!("Please enter y or n: ");
+        }
+    }
 }
 
 // 保存先などの表示
@@ -343,6 +344,14 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
         None
     };
 
+    // for viuer
+    let viuer_image = if args.view {
+        Some(image.get_dynamic_image().map_err(rierr)?)
+    }
+    else {
+        None
+    };
+
     // 出力
     let save_status = if save_required == true {
         // 出力先パスを決定
@@ -360,43 +369,96 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
         }
 
         // ファイルの存在チェック
-        if Path::new(&output_path).exists() {
-        //if !check_file_exists(&output_path, &file_overwrite_ask) {
-            SaveResult {
-                status: RusimgStatus::Asking,
-                input_path: image.get_input_filepath(),
-                output_path: output_path.clone(),
-                before_filesize: 0,
-                after_filesize: None,
-                delete: false,
-            }
+        match check_file_exists(&output_path, &file_overwrite_ask) {
+            ExistsCheckResult::AllOverwrite => {
+                return Ok(ThreadResult {
+                    viuer_image: viuer_image,
+                    convert_result: convert_result,
+                    trim_result: trim_result,
+                    resize_result: resize_result,
+                    grayscale_result: grayscale_result,
+                    compress_result: compress_result,
+                    asking_file_overwrite: true,
+                    save_result: SaveResult {
+                        status: RusimgStatus::Success,
+                        input_path: image.get_input_filepath(),
+                        output_path: None,
+                        before_filesize: 0,
+                        after_filesize: None,
+                        ask_result: ExistsCheckResult::AllOverwrite,
+                        delete: false,
+                    },
+                });
+            },
+            ExistsCheckResult::AllSkip => {
+                return Ok(ThreadResult {
+                    viuer_image: viuer_image,
+                    convert_result: convert_result,
+                    trim_result: trim_result,
+                    resize_result: resize_result,
+                    grayscale_result: grayscale_result,
+                    compress_result: compress_result,
+                    asking_file_overwrite: true,
+                    save_result: SaveResult {
+                        status: RusimgStatus::Cancel,
+                        input_path: image.get_input_filepath(),
+                        output_path: None,
+                        before_filesize: 0,
+                        after_filesize: None,
+                        ask_result: ExistsCheckResult::AllSkip,
+                        delete: false,
+                    },
+                });
+            },
+            ExistsCheckResult::NeedToAsk => {
+                return Ok(ThreadResult {
+                    viuer_image: viuer_image,
+                    convert_result: convert_result,
+                    trim_result: trim_result,
+                    resize_result: resize_result,
+                    grayscale_result: grayscale_result,
+                    compress_result: compress_result,
+                    asking_file_overwrite: true,
+                    save_result: SaveResult {
+                        status: RusimgStatus::Asking,
+                        input_path: image.get_input_filepath(),
+                        output_path: output_path.clone(),
+                        before_filesize: 0,
+                        after_filesize: None,
+                        ask_result: ExistsCheckResult::NeedToAsk,
+                        delete: false,
+                    },
+                });
+            },
+            ExistsCheckResult::NoProblem => {
+                // そのまま保存へ
+            },
         }
-        else {
-            // 保存
-            let save_status = image.save_image(output_path.to_str()).map_err(rierr)?;
 
-            // --delete -> 元ファイルの削除 (optinal)
-            let delete = if let Some(ref saved_filepath) = save_status.output_path {
-                if args.delete && image_file_path != saved_filepath {
-                    fs::remove_file(&image_file_path).map_err(ioerr)?;
-                    true
-                }
-                else {
-                    false
-                }
+        // 保存
+        let save_status = image.save_image(output_path.to_str()).map_err(rierr)?;
+
+        // --delete -> 元ファイルの削除 (optinal)
+        let delete = if let Some(ref saved_filepath) = save_status.output_path {
+            if args.delete && image_file_path != saved_filepath {
+                fs::remove_file(&image_file_path).map_err(ioerr)?;
+                true
             }
             else {
                 false
-            };
-
-            SaveResult {
-                status: RusimgStatus::Success,
-                input_path: image.get_input_filepath(),
-                output_path: save_status.output_path,
-                before_filesize: save_status.before_filesize,
-                after_filesize: save_status.after_filesize,
-                delete: delete,
             }
+        }
+        else {
+            false
+        };
+
+        SaveResult {
+            status: RusimgStatus::Success,
+            input_path: image.get_input_filepath(),
+            output_path: save_status.output_path,
+            before_filesize: save_status.before_filesize,
+            after_filesize: save_status.after_filesize,
+            delete: delete,
         }
     }
     else {
@@ -410,15 +472,8 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
         }
     };
 
-    let viure_image = if args.view {
-        Some(image.get_dynamic_image().map_err(rierr)?)
-    }
-    else {
-        None
-    };
-
     let thread_results = ThreadResult {
-        viuer_image: viure_image,
+        viuer_image: viuer_image,
         convert_result: convert_result,
         trim_result: trim_result,
         resize_result: resize_result,
@@ -508,8 +563,8 @@ fn main() -> Result<(), String> {
                         println!("{}", "Success.".green().bold())
                     },
                     RusimgStatus::Asking => {
-                        match check_file_exists(&thread_results.save_result.output_path.unwrap(), &FileOverwriteAsk::AskEverytime) {
-                            OverwriteResult::Overwrite => {
+                        match ask_file_exists() {
+                            true => {
                                 // 保存
                                 let save_status = image.save_image(output_path.to_str()).map_err(rierr)?;
 
