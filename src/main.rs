@@ -192,7 +192,7 @@ fn check_file_exists(path: &PathBuf, file_overwrite_ask: &FileOverwriteAsk) -> E
     // ファイルの存在チェック
     // ファイルが存在する場合、上書きするかどうかを確認
     if Path::new(path).exists() {
-        print!("The image file \"{}\" already exists.", path.display());
+        println!("The image file \"{}\" already exists.", path.display().to_string().yellow().bold());
         match file_overwrite_ask {
             FileOverwriteAsk::YesToAll => {
                 return ExistsCheckResult::AllOverwrite;
@@ -208,6 +208,7 @@ fn check_file_exists(path: &PathBuf, file_overwrite_ask: &FileOverwriteAsk) -> E
     return ExistsCheckResult::NoProblem;
 }
 
+// ファイルを上書きするか確認する
 fn ask_file_exists() -> bool {
     print!(" Do you want to overwrite it? [y/N]: ");
     loop {
@@ -216,13 +217,15 @@ fn ask_file_exists() -> bool {
         let mut input = String::new();
         std::io::stdin().read_line(&mut input).unwrap();
         if input.trim().to_ascii_lowercase() == "y" || input.trim().to_ascii_lowercase() == "yes" {
+            println!(" => The file will be overwritten.");
             return true;
         }
         else if input.trim().to_ascii_lowercase() == "n" || input.trim().to_ascii_lowercase() == "no" || input.trim() == "" {
+            println!(" => The file will be skipped.");
             return false;
         }
         else {
-            print!("Please enter y or n: ");
+            print!(" Please enter y or n [y/N]: ");
         }
     }
 }
@@ -486,11 +489,11 @@ fn main() -> Result<(), String> {
             // 出力先が既に存在する場合、上書きするかどうかを確認
             let ask_result = match check_file_exists(&output_path, &file_overwrite_ask) {
                 ExistsCheckResult::AllOverwrite => {
-                    println!("{}: {}", "Overwrite".bold(), output_path.display());
+                    println!("{}", " => Overwrite (default: yes)".bold());
                     AskResult::Overwrite
                 },
                 ExistsCheckResult::AllSkip => {
-                    println!("{}: {}", "Skip".bold(), output_path.display());
+                    println!("{}", " => Skip (default: no)".bold());
                     AskResult::Skip
                 },
                 ExistsCheckResult::NeedToAsk => {
@@ -538,9 +541,14 @@ fn main() -> Result<(), String> {
     }
 
     // スレッドの実行結果を表示
+    let mut count = 0;
     for thread in threads_vec {
         match thread.join().unwrap() {
             Ok(thread_results) => {
+                count = count + 1;
+                let processing_str = format!("[{}/{}] Finish: {}", count, total_image_count, &Path::new(&thread_results.save_result.input_path).file_name().unwrap().to_str().unwrap());
+                println!("{}", processing_str.yellow().bold());
+
                 if let Some(convert_result) = thread_results.convert_result {
                     println!("Convert: {} -> {}", convert_result.before_extension.to_string(), convert_result.after_extension.to_string());
                 }
