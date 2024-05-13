@@ -43,42 +43,36 @@ pub enum RusimgStatus {
 }
 
 // process results
-struct SaveResult {
-    output_path: Option<PathBuf>,
-    before_filesize: u64,
-    after_filesize: Option<u64>,
-}
 struct ConvertResult {
     before_extension: rusimg::Extension,
     after_extension: rusimg::Extension,
 }
 struct TrimResult {
-    before_size: rusimg::Size,
-    after_size: rusimg::Size,
+    before_size: rusimg::ImgSize,
+    after_size: rusimg::ImgSize,
 }
 struct ResizeResult {
-    before_size: rusimg::Size,
-    after_size: rusimg::Size,
+    before_size: rusimg::ImgSize,
+    after_size: rusimg::ImgSize,
 }
 struct GrayscaleResult {
     status: bool,
 }
 struct CompressResult {
-    before_filesize: u64,
-    after_filesize: u64,
-}
-struct DeleteResult {
     status: bool,
+}
+struct SaveResult {
+    status: RusimgStatus,
+    save_extension: rusimg::Extension,
+    delete: bool,
 }
 struct ThreadResult {
-    status: bool,
-    save_result: Option<SaveResult>,
     convert_result: Option<ConvertResult>,
     trim_result: Option<TrimResult>,
     resize_result: Option<ResizeResult>,
     grayscale_result: Option<GrayscaleResult>,
     compress_result: Option<CompressResult>,
-    delete_result: Option<DeleteResult>,
+    save_result: SaveResult,
 }
 
 fn get_files_in_dir(dir_path: &PathBuf, recursive: bool) -> Result<Vec<PathBuf>, String> {
@@ -231,7 +225,7 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
     Ok(())
 }
 
-fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<RusimgStatus, ProcessingError> {
+fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, ProcessingError> {
     let rierr = |e: RusimgError| ProcessingError::RusimgError(e);
     let ioerr = |e: std::io::Error| ProcessingError::IOError(e.to_string());
     let argerr = |e: String| ProcessingError::ArgError(e);
@@ -257,17 +251,25 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<RusimgStatus, 
     let mut save_required = false;
 
     // --convert -> 画像形式変換
-    if let Some(ref c) = args.destination_extension {
+    let convert_result = if let Some(ref c) = args.destination_extension {
         let extension = convert_str_to_extension(&c).map_err(rierr)?;
         println!("Convert: {} -> {}", image.extension.to_string(), extension.to_string());
 
         // 変換
-        image.convert(extension).map_err(rierr)?;
+        image.convert(&extension).map_err(rierr)?;
         save_required = true;
+
+        Some(ConvertResult {
+            before_extension: image.extension.clone(),
+            after_extension: extension,
+        })
     }
+    else {
+        None
+    };
 
     // --trim -> トリミング
-    if let Some(trim) = args.trim {
+    let trim_result = if let Some(trim) = args.trim {
         // トリミング
         let before_size = image.get_image_size().map_err(rierr)?;
         let trimmed_size = image.trim(trim.0.0, trim.0.1, trim.1.0, trim.1.1).map_err(rierr)?;
@@ -275,32 +277,62 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<RusimgStatus, 
             println!("Trim: {}x{} -> {}x{}", before_size.width, before_size.height, trimmed_size.width, trimmed_size.height);
             save_required = true;
         }
+
+        Some(TrimResult {
+            before_size: before_size,
+            after_size: trimmed_size,
+        })
     }
+    else {
+        None
+    };
 
     // --resize -> リサイズ
-    if let Some(resize) = args.resize {
+    let resize_result = if let Some(resize) = args.resize {
         // リサイズ
         let before_size = image.get_image_size().map_err(rierr)?;
         let after_size = image.resize(resize).map_err(rierr)?;
         println!("Resize: {}x{} -> {}x{}", before_size.width, before_size.height, after_size.width, after_size.height);
         save_required = true;
+
+        Some(ResizeResult {
+            before_size: before_size,
+            after_size: after_size,
+        })
     }
+    else {
+        None
+    };
 
     // --grayscale -> グレースケール
-    if args.grayscale {
+    let grayscale_result = if args.grayscale {
         // グレースケール
         image.grayscale().map_err(rierr)?;
         println!("Grayscale: Done.");
         save_required = true;
+
+        Some(GrayscaleResult {
+            status: true,
+        })
     }
+    else {
+        None
+    };
 
     // --quality -> 圧縮
-    if let Some(q) = args.quality {
+    let compress_result = if let Some(q) = args.quality {
         // 圧縮
         image.compress(Some(q)).map_err(rierr)?;
         println!("Compress: Done.");
         save_required = true;
+
+        Some(CompressResult {
+            status: true,
+        })
     }
+    else {
+        None
+    };
 
     // 出力
     let save_status = if save_required == true {
@@ -321,7 +353,11 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<RusimgStatus, 
 
         // ファイルの存在チェック
         if !check_file_exists(&output_path, &file_overwrite_ask) {
-            RusimgStatus::Cancel
+            SaveResult {
+                status: RusimgStatus::Cancel,
+                save_extension: image.extension.clone(),
+                delete: false,
+            }
         }
         else {
             // 保存
@@ -331,16 +367,32 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<RusimgStatus, 
                             save_status.before_filesize, save_status.after_filesize);
 
             // --delete -> 元ファイルの削除 (optinal)
-            if let Some(ref saved_filepath) = save_status.output_path {
+            let delete = if let Some(ref saved_filepath) = save_status.output_path {
                 if args.delete && image_file_path != saved_filepath {
                     fs::remove_file(&image_file_path).map_err(ioerr)?;
+                    true
+                }
+                else {
+                    false
                 }
             }
-            RusimgStatus::Success
+            else {
+                false
+            };
+
+            SaveResult {
+                status: RusimgStatus::Success,
+                save_extension: image.extension.clone(),
+                delete: delete,
+            }
         }
     }
     else {
-        RusimgStatus::NotNeeded
+        SaveResult {
+            status: RusimgStatus::NotNeeded,
+            save_extension: image.extension.clone(),
+            delete: false,
+        }
     };
 
     // 表示 (viuer)
@@ -348,7 +400,16 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<RusimgStatus, 
         view(&image.get_dynamic_image().map_err(rierr)?).map_err(rierr)?;
     }
 
-    Ok(save_status)
+    let thread_results = ThreadResult {
+        convert_result: convert_result,
+        trim_result: trim_result,
+        resize_result: resize_result,
+        grayscale_result: grayscale_result,
+        compress_result: compress_result,
+        save_result: save_status,
+    };
+
+    Ok(thread_results)
 }
 
 fn main() -> Result<(), String> {
@@ -385,26 +446,48 @@ fn main() -> Result<(), String> {
         
         let args_clone = args.clone();
         let thread = std::thread::spawn(move || {
-            match process(&args_clone, &image_file_path) {
-                Ok(status) => {
-                    let ret_str = match status {
-                        RusimgStatus::Success => println!("{}", "Success.".green().bold()),
-                        RusimgStatus::Cancel => println!("{}", "Canceled.".yellow().bold()),
-                        RusimgStatus::NotNeeded => {},
-                    };
-                    return ThreadResult { status: true, outputs: vec![image_file_path.to_str().unwrap().to_string()] };
-                },
-                Err(e) => {
-                    println!("{}: {}", "Error".red(), e.to_string());
-                    error_count = error_count + 1;
-                    return ThreadResult { status: false, outputs: vec![image_file_path.to_str().unwrap().to_string()] };
-                },
-            }
+            process(&args_clone, &image_file_path)
         });
         threads_vec.push(thread);
     }
     for thread in threads_vec {
-        thread.join().unwrap();
+        match thread.join().unwrap() {
+            Ok(thread_results) => {
+                if let Some(convert_result) = thread_results.convert_result {
+                    println!("Convert: {} -> {}", convert_result.before_extension.to_string(), convert_result.after_extension.to_string());
+                }
+                if let Some(trim_result) = thread_results.trim_result {
+                    println!("Trim: {}x{} -> {}x{}", trim_result.before_size.width, trim_result.before_size.height, trim_result.after_size.width, trim_result.after_size.height);
+                }
+                if let Some(resize_result) = thread_results.resize_result {
+                    println!("Resize: {}x{} -> {}x{}", resize_result.before_size.width, resize_result.before_size.height, resize_result.after_size.width, resize_result.after_size.height);
+                }
+                if let Some(grayscale_result) = thread_results.grayscale_result {
+                    if grayscale_result.status {
+                        println!("Grayscale: Done.");
+                    }
+                }
+                if let Some(compress_result) = thread_results.compress_result {
+                    if compress_result.status {
+                        println!("Compress: Done.");
+                    }
+                }
+                match thread_results.save_result.status {
+                    RusimgStatus::Success => {
+                        if thread_results.save_result.delete {
+                            println!("Delete: {}", thread_results.save_result.save_extension.to_string());
+                        }
+                        println!("{}", "Success.".green().bold())
+                    },
+                    RusimgStatus::Cancel => println!("{}", "Canceled.".yellow().bold()),
+                    RusimgStatus::NotNeeded => {},
+                };
+            }
+            Err(e) => {
+                println!("{}: {}", "Error".red(), e.to_string());
+                error_count = error_count + 1;
+            }
+        }
     }
 
     if error_count > 0 {

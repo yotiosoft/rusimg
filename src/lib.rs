@@ -301,7 +301,7 @@ impl RusImg {
     /// Convert an image to another format.
     /// And replace the original image with the new one.
     /// It must be called after open_image().
-    pub fn convert(&mut self, new_extension: Extension) -> Result<(), RusimgError> {
+    pub fn convert(&mut self, new_extension: &Extension) -> Result<(), RusimgError> {
         let dynamic_image = self.data.get_dynamic_image()?;
         let filepath = self.data.get_source_filepath();
         let metadata = self.data.get_metadata_src();
@@ -322,7 +322,7 @@ impl RusImg {
             Extension::ExternalFormat(_) => return Err(RusimgError::UnsupportedFileExtension),
         };
 
-        self.extension = new_extension;
+        self.extension = new_extension.clone();
         self.data = new_image;
 
         Ok(())
