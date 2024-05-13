@@ -7,6 +7,8 @@ use image::DynamicImage;
 use parse::ArgStruct;
 use colored::*;
 
+use std::{thread, time};
+
 use rusimg::RusimgError;
 mod parse;
 
@@ -457,6 +459,8 @@ fn process(thread_task: ThreadTask) -> Result<ThreadResult, ProcessingError> {
 }
 
 fn main() -> Result<(), String> {
+    let now = time::Instant::now();
+
     // 引数のパース
     let args = parse::parser();
 
@@ -603,6 +607,8 @@ fn main() -> Result<(), String> {
     else {
         println!("\n✅ All images are processed.");
     }
+
+    println!("{:?}", now.elapsed());
 
     Ok(())
 }
