@@ -79,12 +79,12 @@ struct SaveResult {
 }
 struct ThreadResult {
     viuer_image: Option<DynamicImage>,
+    asking_image: Option<rusimg::RusImg>,
     convert_result: Option<ConvertResult>,
     trim_result: Option<TrimResult>,
     resize_result: Option<ResizeResult>,
     grayscale_result: Option<GrayscaleResult>,
     compress_result: Option<CompressResult>,
-    asking_file_overwrite: bool,
     save_result: SaveResult,
 }
 
@@ -373,12 +373,12 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
             ExistsCheckResult::AllOverwrite => {
                 return Ok(ThreadResult {
                     viuer_image: viuer_image,
+                    asking_image: None,
                     convert_result: convert_result,
                     trim_result: trim_result,
                     resize_result: resize_result,
                     grayscale_result: grayscale_result,
                     compress_result: compress_result,
-                    asking_file_overwrite: true,
                     save_result: SaveResult {
                         status: RusimgStatus::Success,
                         input_path: image.get_input_filepath(),
@@ -393,12 +393,12 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
             ExistsCheckResult::AllSkip => {
                 return Ok(ThreadResult {
                     viuer_image: viuer_image,
+                    asking_image: None,
                     convert_result: convert_result,
                     trim_result: trim_result,
                     resize_result: resize_result,
                     grayscale_result: grayscale_result,
                     compress_result: compress_result,
-                    asking_file_overwrite: true,
                     save_result: SaveResult {
                         status: RusimgStatus::Cancel,
                         input_path: image.get_input_filepath(),
@@ -413,16 +413,16 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
             ExistsCheckResult::NeedToAsk => {
                 return Ok(ThreadResult {
                     viuer_image: viuer_image,
+                    asking_image: Some(image.clone()),
                     convert_result: convert_result,
                     trim_result: trim_result,
                     resize_result: resize_result,
                     grayscale_result: grayscale_result,
                     compress_result: compress_result,
-                    asking_file_overwrite: true,
                     save_result: SaveResult {
                         status: RusimgStatus::Asking,
                         input_path: image.get_input_filepath(),
-                        output_path: output_path.clone(),
+                        output_path: Some(output_path.clone()),
                         before_filesize: 0,
                         after_filesize: None,
                         ask_result: ExistsCheckResult::NeedToAsk,
@@ -458,6 +458,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
             output_path: save_status.output_path,
             before_filesize: save_status.before_filesize,
             after_filesize: save_status.after_filesize,
+            ask_result: ExistsCheckResult::NoProblem,
             delete: delete,
         }
     }
@@ -468,12 +469,14 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
             output_path: None,
             before_filesize: 0,
             after_filesize: None,
+            ask_result: ExistsCheckResult::NoProblem,
             delete: false,
         }
     };
 
     let thread_results = ThreadResult {
         viuer_image: viuer_image,
+        asking_image: None,
         convert_result: convert_result,
         trim_result: trim_result,
         resize_result: resize_result,
@@ -565,6 +568,12 @@ fn main() -> Result<(), String> {
                     RusimgStatus::Asking => {
                         match ask_file_exists() {
                             true => {
+                                let image = thread_results.asking_image.unwrap();
+                                let mut output_path = thread_results.save_result.output_path.unwrap();
+                                let image_file_path = image.get_input_filepath();
+                                let rierr = |e: RusimgError| ProcessingError::RusimgError(e);
+                                let ioerr = |e: std::io::Error| ProcessingError::IOError(e.to_string());
+
                                 // 保存
                                 let save_status = image.save_image(output_path.to_str()).map_err(rierr)?;
 
