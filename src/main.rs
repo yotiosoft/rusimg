@@ -305,6 +305,9 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<RusimgStatus, 
     if args.view {
         view(&image.get_dynamic_image().map_err(rierr)?).map_err(rierr)?;
     }
+    else if save_status == RusimgStatus::NotNeeded {
+        println!("Nothing to do.");
+    }
 
     Ok(save_status)
 }
