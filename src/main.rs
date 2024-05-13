@@ -256,7 +256,6 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
     // --convert -> 画像形式変換
     let convert_result = if let Some(ref c) = args.destination_extension {
         let extension = convert_str_to_extension(&c).map_err(rierr)?;
-        println!("Convert: {} -> {}", image.extension.to_string(), extension.to_string());
 
         // 変換
         image.convert(&extension).map_err(rierr)?;
@@ -277,7 +276,6 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
         let before_size = image.get_image_size().map_err(rierr)?;
         let trimmed_size = image.trim(trim.0.0, trim.0.1, trim.1.0, trim.1.1).map_err(rierr)?;
         if before_size != trimmed_size {
-            println!("Trim: {}x{} -> {}x{}", before_size.width, before_size.height, trimmed_size.width, trimmed_size.height);
             save_required = true;
         }
 
@@ -295,7 +293,6 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
         // リサイズ
         let before_size = image.get_image_size().map_err(rierr)?;
         let after_size = image.resize(resize).map_err(rierr)?;
-        println!("Resize: {}x{} -> {}x{}", before_size.width, before_size.height, after_size.width, after_size.height);
         save_required = true;
 
         Some(ResizeResult {
@@ -311,7 +308,6 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
     let grayscale_result = if args.grayscale {
         // グレースケール
         image.grayscale().map_err(rierr)?;
-        println!("Grayscale: Done.");
         save_required = true;
 
         Some(GrayscaleResult {
@@ -326,7 +322,6 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
     let compress_result = if let Some(q) = args.quality {
         // 圧縮
         image.compress(Some(q)).map_err(rierr)?;
-        println!("Compress: Done.");
         save_required = true;
 
         Some(CompressResult {
@@ -339,7 +334,6 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
 
     // 出力
     let save_status = if save_required == true {
-        println!("Save as {}...", image.extension.to_string());
         // 出力先パスを決定
         let mut output_path = match &args.destination_path {
             Some(path) => path.clone(),                                                             // If --output is specified, use it
