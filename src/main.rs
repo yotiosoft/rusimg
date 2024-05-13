@@ -11,6 +11,7 @@ use std::thread;
 use rusimg::RusimgError;
 mod parse;
 
+// error type
 pub enum ProcessingError {
     RusimgError(RusimgError),
     IOError(String),
@@ -26,6 +27,7 @@ impl fmt::Display for ProcessingError {
     }
 }
 
+// result status
 #[derive(Debug, Clone, PartialEq)]
 pub enum FileOverwriteAsk {
     YesToAll,
@@ -40,9 +42,43 @@ pub enum RusimgStatus {
     NotNeeded,
 }
 
+// process results
+struct SaveResult {
+    output_path: Option<PathBuf>,
+    before_filesize: u64,
+    after_filesize: Option<u64>,
+}
+struct ConvertResult {
+    before_extension: rusimg::Extension,
+    after_extension: rusimg::Extension,
+}
+struct TrimResult {
+    before_size: rusimg::Size,
+    after_size: rusimg::Size,
+}
+struct ResizeResult {
+    before_size: rusimg::Size,
+    after_size: rusimg::Size,
+}
+struct GrayscaleResult {
+    status: bool,
+}
+struct CompressResult {
+    before_filesize: u64,
+    after_filesize: u64,
+}
+struct DeleteResult {
+    status: bool,
+}
 struct ThreadResult {
     status: bool,
-    outputs: Vec<String>,
+    save_result: Option<SaveResult>,
+    convert_result: Option<ConvertResult>,
+    trim_result: Option<TrimResult>,
+    resize_result: Option<ResizeResult>,
+    grayscale_result: Option<GrayscaleResult>,
+    compress_result: Option<CompressResult>,
+    delete_result: Option<DeleteResult>,
 }
 
 fn get_files_in_dir(dir_path: &PathBuf, recursive: bool) -> Result<Vec<PathBuf>, String> {
