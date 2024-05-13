@@ -40,13 +40,26 @@ enum ExistsCheckResult {
     NeedToAsk,
     NoProblem,
 }
+enum AskResult {
+    Overwrite,
+    Skip,
+    NoProblem,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 enum RusimgStatus {
     Success,
     Cancel,
-    Asking,
     NotNeeded,
+}
+
+// thread task
+struct ThreadTask {
+    args: ArgStruct,
+    input_path: PathBuf,
+    output_path: Option<PathBuf>,
+    extension: rusimg::Extension,
+    ask_result: AskResult,
 }
 
 // process results
@@ -79,7 +92,6 @@ struct SaveResult {
 }
 struct ThreadResult {
     viuer_image: Option<DynamicImage>,
-    asking_image: Option<rusimg::RusImg>,
     convert_result: Option<ConvertResult>,
     trim_result: Option<TrimResult>,
     resize_result: Option<ResizeResult>,
@@ -157,6 +169,24 @@ fn get_extension(path: &Path) -> Result<rusimg::Extension, RusimgError> {
             Err(RusimgError::UnsupportedFileExtension)
         },
     }
+}
+
+// 保存先パスの決定
+fn get_output_path(args: &ArgStruct, input_path: &PathBuf, extension: &rusimg::Extension) -> PathBuf {
+    // 出力先パスを決定
+    let mut output_path = match &args.destination_path {
+        Some(path) => path.clone(),                                                             // If --output is specified, use it
+        None => Path::new(input_path).with_extension(extension.to_string()),       // If not, use the input filepath as the input file
+    };
+    // append_name が指定されている場合、ファイル名に追加
+    if let Some(append_name) = &args.destination_append_name {
+        let mut output_path_tmp = output_path.file_stem().unwrap().to_str().unwrap().to_string();
+        output_path_tmp.push_str(append_name);
+        output_path_tmp.push_str(".");
+        output_path_tmp.push_str(&extension.to_string());
+        output_path = PathBuf::from(output_path_tmp);
+    }
+    output_path
 }
 
 // ファイルの存在チェック
@@ -240,7 +270,12 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
     Ok(())
 }
 
-fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, ProcessingError> {
+fn process(thread_task: ThreadTask) -> Result<ThreadResult, ProcessingError> {
+    let args = thread_task.args;
+    let image_file_path = thread_task.input_path;
+    let output_file_path = thread_task.output_path;
+    let ask_result = thread_task.ask_result;
+
     let rierr = |e: RusimgError| ProcessingError::RusimgError(e);
     let ioerr = |e: std::io::Error| ProcessingError::IOError(e.to_string());
     let argerr = |e: String| ProcessingError::ArgError(e);
@@ -267,7 +302,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
 
     // --convert -> 画像形式変換
     let convert_result = if let Some(ref c) = args.destination_extension {
-        let extension = convert_str_to_extension(&c).map_err(rierr)?;
+        let extension = thread_task.extension;
 
         // 変換
         image.convert(&extension).map_err(rierr)?;
@@ -355,45 +390,16 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
     // 出力
     let save_status = if save_required == true {
         // 出力先パスを決定
-        let mut output_path = match &args.destination_path {
-            Some(path) => path.clone(),                                                             // If --output is specified, use it
-            None => Path::new(&image.get_input_filepath()).with_extension(image.extension.to_string()),       // If not, use the input filepath as the input file
-        };
-        // append_name が指定されている場合、ファイル名に追加
-        if let Some(append_name) = &args.destination_append_name {
-            let mut output_path_tmp = output_path.file_stem().unwrap().to_str().unwrap().to_string();
-            output_path_tmp.push_str(append_name);
-            output_path_tmp.push_str(".");
-            output_path_tmp.push_str(&image.extension.to_string());
-            output_path = PathBuf::from(output_path_tmp);
-        }
+        let mut output_path = output_file_path.unwrap();
 
         // ファイルの存在チェック
-        match check_file_exists(&output_path, &file_overwrite_ask) {
-            ExistsCheckResult::AllOverwrite => {
-                return Ok(ThreadResult {
-                    viuer_image: viuer_image,
-                    asking_image: None,
-                    convert_result: convert_result,
-                    trim_result: trim_result,
-                    resize_result: resize_result,
-                    grayscale_result: grayscale_result,
-                    compress_result: compress_result,
-                    save_result: SaveResult {
-                        status: RusimgStatus::Success,
-                        input_path: image.get_input_filepath(),
-                        output_path: None,
-                        before_filesize: 0,
-                        after_filesize: None,
-                        ask_result: ExistsCheckResult::AllOverwrite,
-                        delete: false,
-                    },
-                });
+        match ask_result {
+            AskResult::Overwrite => {
+                // そのまま保存へ
             },
-            ExistsCheckResult::AllSkip => {
+            AskResult::Skip => {
                 return Ok(ThreadResult {
                     viuer_image: viuer_image,
-                    asking_image: None,
                     convert_result: convert_result,
                     trim_result: trim_result,
                     resize_result: resize_result,
@@ -410,27 +416,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
                     },
                 });
             },
-            ExistsCheckResult::NeedToAsk => {
-                return Ok(ThreadResult {
-                    viuer_image: viuer_image,
-                    asking_image: Some(image.clone()),
-                    convert_result: convert_result,
-                    trim_result: trim_result,
-                    resize_result: resize_result,
-                    grayscale_result: grayscale_result,
-                    compress_result: compress_result,
-                    save_result: SaveResult {
-                        status: RusimgStatus::Asking,
-                        input_path: image.get_input_filepath(),
-                        output_path: Some(output_path.clone()),
-                        before_filesize: 0,
-                        after_filesize: None,
-                        ask_result: ExistsCheckResult::NeedToAsk,
-                        delete: false,
-                    },
-                });
-            },
-            ExistsCheckResult::NoProblem => {
+            AskResult::NoProblem => {
                 // そのまま保存へ
             },
         }
@@ -439,7 +425,7 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
         let save_status = image.save_image(output_path.to_str()).map_err(rierr)?;
 
         // --delete -> 元ファイルの削除 (optinal)
-        let delete = if let Some(ref saved_filepath) = save_status.output_path {
+        let delete = if let Some(saved_filepath) = save_status.output_path.clone() {
             if args.delete && image_file_path != saved_filepath {
                 fs::remove_file(&image_file_path).map_err(ioerr)?;
                 true
@@ -476,7 +462,6 @@ fn process(args: &ArgStruct, image_file_path: &PathBuf) -> Result<ThreadResult, 
 
     let thread_results = ThreadResult {
         viuer_image: viuer_image,
-        asking_image: None,
         convert_result: convert_result,
         trim_result: trim_result,
         resize_result: resize_result,
@@ -494,7 +479,7 @@ fn main() -> Result<(), String> {
 
     // 作業ディレクトリの指定（default: current dir）
     let source_paths = args.souce_path.clone().or(Some(vec![PathBuf::from(".")])).unwrap();
-    let mut image_files = Vec::new();
+    let mut thread_tasks = Vec::new();
     for source_path in source_paths {
         let image_files_temp = if source_path.is_dir() {
             get_files_in_dir(&source_path, args.recursive)?
@@ -503,29 +488,66 @@ fn main() -> Result<(), String> {
             get_files_by_wildcard(&source_path)?
         };
         for image_file in image_files_temp {
-            image_files.push(image_file);
+            // 出力先パスを決定
+            let extension = convert_str_to_extension(&args.destination_extension.clone().unwrap_or("".to_string())).unwrap();
+            let output_path = get_output_path(&args, &image_file, &extension);
+
+            // 出力先が既に存在する場合、上書きするかどうかを確認
+            let ask_result = match check_file_exists(&output_path, &FileOverwriteAsk::AskEverytime) {
+                ExistsCheckResult::AllOverwrite => {
+                    println!("{}: {}", "Overwrite".bold(), output_path.display());
+                    AskResult::Overwrite
+                },
+                ExistsCheckResult::AllSkip => {
+                    println!("{}: {}", "Skip".bold(), output_path.display());
+                    AskResult::Skip
+                },
+                ExistsCheckResult::NeedToAsk => {
+                    if ask_file_exists() {
+                        AskResult::Overwrite
+                    }
+                    else {
+                        AskResult::Skip
+                    }
+                },
+                ExistsCheckResult::NoProblem => {
+                    AskResult::NoProblem
+                },
+            };
+
+            let thread_task = ThreadTask {
+                args: args.clone(),
+                input_path: image_file,
+                output_path: Some(output_path),
+                extension: extension,
+                ask_result: ask_result,
+            };
+
+            thread_tasks.push(thread_task);
         }
     }
 
     // 検出した画像ファイルパスの表示
-    let total_image_count = image_files.len();
+    let total_image_count = thread_tasks.len();
     println!("{}", format!("🔎 {} images are detected.", total_image_count).bold());
 
     // 各画像に対する処理
     let mut error_count = 0;
     let mut count = 0;
     let mut threads_vec = Vec::new();
-    for image_file_path in image_files {
+    for thread_task in thread_tasks {
         count = count + 1;
-        let processing_str = format!("[{}/{}] Processing: {}", count, total_image_count, &Path::new(&image_file_path).file_name().unwrap().to_str().unwrap());
+        let processing_str = format!("[{}/{}] Processing: {}", count, total_image_count, &Path::new(&thread_task.input_path).file_name().unwrap().to_str().unwrap());
         println!("{}", processing_str.yellow().bold());
         
         let args_clone = args.clone();
         let thread = std::thread::spawn(move || {
-            process(&args_clone, &image_file_path)
+            process(thread_task)
         });
         threads_vec.push(thread);
     }
+
+    // スレッドの実行結果を表示
     for thread in threads_vec {
         match thread.join().unwrap() {
             Ok(thread_results) => {
@@ -565,46 +587,6 @@ fn main() -> Result<(), String> {
                         }
                         println!("{}", "Success.".green().bold())
                     },
-                    RusimgStatus::Asking => {
-                        match ask_file_exists() {
-                            true => {
-                                let image = thread_results.asking_image.unwrap();
-                                let mut output_path = thread_results.save_result.output_path.unwrap();
-                                let image_file_path = image.get_input_filepath();
-                                let rierr = |e: RusimgError| ProcessingError::RusimgError(e);
-                                let ioerr = |e: std::io::Error| ProcessingError::IOError(e.to_string());
-
-                                // 保存
-                                let save_status = image.save_image(output_path.to_str()).map_err(rierr)?;
-
-                                // --delete -> 元ファイルの削除 (optinal)
-                                let delete = if let Some(ref saved_filepath) = save_status.output_path {
-                                    if args.delete && image_file_path != saved_filepath {
-                                        fs::remove_file(&image_file_path).map_err(ioerr)?;
-                                        true
-                                    }
-                                    else {
-                                        false
-                                    }
-                                }
-                                else {
-                                    false
-                                };
-
-                                // 保存先などの表示
-                                save_print(&image.get_input_filepath(), &save_status.output_path,
-                                    save_status.before_filesize, save_status.after_filesize);
-
-                                if delete {
-                                    println!("Delete source file: {}", image.get_input_filepath().display());
-                                }
-                                println!("{}", "Success.".green().bold())
-                            },
-                            Overwrite::Skip => {
-                                println!("{}", "Canceled.".yellow().bold());
-                            },
-                        }
-                    }
                     RusimgStatus::Cancel => println!("{}", "Canceled.".yellow().bold()),
                     RusimgStatus::NotNeeded => {},
                 };
