@@ -272,7 +272,7 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
     Ok(())
 }
 
-async fn process(thread_task: ThreadTask) -> Result<ThreadResult, ProcessingError> {
+async fn process(thread_task: ThreadTask, file_io_lock: std::sync::Mutex<i8>) -> Result<ThreadResult, ProcessingError> {
     let args = thread_task.args;
     let image_file_path = thread_task.input_path;
     let output_file_path = thread_task.output_path;
@@ -540,13 +540,14 @@ async fn main() -> Result<(), String> {
     let mut error_count = 0;
     let mut count = 0;
     let mut threads_vec = Vec::new();
+    let file_io_lock = std::sync::Mutex::new(0);
     for thread_task in thread_tasks {
         count = count + 1;
         let processing_str = format!("[{}/{}] Processing: {}", count, total_image_count, &Path::new(&thread_task.input_path).file_name().unwrap().to_str().unwrap());
         println!("{}", processing_str.yellow().bold());
         
         let thread = runtime.spawn({
-            process(thread_task)
+            process(thread_task, file_io_lock)
         });
         threads_vec.push(thread);
     }
