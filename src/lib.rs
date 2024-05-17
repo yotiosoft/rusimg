@@ -357,7 +357,7 @@ impl RusImg {
             Some(p) => Some(PathBuf::from(p)),
             None => None,
         };
-        self.data.save(path_buf)?;
+        //self.data.save(path_buf)?;
 
         let ret = SaveStatus {
             output_path: self.data.get_destination_filepath().clone().or(None),

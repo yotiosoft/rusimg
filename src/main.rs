@@ -7,6 +7,8 @@ use image::DynamicImage;
 use parse::ArgStruct;
 use colored::*;
 use tokio::runtime::{Runtime, Builder};
+use tokio::task;
+use std::sync::{Arc, Mutex};
 
 use rusimg::RusimgError;
 mod parse;
@@ -272,7 +274,7 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
     Ok(())
 }
 
-async fn process(thread_task: ThreadTask, file_io_lock: std::sync::Mutex<i8>) -> Result<ThreadResult, ProcessingError> {
+async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Result<ThreadResult, ProcessingError> {
     let args = thread_task.args;
     let image_file_path = thread_task.input_path;
     let output_file_path = thread_task.output_path;
@@ -375,6 +377,9 @@ async fn process(thread_task: ThreadTask, file_io_lock: std::sync::Mutex<i8>) ->
     };
 
     // 出力
+    let mut lock = file_io_lock.lock().unwrap();
+    *lock += 1;
+    println!("lock: {}", *lock);
     let save_status = if save_required == true {
         // ファイルの存在チェック
         match ask_result {
@@ -409,6 +414,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: std::sync::Mutex<i8>) ->
 
         // 保存
         let save_status = image.save_image(output_path.to_str()).map_err(rierr)?;
+        println!("save: {}", *lock);
 
         // --delete -> 元ファイルの削除 (optinal)
         let delete = if let Some(saved_filepath) = save_status.output_path.clone() {
@@ -540,13 +546,14 @@ async fn main() -> Result<(), String> {
     let mut error_count = 0;
     let mut count = 0;
     let mut threads_vec = Vec::new();
-    let file_io_lock = std::sync::Mutex::new(0);
+    let file_io_lock = Arc::new(Mutex::new(0));
     for thread_task in thread_tasks {
         count = count + 1;
         let processing_str = format!("[{}/{}] Processing: {}", count, total_image_count, &Path::new(&thread_task.input_path).file_name().unwrap().to_str().unwrap());
         println!("{}", processing_str.yellow().bold());
         
-        let thread = runtime.spawn({
+        let file_io_lock = Arc::clone(&file_io_lock);
+        let thread = runtime.spawn(async move {
             process(thread_task, file_io_lock)
         });
         threads_vec.push(thread);
@@ -554,9 +561,9 @@ async fn main() -> Result<(), String> {
 
     // スレッドの実行結果を表示
     let mut count = 0;
-    local_runtime.block_on(async {
+    let res = task::block_in_place(|| async move {
         for thread in threads_vec {
-            match thread.await.unwrap() {
+            match thread.await.unwrap().await {
                 Ok(thread_results) => {
                     count = count + 1;
                     let processing_str = format!("[{}/{}] Finish: {}", count, total_image_count, &Path::new(&thread_results.save_result.input_path).file_name().unwrap().to_str().unwrap());
@@ -608,15 +615,15 @@ async fn main() -> Result<(), String> {
                 }
             }
         }
-    });
 
-    if error_count > 0 {
-        println!("\n✅ {} images are processed.", total_image_count - error_count);
-        println!("❌ {} images are failed to process.", error_count);
-    }
-    else {
-        println!("\n✅ All images are processed.");
-    }
+        if error_count > 0 {
+            println!("\n✅ {} images are processed.", total_image_count - error_count);
+            println!("❌ {} images are failed to process.", error_count);
+        }
+        else {
+            println!("\n✅ All images are processed.");
+        }
+    }).await;
 
     Ok(())
 }
