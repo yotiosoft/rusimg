@@ -6,6 +6,7 @@ use glob::glob;
 use image::DynamicImage;
 use parse::ArgStruct;
 use colored::*;
+use std::sync::{Arc, Mutex};
 
 use std::{thread, time};
 
@@ -273,7 +274,8 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
     Ok(())
 }
 
-fn process(thread_task: ThreadTask) -> Result<ThreadResult, ProcessingError> {
+// 各スレッドでの処理
+fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Result<ThreadResult, ProcessingError> {
     let args = thread_task.args;
     let image_file_path = thread_task.input_path;
     let output_file_path = thread_task.output_path;
@@ -408,6 +410,13 @@ fn process(thread_task: ThreadTask) -> Result<ThreadResult, ProcessingError> {
         // 出力先パス
         let output_path = output_file_path.unwrap();
 
+        // ファイル保存は排他制御として実行する
+        // その理由は、ファイルの保存が同時に行われると、ファイルが破損する可能性があるため
+        // ロック変数 file_io_lock を排他制御として使用
+        // すなわち、ここから先は変数が取得できるまで処理を待機する
+        let mut lock = file_io_lock.lock().unwrap();
+        *lock += 1;
+
         // 保存
         let save_status = image.save_image(output_path.to_str()).map_err(rierr)?;
 
@@ -533,13 +542,15 @@ fn main() -> Result<(), String> {
     let mut error_count = 0;
     let mut count = 0;
     let mut threads_vec = Vec::new();
+    let file_io_lock = Arc::new(Mutex::new(0));
     for thread_task in thread_tasks {
         count = count + 1;
         let processing_str = format!("[{}/{}] Processing: {}", count, total_image_count, &Path::new(&thread_task.input_path).file_name().unwrap().to_str().unwrap());
         println!("{}", processing_str.yellow().bold());
         
+        let file_io_lock = Arc::clone(&file_io_lock);
         let thread = std::thread::spawn(move || {
-            process(thread_task)
+            process(thread_task, file_io_lock)
         });
         threads_vec.push(thread);
     }
@@ -575,7 +586,7 @@ fn main() -> Result<(), String> {
 
                 // 表示 (viuer)
                 if let Some(viuer_image) = thread_results.viuer_image {
-                    view(&viuer_image).map_err(|e| e.to_string())?;
+                    view(&viuer_image).map_err(|e| e.to_string()).unwrap();
                 }
 
                 match thread_results.save_result.status {
