@@ -272,6 +272,7 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
     Ok(())
 }
 
+// 各スレッドでの処理
 fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Result<ThreadResult, ProcessingError> {
     let args = thread_task.args;
     let image_file_path = thread_task.input_path;
@@ -375,9 +376,11 @@ fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Result<Thr
     };
 
     // 出力
+    // ファイル保存は排他制御として実行する
+    // その理由は、ファイルの保存が同時に行われると、ファイルが破損する可能性があるため
+    // ロック変数 file_io_lock を排他制御として使用
     let mut lock = file_io_lock.lock().unwrap();
     *lock += 1;
-    println!("lock: {}", *lock);
     let save_status = if save_required == true {
         // ファイルの存在チェック
         match ask_result {
