@@ -419,11 +419,13 @@ fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>, resize_proces
         // その理由は、ファイルの保存が同時に行われると、ファイルが破損する可能性があるため
         // ロック変数 file_io_lock を排他制御として使用
         // すなわち、ここから先は変数が取得できるまで処理を待機する
-        let mut lock = file_io_lock.lock().unwrap();
-        *lock += 1;
+        let save_status = {
+            let mut lock = file_io_lock.lock().unwrap();
+            *lock += 1;
 
-        // 保存
-        let save_status = image.save_image(output_path.to_str()).map_err(rierr)?;
+            // 保存
+            image.save_image(output_path.to_str()).map_err(rierr)?
+        };
 
         // --delete -> 元ファイルの削除 (optinal)
         let delete = if let Some(saved_filepath) = save_status.output_path.clone() {
