@@ -565,8 +565,16 @@ async fn main() -> Result<(), String> {
 
     // スレッドの実行結果を表示
     while let Some(item) = tasks.next().await {
-        let thread_results = item.unwrap().await?;
-        println!("{}", thread_results.save_result.input_path.display());
+        let thread_results = item.unwrap().await;
+        match thread_results {
+            Ok(thread_results) => {
+                let processing_str = format!("[{}/{}] Finish: {}", count, total_image_count, &Path::new(&thread_results.save_result.input_path).file_name().unwrap().to_str().unwrap());
+            },
+            Err(e) => {
+                println!("{}: {}", "Error".red(), e.to_string());
+                error_count = error_count + 1;
+            }
+        }
     }
     /*
     local_runtime.block_on(async {
