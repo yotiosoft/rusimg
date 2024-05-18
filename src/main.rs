@@ -558,17 +558,18 @@ async fn main() -> Result<(), String> {
         
         let file_io_lock = Arc::clone(&file_io_lock);
         let thread = runtime.spawn(async move {
-            process(thread_task, file_io_lock)
+            process(thread_task, file_io_lock).await
         });
         tasks.push(thread);
     }
 
     // スレッドの実行結果を表示
     while let Some(item) = tasks.next().await {
-        let thread_results = item.unwrap().await;
+        let thread_results = item.unwrap();
         match thread_results {
             Ok(thread_results) => {
                 let processing_str = format!("[{}/{}] Finish: {}", count, total_image_count, &Path::new(&thread_results.save_result.input_path).file_name().unwrap().to_str().unwrap());
+                println!("{}", processing_str.yellow().bold());
             },
             Err(e) => {
                 println!("{}: {}", "Error".red(), e.to_string());
