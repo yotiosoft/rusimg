@@ -275,7 +275,7 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
 }
 
 // 各スレッドでの処理
-fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Result<ThreadResult, ProcessingError> {
+fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>, resize_process_lock: Arc<Mutex<i32>>) -> Result<ThreadResult, ProcessingError> {
     let args = thread_task.args;
     let image_file_path = thread_task.input_path;
     let output_file_path = thread_task.output_path;
@@ -327,6 +327,11 @@ fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Result<Thr
 
     // --resize -> リサイズ
     let resize_result = if let Some(resize) = args.resize {
+        // リサイズ処理は非常に重いため、同時に複数のリサイズ処理が行われると、メモリ不足やクラッシュの原因になる
+        // そのため、リサイズ処理は排他制御として実行する
+        let mut lock = resize_process_lock.lock().unwrap();
+        *lock += 1;
+
         // リサイズ
         let before_size = image.get_image_size().map_err(rierr)?;
         let after_size = image.resize(resize).map_err(rierr)?;
@@ -543,14 +548,16 @@ fn main() -> Result<(), String> {
     let mut count = 0;
     let mut threads_vec = Vec::new();
     let file_io_lock = Arc::new(Mutex::new(0));
+    let resize_process_lock = Arc::new(Mutex::new(0));
     for thread_task in thread_tasks {
         count = count + 1;
         let processing_str = format!("[{}/{}] Processing: {}", count, total_image_count, &Path::new(&thread_task.input_path).file_name().unwrap().to_str().unwrap());
         println!("{}", processing_str.yellow().bold());
         
         let file_io_lock = Arc::clone(&file_io_lock);
+        let resize_process_lock = Arc::clone(&resize_process_lock);
         let thread = std::thread::spawn(move || {
-            process(thread_task, file_io_lock)
+            process(thread_task, file_io_lock, resize_process_lock)
         });
         threads_vec.push(thread);
     }
