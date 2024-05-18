@@ -21,6 +21,7 @@ viuer = { version ="0.6.2", optional = true }
 glob = { version = "0.3.1", optional = true }
 colored = { version = "2.0.4", optional = true }
 tokio = { version = "1.37.0", features = ["full"], optional = true }
+futures = { version = "0.3.30", optional = true }
 
 [features]
 default = ["bmp", "jpeg", "png", "webp"]
@@ -28,7 +29,7 @@ bmp = []
 jpeg = ["mozjpeg"]
 png = ["oxipng"]
 webp = ["dep_webp"]
-app = ["clap", "regex", "viuer", "glob", "colored", "tokio"]
+app = ["clap", "regex", "viuer", "glob", "colored", "tokio", "futures"]
 
 [[bin]]
 name = "rusimg"

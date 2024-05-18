@@ -8,6 +8,7 @@ use parse::ArgStruct;
 use colored::*;
 use std::sync::{Arc, Mutex};
 use tokio::runtime::{Runtime, Builder};
+use futures::stream::{FuturesUnordered, StreamExt};
 
 use rusimg::RusimgError;
 mod parse;
@@ -548,7 +549,7 @@ async fn main() -> Result<(), String> {
     // 各画像に対する処理
     let mut error_count = 0;
     let mut count = 0;
-    let mut threads_vec = Vec::new();
+    let mut tasks = FuturesUnordered::new();
     let file_io_lock = Arc::new(Mutex::new(0));
     for thread_task in thread_tasks {
         count = count + 1;
@@ -559,10 +560,15 @@ async fn main() -> Result<(), String> {
         let thread = runtime.spawn(async move {
             process(thread_task, file_io_lock)
         });
-        threads_vec.push(thread);
+        tasks.push(thread);
     }
 
     // スレッドの実行結果を表示
+    while let Some(item) = tasks.next().await {
+        let thread_results = item.unwrap().await?;
+        println!("{}", thread_results.save_result.input_path.display());
+    }
+    /*
     local_runtime.block_on(async {
         let mut count = 0;
         for thread in threads_vec {
@@ -619,6 +625,7 @@ async fn main() -> Result<(), String> {
             }
         }
     });
+    */
 
     if error_count > 0 {
         println!("\n✅ {} images are processed.", total_image_count - error_count);
