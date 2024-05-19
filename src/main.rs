@@ -467,7 +467,7 @@ async fn main() -> Result<(), String> {
     let threads = 4;
     let local_runtime = Runtime::new().unwrap();
     let runtime = Builder::new_multi_thread()
-        .worker_threads(threads)
+        .worker_threads(threads + 1)
         .enable_all()
         .build()
         .unwrap();
@@ -576,6 +576,10 @@ async fn main() -> Result<(), String> {
         });
         tasks.push(thread);
     }
+
+    local_runtime.block_on(async {
+        tasks.for_each(|_| async {}).await;
+    });
 
     // スレッドの実行結果を表示
     /*
