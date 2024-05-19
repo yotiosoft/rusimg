@@ -277,7 +277,7 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
 }
 
 // 各スレッドでの処理
-async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Result<ThreadResult, ProcessingError> {
+async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>, resize_process_lock: Arc<Mutex<i32>>) -> Result<ThreadResult, ProcessingError> {
     let args = thread_task.args;
     let image_file_path = thread_task.input_path;
     let output_file_path = thread_task.output_path;
@@ -478,9 +478,10 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
+    let threads = 4;
     let local_runtime = Runtime::new().unwrap();
     let runtime = Builder::new_multi_thread()
-        .worker_threads(4)
+        .worker_threads(threads)
         .enable_all()
         .build()
         .unwrap();
@@ -553,38 +554,40 @@ async fn main() -> Result<(), String> {
     let total_image_count = thread_tasks.len();
     println!("{}", format!("🔎 {} images are detected.", total_image_count).bold());
 
+    // thread_tasks をスレッド間で共有
+    let thread_tasks = Arc::new(Mutex::new(thread_tasks));
+
     // 各画像に対する処理
     let mut error_count = 0;
-    let mut count = 0;
+    let mut count = Arc::new(Mutex::new(0));
     let mut tasks = FuturesUnordered::new();
     let file_io_lock = Arc::new(Mutex::new(0));
     let resize_process_lock = Arc::new(Mutex::new(0));
-    for thread_task in thread_tasks {
-        count = count + 1;
-        let processing_str = format!("[{}/{}] Processing: {}", count, total_image_count, &Path::new(&thread_task.input_path).file_name().unwrap().to_str().unwrap());
-        println!("{}", processing_str.yellow().bold());
-        
-        let file_io_lock = Arc::clone(&file_io_lock);
+
+    for thread_num in 0..threads {
+        let thread_tasks = Arc::clone(&thread_tasks);
+
         let thread = runtime.spawn(async move {
-            process(thread_task, file_io_lock).await
+            while let Some(thread_task) = thread_tasks.lock().unwrap().pop() {
+                let count = Arc::clone(&count);
+                let file_io_lock = Arc::clone(&file_io_lock);
+                let resize_process_lock = Arc::clone(&resize_process_lock);
+                
+                let count = {
+                    let mut count = count.lock().unwrap();
+                    *count += 1;
+                    *count
+                };
+                let processing_str = format!("[{}/{}] Processing: {}", count, total_image_count, &Path::new(&thread_task.input_path).file_name().unwrap().to_str().unwrap());
+                println!("{}", processing_str.yellow().bold());
+                
+                process(thread_task, file_io_lock, resize_process_lock).await;
+            }
         });
         tasks.push(thread);
     }
 
     // スレッドの実行結果を表示
-    while let Some(item) = tasks.next().await {
-        let thread_results = item.unwrap();
-        match thread_results {
-            Ok(thread_results) => {
-                let processing_str = format!("[{}/{}] Finish: {}", count, total_image_count, &Path::new(&thread_results.save_result.input_path).file_name().unwrap().to_str().unwrap());
-                println!("{}", processing_str.yellow().bold());
-            },
-            Err(e) => {
-                println!("{}: {}", "Error".red(), e.to_string());
-                error_count = error_count + 1;
-            }
-        }
-    }
     /*
     local_runtime.block_on(async {
         let mut count = 0;
@@ -651,8 +654,6 @@ async fn main() -> Result<(), String> {
     else {
         println!("\n✅ All images are processed.");
     }
-
-    println!("{:?}", now.elapsed());
 
     Ok(())
 }
