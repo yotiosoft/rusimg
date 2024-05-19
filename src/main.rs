@@ -277,7 +277,7 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
 }
 
 // 各スレッドでの処理
-async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>, resize_process_lock: Arc<Mutex<i32>>) -> Result<ThreadResult, ProcessingError> {
+async fn process(thread_task: ThreadTask) -> Result<ThreadResult, ProcessingError> {
     let args = thread_task.args;
     let image_file_path = thread_task.input_path;
     let output_file_path = thread_task.output_path;
@@ -329,11 +329,6 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>, resize_
 
     // --resize -> リサイズ
     let resize_result = if let Some(resize) = args.resize {
-        // リサイズ処理は非常に重いため、同時に複数のリサイズ処理が行われると、メモリ不足やクラッシュの原因になる
-        // そのため、リサイズ処理は排他制御として実行する
-        let mut lock = resize_process_lock.lock().unwrap();
-        *lock += 1;
-
         // リサイズ
         let before_size = image.get_image_size().map_err(rierr)?;
         let after_size = image.resize(resize).map_err(rierr)?;
@@ -417,17 +412,8 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>, resize_
         // 出力先パス
         let output_path = output_file_path.unwrap();
 
-        // ファイル保存は排他制御として実行する
-        // その理由は、ファイルの保存が同時に行われると、ファイルが破損する可能性があるため
-        // ロック変数 file_io_lock を排他制御として使用
-        // すなわち、ここから先は変数が取得できるまで処理を待機する
-        let save_status = {
-            let mut lock = file_io_lock.lock().unwrap();
-            *lock += 1;
-
-            // 保存
-            image.save_image(output_path.to_str()).map_err(rierr)?
-        };
+        // 保存
+        let save_status = image.save_image(output_path.to_str()).map_err(rierr)?;
 
         // --delete -> 元ファイルの削除 (optinal)
         let delete = if let Some(saved_filepath) = save_status.output_path.clone() {
@@ -566,13 +552,17 @@ async fn main() -> Result<(), String> {
 
     for thread_num in 0..threads {
         let thread_tasks = Arc::clone(&thread_tasks);
+        let count = Arc::clone(&count);
 
         let thread = runtime.spawn(async move {
-            while let Some(thread_task) = thread_tasks.lock().unwrap().pop() {
-                let count = Arc::clone(&count);
-                let file_io_lock = Arc::clone(&file_io_lock);
-                let resize_process_lock = Arc::clone(&resize_process_lock);
-                
+            loop {
+                let thread_task = {
+                    let mut thread_tasks = thread_tasks.lock().unwrap();
+                    if thread_tasks.len() == 0 {
+                        break;
+                    }
+                    thread_tasks.pop().unwrap()
+                };
                 let count = {
                     let mut count = count.lock().unwrap();
                     *count += 1;
@@ -581,7 +571,7 @@ async fn main() -> Result<(), String> {
                 let processing_str = format!("[{}/{}] Processing: {}", count, total_image_count, &Path::new(&thread_task.input_path).file_name().unwrap().to_str().unwrap());
                 println!("{}", processing_str.yellow().bold());
                 
-                process(thread_task, file_io_lock, resize_process_lock).await;
+                process(thread_task).await;
             }
         });
         tasks.push(thread);
