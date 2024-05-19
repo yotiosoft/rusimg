@@ -10,6 +10,8 @@ use std::sync::{Arc, Mutex};
 use tokio::runtime::{Runtime, Builder};
 use futures::stream::{FuturesUnordered, StreamExt};
 
+use std::{thread, time};
+
 use rusimg::RusimgError;
 mod parse;
 
@@ -327,6 +329,11 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
 
     // --resize -> リサイズ
     let resize_result = if let Some(resize) = args.resize {
+        // リサイズ処理は非常に重いため、同時に複数のリサイズ処理が行われると、メモリ不足やクラッシュの原因になる
+        // そのため、リサイズ処理は排他制御として実行する
+        let mut lock = resize_process_lock.lock().unwrap();
+        *lock += 1;
+
         // リサイズ
         let before_size = image.get_image_size().map_err(rierr)?;
         let after_size = image.resize(resize).map_err(rierr)?;
@@ -551,6 +558,7 @@ async fn main() -> Result<(), String> {
     let mut count = 0;
     let mut tasks = FuturesUnordered::new();
     let file_io_lock = Arc::new(Mutex::new(0));
+    let resize_process_lock = Arc::new(Mutex::new(0));
     for thread_task in thread_tasks {
         count = count + 1;
         let processing_str = format!("[{}/{}] Processing: {}", count, total_image_count, &Path::new(&thread_task.input_path).file_name().unwrap().to_str().unwrap());
@@ -643,6 +651,8 @@ async fn main() -> Result<(), String> {
     else {
         println!("\n✅ All images are processed.");
     }
+
+    println!("{:?}", now.elapsed());
 
     Ok(())
 }
