@@ -7,15 +7,13 @@ use image::DynamicImage;
 use parse::ArgStruct;
 use colored::*;
 use std::sync::{Arc, Mutex};
-use tokio::runtime::{Runtime, Builder};
-use futures::stream::{FuturesUnordered, StreamExt};
-
-use std::{thread, time};
+use tokio::sync::mpsc;
+use futures::stream::FuturesUnordered;
 
 use rusimg::RusimgError;
 mod parse;
 
-const DEFAULT_THREADS: i8 = 4;
+const DEFAULT_THREADS: usize = 4;
 
 // error type
 pub enum ProcessingError {
@@ -539,14 +537,16 @@ async fn main() -> Result<(), String> {
 
     // 各画像に対する処理
     let mut error_count = 0;
-    let mut count = Arc::new(Mutex::new(0));
-    let mut tasks = FuturesUnordered::new();
-    let file_io_lock = Arc::new(Mutex::new(0));
-    let resize_process_lock = Arc::new(Mutex::new(0));
+    let count = Arc::new(Mutex::new(0));
+    let tasks = FuturesUnordered::new();
+    
+    // チャネルを用意
+    let (tx, mut rx) = mpsc::channel::<Result<ThreadResult, ProcessingError>>(32);
 
-    for thread_num in 0..DEFAULT_THREADS {
+    for _thread_num in 0..DEFAULT_THREADS {
         let thread_tasks = Arc::clone(&thread_tasks);
         let count = Arc::clone(&count);
+        let tx = tx.clone();
 
         let thread = tokio::spawn(async move {
             loop {
@@ -557,30 +557,30 @@ async fn main() -> Result<(), String> {
                     }
                     thread_tasks.pop().unwrap()
                 };
-                let count = {
-                    let mut count = count.lock().unwrap();
-                    *count += 1;
-                    *count
-                };
+                /*
                 let processing_str = format!("[{}/{}] Processing: {}", count, total_image_count, &Path::new(&thread_task.input_path).file_name().unwrap().to_str().unwrap());
                 println!("{}", processing_str.yellow().bold());
-                
-                process(thread_task).await;
+                */
+                let response = process(thread_task).await;
+                match tx.send(response).await {
+                    Ok(_) => {},
+                    Err(e) => {
+                        println!("Send error: {}", e.to_string());
+                    }
+                }
+
+                // カウント
+                let mut count = count.lock().unwrap();
+                *count += 1;
             }
         });
         tasks.push(thread);
     }
-    
-    println!("{}", "Processing...".bold());
-    tasks.for_each(|_| async {}).await;
-    println!("{}", "Finish.".bold());
 
     // スレッドの実行結果を表示
-    /*
-    local_runtime.block_on(async {
     let mut count = 0;
-    for thread in threads_vec {
-        match thread.await.unwrap().await {
+    while let Some(rx_result) = rx.recv().await {
+        match rx_result {
             Ok(thread_results) => {
                 count = count + 1;
                 let processing_str = format!("[{}/{}] Finish: {}", count, total_image_count, &Path::new(&thread_results.save_result.input_path).file_name().unwrap().to_str().unwrap());
@@ -631,9 +631,11 @@ async fn main() -> Result<(), String> {
                 error_count = error_count + 1;
             }
         }
+
+        if count == total_image_count {
+            break;
+        }
     }
-    });
-    */
 
     if error_count > 0 {
         println!("\n✅ {} images are processed.", total_image_count - error_count);
