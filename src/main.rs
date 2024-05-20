@@ -275,7 +275,7 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
 }
 
 // 各スレッドでの処理
-async fn process(thread_task: ThreadTask) -> Result<ThreadResult, ProcessingError> {
+async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Result<ThreadResult, ProcessingError> {
     let args = thread_task.args;
     let image_file_path = thread_task.input_path;
     let output_file_path = thread_task.output_path;
@@ -411,7 +411,12 @@ async fn process(thread_task: ThreadTask) -> Result<ThreadResult, ProcessingErro
         let output_path = output_file_path.unwrap();
 
         // 保存
-        let save_status = image.save_image(output_path.to_str()).map_err(rierr)?;
+        // 出力処理は同時に実行すると負荷がかかるため、排他制御を行う
+        let save_status = {
+            let mut lock = file_io_lock.lock().unwrap();
+            *lock += 1;
+            image.save_image(output_path.to_str()).map_err(rierr)?
+        };
 
         // --delete -> 元ファイルの削除 (optinal)
         let delete = if let Some(saved_filepath) = save_status.output_path.clone() {
@@ -547,10 +552,13 @@ async fn main() -> Result<(), String> {
     for _thread_num in 0..threads {
         let thread_tasks = Arc::clone(&thread_tasks);
         let count = Arc::clone(&count);
+        let file_io_lock = Arc::new(Mutex::new(0));
         let tx = tx.clone();
 
         let thread = tokio::spawn(async move {
             loop {
+                let file_io_lock = Arc::clone(&file_io_lock);
+
                 let thread_task = {
                     let mut thread_tasks = thread_tasks.lock().unwrap();
                     if thread_tasks.len() == 0 {
@@ -562,7 +570,7 @@ async fn main() -> Result<(), String> {
                 let processing_str = format!("[{}/{}] Processing: {}", count, total_image_count, &Path::new(&thread_task.input_path).file_name().unwrap().to_str().unwrap());
                 println!("{}", processing_str.yellow().bold());
                 */
-                let response = process(thread_task).await;
+                let response = process(thread_task, file_io_lock).await;
                 match tx.send(response).await {
                     Ok(_) => {},
                     Err(e) => {
