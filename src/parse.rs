@@ -2,6 +2,8 @@ use std::path::PathBuf;
 use clap::Parser;
 use regex::Regex;
 
+const DEFAULT_THREADS: usize = 4;
+
 #[derive(Debug, Clone)]
 pub struct ArgStruct {
     pub souce_path: Option<Vec<PathBuf>>,
@@ -17,6 +19,7 @@ pub struct ArgStruct {
     pub view: bool,
     pub yes: bool,
     pub no: bool,
+    pub threads: usize,
 }
 
 #[derive(clap::Parser, Debug)]
@@ -70,12 +73,17 @@ struct Args {
     #[arg(short, long)]
     yes: bool,
 
+    /// Number of threads (default: 4)
+    #[arg(short='T', long, default_value_t = DEFAULT_THREADS)]
+    threads: usize,
+
     /// No to all
     #[arg(short, long)]
     no: bool,
 }
 
 pub fn parser() -> ArgStruct {
+    // 引数のパース
     let args = Args::parse();
 
     // If trim option is specified, check the format.
@@ -105,7 +113,12 @@ pub fn parser() -> ArgStruct {
         std::process::exit(1);
     }
     if args.resize < Some(0) && args.resize.is_some() {
-        println!("Resize must be 0 < size");
+        println!("Resize must be size > 0");
+        std::process::exit(1);
+    }
+
+    if args.threads < 1 {
+        println!("Threads must be threads => 1");
         std::process::exit(1);
     }
 
@@ -123,5 +136,6 @@ pub fn parser() -> ArgStruct {
         view: args.view,
         yes: args.yes,
         no: args.no,
+        threads: args.threads,
     }
 }

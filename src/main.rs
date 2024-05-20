@@ -13,8 +13,6 @@ use futures::stream::FuturesUnordered;
 use rusimg::RusimgError;
 mod parse;
 
-const DEFAULT_THREADS: usize = 4;
-
 // error type
 pub enum ProcessingError {
     RusimgError(RusimgError),
@@ -467,6 +465,9 @@ async fn main() -> Result<(), String> {
     // 引数のパース
     let args = parse::parser();
 
+    // スレッド数
+    let threads = args.threads;
+
     // 上書きが必要な場合、毎回確認するかどうか
     let file_overwrite_ask = if args.yes {
         FileOverwriteAsk::YesToAll
@@ -543,7 +544,7 @@ async fn main() -> Result<(), String> {
     // チャネルを用意
     let (tx, mut rx) = mpsc::channel::<Result<ThreadResult, ProcessingError>>(32);
 
-    for _thread_num in 0..DEFAULT_THREADS {
+    for _thread_num in 0..threads {
         let thread_tasks = Arc::clone(&thread_tasks);
         let count = Arc::clone(&count);
         let tx = tx.clone();
