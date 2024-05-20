@@ -73,7 +73,7 @@ struct Args {
     #[arg(short, long)]
     yes: bool,
 
-    /// Number of threads (default: 4)
+    /// Number of threads
     #[arg(short='T', long, default_value_t = DEFAULT_THREADS)]
     threads: usize,
 
