@@ -45,7 +45,7 @@ impl RusimgTrait for BmpImage {
 
     fn save(&mut self, path: Option<PathBuf>) -> Result<(), RusimgError> {
         let save_path = Self::save_filepath(&self, &self.filepath_input, path, &"bmp".to_string())?;
-        self.image.to_rgba8().save(&save_path).map_err(|e| RusimgError::FailedToSaveImage(e.to_string()))?;
+        self.image.to_rgb8().save(&save_path).map_err(|e| RusimgError::FailedToSaveImage(e.to_string()))?;
         self.metadata_output = Some(std::fs::metadata(&save_path).map_err(|e| RusimgError::FailedToGetMetadata(e.to_string()))?);
         self.filepath_output = Some(save_path);
 
