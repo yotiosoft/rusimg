@@ -91,7 +91,7 @@ struct SaveResult {
     after_filesize: Option<u64>,
     delete: bool,
 }
-struct ThreadResult {
+struct ProcessResult {
     viuer_image: Option<DynamicImage>,
     convert_result: Option<ConvertResult>,
     trim_result: Option<TrimResult>,
@@ -99,6 +99,10 @@ struct ThreadResult {
     grayscale_result: Option<GrayscaleResult>,
     compress_result: Option<CompressResult>,
     save_result: SaveResult,
+}
+struct ThreadResult {
+    process_result: Option<Result<ProcessResult, ProcessingError>>,
+    finish: bool,
 }
 
 fn get_files_in_dir(dir_path: &PathBuf, recursive: bool) -> Result<Vec<PathBuf>, String> {
@@ -238,15 +242,15 @@ fn save_print(before_path: &PathBuf, after_path: &Option<PathBuf>, before_size: 
     match (after_path, after_size) {
         (Some(after_path), Some(after_size)) => {
             if before_path == after_path {
-                println!("{}: {}", "Overwrite".bold(), before_path.display());
+                println!("{}: {}", "Overwrite", before_path.display());
                 println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
             }
             else if get_extension(before_path.as_path()) != get_extension(after_path.as_path()) {
-                println!("{}: {} -> {}", "Convert".bold(), before_path.display(), after_path.display());
+                println!("{}: {} -> {}", "Rename", before_path.display(), after_path.display());
                 println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
             }
             else {
-                println!("{}: {} -> {}", "Move".bold(), before_path.display(), after_path.display());
+                println!("{}: {} -> {}", "Move", before_path.display(), after_path.display());
                 println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
             }
         },
@@ -275,7 +279,7 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
 }
 
 // 各スレッドでの処理
-async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Result<ThreadResult, ProcessingError> {
+async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Result<ProcessResult, ProcessingError> {
     let args = thread_task.args;
     let image_file_path = thread_task.input_path;
     let output_file_path = thread_task.output_path;
@@ -386,7 +390,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
                 // そのまま保存へ
             },
             AskResult::Skip => {
-                return Ok(ThreadResult {
+                return Ok(ProcessResult {
                     viuer_image: viuer_image,
                     convert_result: convert_result,
                     trim_result: trim_result,
@@ -453,7 +457,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
         }
     };
 
-    let thread_results = ThreadResult {
+    let thread_results = ProcessResult {
         viuer_image: viuer_image,
         convert_result: convert_result,
         trim_result: trim_result,
@@ -548,7 +552,7 @@ async fn main() -> Result<(), String> {
     let tasks = FuturesUnordered::new();
     
     // チャネルを用意
-    let (tx, mut rx) = mpsc::channel::<Result<ThreadResult, ProcessingError>>(32);
+    let (tx, mut rx) = mpsc::channel::<ThreadResult>(32);
 
     for _thread_num in 0..threads {
         let thread_tasks = Arc::clone(&thread_tasks);
@@ -562,17 +566,30 @@ async fn main() -> Result<(), String> {
 
                 let thread_task = {
                     let mut thread_tasks = thread_tasks.lock().unwrap();
-                    if thread_tasks.len() == 0 {
-                        break;
-                    }
-                    thread_tasks.pop().unwrap()
+                    thread_tasks.pop()
                 };
+                if thread_task.is_none() {
+                    match tx.send(ThreadResult {
+                        process_result: None,
+                        finish: true,
+                    }).await {
+                        Ok(_) => {},
+                        Err(e) => {
+                            println!("Send error: {}", e.to_string());
+                        }
+                    }
+                    break;
+                }
+                let thread_task = thread_task.unwrap();
                 /*
                 let processing_str = format!("[{}/{}] Processing: {}", count, total_image_count, &Path::new(&thread_task.input_path).file_name().unwrap().to_str().unwrap());
                 println!("{}", processing_str.yellow().bold());
                 */
-                let response = process(thread_task, file_io_lock).await;
-                match tx.send(response).await {
+                let process_result = process(thread_task, file_io_lock).await;
+                match tx.send(ThreadResult {
+                    process_result: Some(process_result),
+                    finish: false,
+                }).await {
                     Ok(_) => {},
                     Err(e) => {
                         println!("Send error: {}", e.to_string());
@@ -589,60 +606,66 @@ async fn main() -> Result<(), String> {
 
     // スレッドの実行結果を表示
     let mut count = 0;
+    let mut thread_finished = 0;
     while let Some(rx_result) = rx.recv().await {
-        match rx_result {
-            Ok(thread_results) => {
-                count = count + 1;
-                let processing_str = format!("[{}/{}] Finish: {}", count, total_image_count, &Path::new(&thread_results.save_result.input_path).file_name().unwrap().to_str().unwrap());
-                println!("{}", processing_str.yellow().bold());
+        if let Some(process_result) = rx_result.process_result {
+            match process_result {
+                Ok(thread_results) => {
+                    count = count + 1;
+                    let processing_str = format!("[{}/{}] Finish: {}", count, total_image_count, &Path::new(&thread_results.save_result.input_path).file_name().unwrap().to_str().unwrap());
+                    println!("{}", processing_str.yellow().bold());
 
-                if let Some(convert_result) = thread_results.convert_result {
-                    println!("Convert: {} -> {}", convert_result.before_extension.to_string(), convert_result.after_extension.to_string());
-                }
-                if let Some(trim_result) = thread_results.trim_result {
-                    println!("Trim: {}x{} -> {}x{}", trim_result.before_size.width, trim_result.before_size.height, trim_result.after_size.width, trim_result.after_size.height);
-                }
-                if let Some(resize_result) = thread_results.resize_result {
-                    println!("Resize: {}x{} -> {}x{}", resize_result.before_size.width, resize_result.before_size.height, resize_result.after_size.width, resize_result.after_size.height);
-                }
-                if let Some(grayscale_result) = thread_results.grayscale_result {
-                    if grayscale_result.status {
-                        println!("Grayscale: Done.");
+                    if let Some(convert_result) = thread_results.convert_result {
+                        println!("Convert: {} -> {}", convert_result.before_extension.to_string(), convert_result.after_extension.to_string());
                     }
-                }
-                if let Some(compress_result) = thread_results.compress_result {
-                    if compress_result.status {
-                        println!("Compress: Done.");
+                    if let Some(trim_result) = thread_results.trim_result {
+                        println!("Trim: {}x{} -> {}x{}", trim_result.before_size.width, trim_result.before_size.height, trim_result.after_size.width, trim_result.after_size.height);
                     }
-                }
-
-                // 表示 (viuer)
-                if let Some(viuer_image) = thread_results.viuer_image {
-                    view(&viuer_image).map_err(|e| e.to_string()).unwrap();
-                }
-
-                match thread_results.save_result.status {
-                    RusimgStatus::Success => {
-                        // 保存先などの表示
-                        save_print(&thread_results.save_result.input_path, &thread_results.save_result.output_path,
-                            thread_results.save_result.before_filesize, thread_results.save_result.after_filesize);
-
-                        if thread_results.save_result.delete {
-                            println!("Delete source file: {}", thread_results.save_result.input_path.display());
+                    if let Some(resize_result) = thread_results.resize_result {
+                        println!("Resize: {}x{} -> {}x{}", resize_result.before_size.width, resize_result.before_size.height, resize_result.after_size.width, resize_result.after_size.height);
+                    }
+                    if let Some(grayscale_result) = thread_results.grayscale_result {
+                        if grayscale_result.status {
+                            println!("Grayscale: Done.");
                         }
-                        println!("{}", "Success.".green().bold())
-                    },
-                    RusimgStatus::Cancel => println!("{}", "Canceled.".yellow().bold()),
-                    RusimgStatus::NotNeeded => println!("{}", "Nothing to do.".yellow().bold()),
-                };
-            }
-            Err(e) => {
-                println!("{}: {}", "Error".red(), e.to_string());
-                error_count = error_count + 1;
+                    }
+                    if let Some(compress_result) = thread_results.compress_result {
+                        if compress_result.status {
+                            println!("Compress: Done.");
+                        }
+                    }
+
+                    // 表示 (viuer)
+                    if let Some(viuer_image) = thread_results.viuer_image {
+                        view(&viuer_image).map_err(|e| e.to_string()).unwrap();
+                    }
+
+                    match thread_results.save_result.status {
+                        RusimgStatus::Success => {
+                            // 保存先などの表示
+                            save_print(&thread_results.save_result.input_path, &thread_results.save_result.output_path,
+                                thread_results.save_result.before_filesize, thread_results.save_result.after_filesize);
+
+                            if thread_results.save_result.delete {
+                                println!("Delete source file: {}", thread_results.save_result.input_path.display());
+                            }
+                            println!("{}", "Success.".green().bold())
+                        },
+                        RusimgStatus::Cancel => println!("{}", "Canceled.".yellow().bold()),
+                        RusimgStatus::NotNeeded => println!("{}", "Nothing to do.".yellow().bold()),
+                    };
+                }
+                Err(e) => {
+                    println!("{}: {}", "Error".red(), e.to_string());
+                    error_count = error_count + 1;
+                }
             }
         }
 
-        if count == total_image_count {
+        if rx_result.finish {
+            thread_finished = thread_finished + 1;
+        }
+        if thread_finished == threads {
             break;
         }
     }
