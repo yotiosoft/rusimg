@@ -293,13 +293,14 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
     // --convert -> 画像形式変換
     let convert_result = if let Some(_c) = args.destination_extension {
         let extension = thread_task.extension;
+        let before_extension = image.extension.clone();
 
         // 変換
         image.convert(&extension).map_err(rierr)?;
         save_required = true;
 
         Some(ConvertResult {
-            before_extension: image.extension.clone(),
+            before_extension: before_extension,
             after_extension: extension,
         })
     }
