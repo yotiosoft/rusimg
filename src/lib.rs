@@ -72,6 +72,12 @@ pub struct RusImg {
     pub extension: Extension,
     pub data: Box<(dyn RusimgTrait)>,
 }
+pub struct Rect {
+    pub x: u32,
+    pub y: u32,
+    pub w: u32,
+    pub h: u32,
+}
 
 pub trait RusimgTrait {
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
@@ -79,7 +85,7 @@ pub trait RusimgTrait {
     fn save(&mut self, path: Option<PathBuf>) -> Result<(), RusimgError>;
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError>;
     fn resize(&mut self, resize_ratio: u8) -> Result<ImgSize, RusimgError>;
-    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<ImgSize, RusimgError>;
+    fn trim(&mut self, trim: Rect) -> Result<ImgSize, RusimgError>;
     fn grayscale(&mut self);
 
     fn set_dynamic_image(&mut self, image: DynamicImage) -> Result<(), RusimgError>;
@@ -279,7 +285,11 @@ impl RusImg {
     /// Trim an image.
     /// It must be called after open_image().
     pub fn trim(&mut self, trim_x: u32, trim_y: u32, trim_w: u32, trim_h: u32) -> Result<ImgSize, RusimgError> {
-        let size = self.data.trim((trim_x, trim_y), (trim_w, trim_h))?;
+        let size = self.data.trim(Rect{x: trim_x, y: trim_y, w: trim_w, h: trim_h})?;
+        Ok(size)
+    }
+    pub fn trim_rect(&mut self, trim_area: Rect) -> Result<ImgSize, RusimgError> {
+        let size = self.data.trim(trim_area)?;
         Ok(size)
     }
 

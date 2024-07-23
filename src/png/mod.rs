@@ -3,7 +3,7 @@ use std::fs::Metadata;
 use std::path::PathBuf;
 use image::DynamicImage;
 
-use super::{RusimgTrait, RusimgError, ImgSize};
+use super::{RusimgTrait, RusimgError, ImgSize, Rect};
 
 #[derive(Debug, Clone)]
 pub struct PngImage {
@@ -141,13 +141,13 @@ impl RusimgTrait for PngImage {
         Ok(ImgSize::new(self.width, self.height))
     }
 
-    fn trim(&mut self, trim_xy: (u32, u32), trim_wh: (u32, u32)) -> Result<ImgSize, RusimgError> {
-        let mut w = trim_wh.0;
-        let mut h = trim_wh.1;
-        if self.width < (trim_xy.0 + w) as usize || self.height < (trim_xy.1 + h) as usize {
-            if self.width > trim_xy.0 as usize && self.height > trim_xy.1 as usize {
-                w = if self.width < (trim_xy.0 + w) as usize { self.width as u32 - trim_xy.0 } else { trim_wh.0 };
-                h = if self.height < (trim_xy.1 + h) as usize { self.height as u32 - trim_xy.1 } else { trim_wh.1 };
+    fn trim(&mut self, trim: Rect) -> Result<ImgSize, RusimgError> {
+        let mut w = trim.w;
+        let mut h = trim.h;
+        if self.size.width < (trim.x + trim.w) as usize || self.size.height < (trim.y + trim.h) as usize {
+            if self.size.width > trim.x as usize && self.size.height > trim.y as usize {
+                w = if self.size.width < (trim.x + trim.w) as usize { self.size.width as u32 - trim.x } else { trim.w };
+                h = if self.size.height < (trim.y + trim.h) as usize { self.size.height as u32 - trim.y } else { trim.h };
                 //println!("Required width or height is larger than image size. Corrected size: {}x{} -> {}x{}", trim_wh.0, trim_wh.1, w, h);
             }
             else {
@@ -155,12 +155,11 @@ impl RusimgTrait for PngImage {
             }
         }
 
-        self.image = self.image.crop(trim_xy.0, trim_xy.1, w, h);
+        self.image = self.image.crop(trim.x, trim.y, w, h);
 
-        self.width = w as usize;
-        self.height = h as usize;
+        self.size.width = w as usize;
+        self.size.height = h as usize;
 
-        self.operations_count += 1;
         Ok(ImgSize::new(self.width, self.height))
     }
 

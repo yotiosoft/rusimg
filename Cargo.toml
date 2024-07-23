@@ -11,7 +11,7 @@ autobins = true
 
 [dependencies]
 image = "0.24.5"
-mozjpeg = { version = "0.9.4", optional = true }
+mozjpeg = { optional = true }
 oxipng = { version = "8.0.0", optional = true }
 dep_webp = { version = "0.2.2", optional = true, package = "webp" }
 

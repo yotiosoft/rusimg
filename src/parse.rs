@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use clap::Parser;
 use regex::Regex;
+use rusimg::Rect;
 
 const DEFAULT_THREADS: usize = 4;
 
@@ -14,7 +15,7 @@ pub struct ArgStruct {
     pub quality: Option<f32>,
     pub delete: bool,
     pub resize: Option<u8>,
-    pub trim: Option<((u32, u32), (u32, u32))>,
+    pub trim: Option<Rect>,
     pub grayscale: bool,
     pub view: bool,
     pub yes: bool,
@@ -97,7 +98,7 @@ pub fn parser() -> ArgStruct {
             let y = trim_xy[1].parse::<u32>().unwrap();
             let w = trim_wh[1].parse::<u32>().unwrap();
             let h = trim_wh[2].parse::<u32>().unwrap();
-            Some(((x, y), (w, h)))
+            Some(Rect{x, y, w, h})
         }
         else {
             println!("Invalid trim format. Please use 'XxY+W+H' (e.g.100x100+50x50).");
