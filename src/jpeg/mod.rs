@@ -84,13 +84,10 @@ impl RusimgTrait for JpegImage {
         let mut compress = Compress::new(ColorSpace::JCS_RGB);
         compress.set_scan_optimization_mode(ScanMode::AllComponentsTogether);
         compress.set_size(self.size.width, self.size.height);
-        compress.set_mem_dest();
         compress.set_quality(quality);
-        compress.start_compress();
-        compress.write_scanlines(&image_bytes);
-        compress.finish_compress();
+        let mut comp = compress.start_compress(image_bytes).map_err(|e| RusimgError::FailedToCompressImage(Some(e.to_string())))?;
 
-        self.image_bytes = Some(compress.data_to_vec().map_err(|_| RusimgError::FailedToCompressImage(None))?);
+        self.image_bytes = Some(image_bytes);
 
         self.operations_count += 1;
 
