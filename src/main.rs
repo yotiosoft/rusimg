@@ -478,7 +478,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
 #[tokio::main]
 async fn main() -> Result<(), String> {
     // 引数のパース
-    let args = parse::parser();
+    let args = parse::parser().map_err(|e| e.to_string())?;
 
     // スレッド数
     let threads = args.threads;
@@ -664,12 +664,12 @@ async fn main() -> Result<(), String> {
                     error_count = error_count + 1;
                     match e {
                         ProcessingError::RusimgError(e) => {
-                            let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, e.filepath);
+                            let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, &Path::new(&e.filepath).file_name().unwrap().to_str().unwrap());
                             println!("{}", processing_str.red().bold());
                             println!("{}: {}", "Error".red(), e.error);
                         },
                         ProcessingError::IOError(e) => {
-                            let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, e.filepath);
+                            let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, &Path::new(&e.filepath).file_name().unwrap().to_str().unwrap());
                             println!("{}", processing_str.red().bold());
                             println!("{}: {}", "Error".red(), e.error);
                         },

@@ -2,8 +2,29 @@ use std::path::PathBuf;
 use clap::Parser;
 use regex::Regex;
 use rusimg::Rect;
+use std::fmt;
 
 const DEFAULT_THREADS: usize = 4;
+
+pub enum ArgError {
+    InvalidTrimFormat,
+    FailedToParseTrim(String),
+    InvalidQuality,
+    InvalidResize,
+    InvalidThreads,
+}
+impl fmt::Display for ArgError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ArgError::InvalidTrimFormat => write!(f, "Invalid trim format. Please use 'XxY+W+H' (e.g.100x100+50x50)."),
+            ArgError::FailedToParseTrim(e) => write!(f, "Failed to parse trim format: {}", e),
+            ArgError::InvalidQuality => write!(f, "Quality must be 0.0 <= q <= 100.0"),
+            ArgError::InvalidResize => write!(f, "Resize must be size > 0"),
+            ArgError::InvalidThreads => write!(f, "Threads must be threads => 1"),
+        }
+    }
+
+}
 
 #[derive(Debug, Clone)]
 pub struct ArgStruct {
@@ -83,7 +104,7 @@ struct Args {
     no: bool,
 }
 
-pub fn parser() -> ArgStruct {
+pub fn parser() -> Result<ArgStruct, ArgError> {
     // 引数のパース
     let args = Args::parse();
 
@@ -98,36 +119,31 @@ pub fn parser() -> ArgStruct {
             Ok(Some(Rect{x, y, w, h}))
         }
         else {
-            println!("Invalid trim format. Please use 'XxY+W+H' (e.g.100x100+50x50).");
-            std::process::exit(1);
+            return Err(ArgError::InvalidTrimFormat);
         }
     }
     else {
         Ok(None)
     };
     let trim = if let Err(e) = trim {
-        println!("{}", e);
-        std::process::exit(1);
+        return Err(ArgError::FailedToParseTrim(e));
     }
     else {
         trim.unwrap()
     };
 
     if (args.quality < Some(0.0) || args.quality > Some(100.0)) && args.quality.is_some() {
-        println!("Quality must be 0.0 <= q <= 100.0");
-        std::process::exit(1);
+        return Err(ArgError::InvalidQuality);
     }
     if args.resize < Some(0) && args.resize.is_some() {
-        println!("Resize must be size > 0");
-        std::process::exit(1);
+        return Err(ArgError::InvalidResize);
     }
 
     if args.threads < 1 {
-        println!("Threads must be threads => 1");
-        std::process::exit(1);
+        return Err(ArgError::InvalidThreads);
     }
 
-    ArgStruct {
+    Ok(ArgStruct {
         souce_path: args.source,
         destination_path: args.output,
         destination_extension: args.convert,
@@ -142,5 +158,5 @@ pub fn parser() -> ArgStruct {
         yes: args.yes,
         no: args.no,
         threads: args.threads,
-    }
+    })
 }
