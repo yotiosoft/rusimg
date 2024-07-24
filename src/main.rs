@@ -613,7 +613,7 @@ async fn main() -> Result<(), String> {
             match process_result {
                 Ok(thread_results) => {
                     count = count + 1;
-                    let processing_str = format!("[{}/{}] Finish: {}", count, total_image_count, &Path::new(&thread_results.save_result.input_path).file_name().unwrap().to_str().unwrap());
+                    let processing_str = format!("[{}/{}] Finish: {}", count + error_count, total_image_count, &Path::new(&thread_results.save_result.input_path).file_name().unwrap().to_str().unwrap());
                     println!("{}", processing_str.yellow().bold());
 
                     if let Some(convert_result) = thread_results.convert_result {

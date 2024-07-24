@@ -88,17 +88,14 @@ pub fn parser() -> ArgStruct {
     let args = Args::parse();
 
     // If trim option is specified, check the format.
-    let trim = if args.trim.is_some() {
-        let re = Regex::new(r"^\d*x\d*\+\d*\+\d*$").unwrap();
-        let trim = args.trim.unwrap();
-        if re.is_match(&trim) {
-            let trim_wh = trim.split("+").collect::<Vec<&str>>();
-            let trim_xy = trim_wh[0].split("x").collect::<Vec<&str>>();
-            let x = trim_xy[0].parse::<u32>().unwrap();
-            let y = trim_xy[1].parse::<u32>().unwrap();
-            let w = trim_wh[1].parse::<u32>().unwrap();
-            let h = trim_wh[2].parse::<u32>().unwrap();
-            Some(Rect{x, y, w, h})
+    let trim: Result<Option<rusimg::Rect>, String> = if args.trim.is_some() {
+        let re = Regex::new(r"(\d+)x(\d+)\+(\d+)x(\d+)").unwrap();
+        if let Some(captures) = re.captures(&args.trim.unwrap()) {
+            let x = captures.get(1).unwrap().as_str().parse().map_err(|e: std::num::ParseIntError| e.to_string()).unwrap();
+            let y = captures.get(2).unwrap().as_str().parse().map_err(|e: std::num::ParseIntError| e.to_string()).unwrap();
+            let w = captures.get(3).unwrap().as_str().parse().map_err(|e: std::num::ParseIntError| e.to_string()).unwrap();
+            let h = captures.get(4).unwrap().as_str().parse().map_err(|e: std::num::ParseIntError| e.to_string()).unwrap();
+            Ok(Some(Rect{x, y, w, h}))
         }
         else {
             println!("Invalid trim format. Please use 'XxY+W+H' (e.g.100x100+50x50).");
@@ -106,7 +103,14 @@ pub fn parser() -> ArgStruct {
         }
     }
     else {
-        None
+        Ok(None)
+    };
+    let trim = if let Err(e) = trim {
+        println!("{}", e);
+        std::process::exit(1);
+    }
+    else {
+        trim.unwrap()
     };
 
     if (args.quality < Some(0.0) || args.quality > Some(100.0)) && args.quality.is_some() {
