@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::fs;
-use std::fmt;
+use std::fmt::{self, Error};
 use std::io::{stdout, Write};
 use glob::glob;
 use image::DynamicImage;
@@ -14,17 +14,23 @@ use rusimg::RusimgError;
 mod parse;
 
 // error type
-pub enum ProcessingError {
-    RusimgError(RusimgError),
-    IOError(String),
-    ArgError(String),
+type ErrorOccuredFilePath = String;
+type ErrorMessage = std::io::Error;
+struct ErrorStruct<T> {
+    error: T,
+    filepath: ErrorOccuredFilePath,
+}
+enum ProcessingError {
+    RusimgError(ErrorStruct<RusimgError>),
+    IOError(ErrorStruct<ErrorMessage>),
+    ArgError(ErrorStruct<ErrorMessage>),
 }
 impl fmt::Display for ProcessingError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ProcessingError::RusimgError(e) => write!(f, "{}", e.to_string()),
-            ProcessingError::IOError(e) => write!(f, "{}", e),
-            ProcessingError::ArgError(e) => write!(f, "{}", e),
+            ProcessingError::RusimgError(e) => write!(f, "{}", e.error),
+            ProcessingError::IOError(e) => write!(f, "{}", e.error),
+            ProcessingError::ArgError(e) => write!(f, "{}", e.error),
         }
     }
 }
@@ -285,8 +291,8 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
     let output_file_path = thread_task.output_path;
     let ask_result = thread_task.ask_result;
 
-    let rierr = |e: RusimgError| ProcessingError::RusimgError(e);
-    let ioerr = |e: std::io::Error| ProcessingError::IOError(e.to_string());
+    let rierr = |e: RusimgError| ProcessingError::RusimgError(ErrorStruct { error: e, filepath: image_file_path.to_str().unwrap().to_string() });
+    let ioerr = |e: std::io::Error| ProcessingError::IOError(ErrorStruct { error: e, filepath: image_file_path.to_str().unwrap().to_string() });
 
     // ファイルを開く
     let mut image = rusimg::open_image(&image_file_path).map_err(rierr)?;
@@ -657,11 +663,24 @@ async fn main() -> Result<(), String> {
                     };
                 }
                 Err(e) => {
-                    let thread_results = e;
-                    let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, &Path::new(&thread_results.save_result.input_path).file_name().unwrap().to_str().unwrap());
-                    println!("{}", processing_str.red().bold());
-                    println!("{}: {}", "Error".red(), e.to_string());
                     error_count = error_count + 1;
+                    match e {
+                        ProcessingError::RusimgError(e) => {
+                            let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, e.filepath);
+                            println!("{}", processing_str.red().bold());
+                            println!("{}: {}", "Error".red(), e.error);
+                        },
+                        ProcessingError::IOError(e) => {
+                            let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, e.filepath);
+                            println!("{}", processing_str.red().bold());
+                            println!("{}: {}", "Error".red(), e.error);
+                        },
+                        ProcessingError::ArgError(e) => {
+                            let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, e.filepath);
+                            println!("{}", processing_str.red().bold());
+                            println!("{}: {}", "Error".red(), e.error);
+                        },
+                    }
                 }
             }
         }
