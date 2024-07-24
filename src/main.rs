@@ -657,6 +657,9 @@ async fn main() -> Result<(), String> {
                     };
                 }
                 Err(e) => {
+                    let thread_results = e;
+                    let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, &Path::new(&thread_results.save_result.input_path).file_name().unwrap().to_str().unwrap());
+                    println!("{}", processing_str.red().bold());
                     println!("{}: {}", "Error".red(), e.to_string());
                     error_count = error_count + 1;
                 }
