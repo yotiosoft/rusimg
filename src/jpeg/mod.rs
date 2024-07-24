@@ -85,9 +85,9 @@ impl RusimgTrait for JpegImage {
         compress.set_scan_optimization_mode(ScanMode::AllComponentsTogether);
         compress.set_size(self.size.width, self.size.height);
         compress.set_quality(quality);
-        let mut comp = compress.start_compress(image_bytes).map_err(|e| RusimgError::FailedToCompressImage(Some(e.to_string())))?;
+        let comp = compress.start_compress(image_bytes).map_err(|e| RusimgError::FailedToCompressImage(Some(e.to_string())))?;
 
-        self.image_bytes = Some(image_bytes);
+        self.image_bytes = Some(comp.finish().map_err(|e| RusimgError::FailedToCompressImage(Some(e.to_string())))?);
 
         self.operations_count += 1;
 

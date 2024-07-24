@@ -72,6 +72,7 @@ pub struct RusImg {
     pub extension: Extension,
     pub data: Box<(dyn RusimgTrait)>,
 }
+#[derive(Debug, Clone, PartialEq)]
 pub struct Rect {
     pub x: u32,
     pub y: u32,

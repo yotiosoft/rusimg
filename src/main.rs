@@ -316,7 +316,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
     let trim_result = if let Some(trim) = args.trim {
         // トリミング
         let before_size = image.get_image_size().map_err(rierr)?;
-        let trimmed_size = image.trim(trim.0.0, trim.0.1, trim.1.0, trim.1.1).map_err(rierr)?;
+        let trimmed_size = image.trim_rect(trim).map_err(rierr)?;
         if before_size != trimmed_size {
             save_required = true;
         }
