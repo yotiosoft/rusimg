@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::fs;
-use std::fmt::{self, Error};
+use std::fmt;
 use std::io::{stdout, Write};
 use glob::glob;
 use image::DynamicImage;
@@ -23,14 +23,12 @@ struct ErrorStruct<T> {
 enum ProcessingError {
     RusimgError(ErrorStruct<RusimgError>),
     IOError(ErrorStruct<ErrorMessage>),
-    ArgError(ErrorStruct<ErrorMessage>),
 }
 impl fmt::Display for ProcessingError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ProcessingError::RusimgError(e) => write!(f, "{}", e.error),
             ProcessingError::IOError(e) => write!(f, "{}", e.error),
-            ProcessingError::ArgError(e) => write!(f, "{}", e.error),
         }
     }
 }
@@ -671,11 +669,6 @@ async fn main() -> Result<(), String> {
                             println!("{}: {}", "Error".red(), e.error);
                         },
                         ProcessingError::IOError(e) => {
-                            let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, e.filepath);
-                            println!("{}", processing_str.red().bold());
-                            println!("{}: {}", "Error".red(), e.error);
-                        },
-                        ProcessingError::ArgError(e) => {
                             let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, e.filepath);
                             println!("{}", processing_str.red().bold());
                             println!("{}: {}", "Error".red(), e.error);
