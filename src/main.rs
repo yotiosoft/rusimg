@@ -4,6 +4,7 @@ use std::fmt;
 use std::io::{stdout, Write};
 use glob::glob;
 use image::DynamicImage;
+use older_image::DynamicImage as OlderDynamicImage;
 use parse::ArgStruct;
 use colored::*;
 use std::sync::{Arc, Mutex};
@@ -276,8 +277,9 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
         height: Some(conf_height as u32),    
         ..Default::default()
     };
-
-    viuer::print(&image, &conf).map_err(|e| RusimgError::FailedToViewImage(e.to_string()))?;
+    
+    let older_version_image = image.clone() as OlderDynamicImage;
+    viuer::print(&older_version_image, &conf).map_err(|e| RusimgError::FailedToViewImage(e.to_string()))?;
 
     Ok(())
 }

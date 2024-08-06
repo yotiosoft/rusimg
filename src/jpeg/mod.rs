@@ -1,5 +1,5 @@
 use mozjpeg::{Compress, ColorSpace, ScanMode};
-use image::DynamicImage;
+use image::{DynamicImage, ImageReader};
 
 use std::fs::Metadata;
 use std::io::Write;
@@ -38,7 +38,8 @@ impl RusimgTrait for JpegImage {
     }
 
     fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> {
-        let image = image::load_from_memory(&image_buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
+        //let image = image::load_from_memory(&image_buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
+        let image = ImageReader::open(path.clone()).unwrap().decode().unwrap();
         let size = ImgSize { width: image.width() as usize, height: image.height() as usize };
 
         let extension_str = path.extension().and_then(|s| s.to_str()).unwrap_or("").to_string();

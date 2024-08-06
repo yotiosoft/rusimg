@@ -24,7 +24,7 @@ impl RusimgTrait for PngImage {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
         let mut new_binary_data = Vec::new();
-        image.write_to(&mut Cursor::new(&mut new_binary_data), image::ImageOutputFormat::Png)
+        image.write_to(&mut Cursor::new(&mut new_binary_data), image::ImageFormat::Png)
             .map_err(|e| RusimgError::FailedToCopyBinaryData(e.to_string()))?;
 
         Ok(Self {
