@@ -34,6 +34,7 @@ pub enum RusimgError {
     UnsupportedFileExtension,
     ImageDataIsNone,
     FailedToGetDynamicImage,
+    FailedToConvertExtension,
 }
 impl fmt::Display for RusimgError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -64,6 +65,7 @@ impl fmt::Display for RusimgError {
             RusimgError::UnsupportedFileExtension => write!(f, "Unsupported file extension"),
             RusimgError::ImageDataIsNone => write!(f, "Image data is None"),
             RusimgError::FailedToGetDynamicImage => write!(f, "Failed to get dynamic image"),
+            RusimgError::FailedToConvertExtension => write!(f, "Failed to convert extension"),
         }
     }
 }

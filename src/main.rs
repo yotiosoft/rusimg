@@ -64,7 +64,7 @@ struct ThreadTask {
     args: ArgStruct,
     input_path: PathBuf,
     output_path: Option<PathBuf>,
-    extension: rusimg::Extension,
+    extension: Option<rusimg::Extension>,
     ask_result: AskResult,
 }
 
@@ -320,21 +320,26 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
 
     // --convert -> 画像形式変換
     let convert_result = if let Some(_c) = args.destination_extension {
-        let extension = thread_task.extension;
-        let before_extension = image.extension.clone();
+        if let Some(extension) = thread_task.extension {
+            let before_extension = image.extension.clone();
 
-        // 変換
-        image.convert(&extension).map_err(rierr)?;
-        save_required = true;
+            // 変換
+            image.convert(&extension).map_err(rierr)?;
+            save_required = true;
 
-        Some(ConvertResult {
-            before_extension: before_extension,
-            after_extension: extension,
-        })
+            Ok(Some(ConvertResult {
+                before_extension: before_extension,
+                after_extension: extension,
+            }))
+        }
+        else {
+            Err(RusimgError::FailedToConvertExtension)
+        }
     }
     else {
-        None
+        Ok(None)
     };
+    let convert_result = convert_result.map_err(rierr)?;
 
     // --trim -> トリミング
     let trim_result = if let Some(trim) = args.trim {
@@ -525,48 +530,59 @@ async fn main() -> Result<(), String> {
             get_files_by_wildcard(&source_path)?
         };
         for image_file in image_files_temp {
-            // 出力先パスを決定
-            let extension = convert_str_to_extension(&args.destination_extension.clone().unwrap_or("".to_string()));
-            let extension = match extension {
-                Ok(e) => e,
-                Err(e) => {
-                    println!("{}: {}", "Error".red(), e.to_string());
-                    continue;
-                },
-            };
-            let output_path = get_output_path(&args, &image_file, &extension);
+            let thread_task = if let Some(extension_str) = &args.destination_extension {
+                // 出力先パスを決定
+                let extension = convert_str_to_extension(&extension_str.clone());
+                let extension = match extension {
+                    Ok(e) => e,
+                    Err(e) => {
+                        println!("{}: {}", "Error".red(), e.to_string());
+                        continue;
+                    },
+                };
+                let output_path = get_output_path(&args, &image_file, &extension);
 
-            // 出力先が既に存在する場合、上書きするかどうかを確認
-            let ask_result = match check_file_exists(&output_path, &file_overwrite_ask) {
-                ExistsCheckResult::AllOverwrite => {
-                    println!("{}", " => Overwrite (default: yes)".bold());
-                    AskResult::Overwrite
-                },
-                ExistsCheckResult::AllSkip => {
-                    println!("{}", " => Skip (default: no)".bold());
-                    AskResult::Skip
-                },
-                ExistsCheckResult::NeedToAsk => {
-                    if ask_file_exists() {
+                // 出力先が既に存在する場合、上書きするかどうかを確認
+                let ask_result = match check_file_exists(&output_path, &file_overwrite_ask) {
+                    ExistsCheckResult::AllOverwrite => {
+                        println!("{}", " => Overwrite (default: yes)".bold());
                         AskResult::Overwrite
-                    }
-                    else {
+                    },
+                    ExistsCheckResult::AllSkip => {
+                        println!("{}", " => Skip (default: no)".bold());
                         AskResult::Skip
-                    }
-                },
-                ExistsCheckResult::NoProblem => {
-                    AskResult::NoProblem
-                },
-            };
+                    },
+                    ExistsCheckResult::NeedToAsk => {
+                        if ask_file_exists() {
+                            AskResult::Overwrite
+                        }
+                        else {
+                            AskResult::Skip
+                        }
+                    },
+                    ExistsCheckResult::NoProblem => {
+                        AskResult::NoProblem
+                    },
+                };
 
-            let thread_task = ThreadTask {
-                args: args.clone(),
-                input_path: image_file,
-                output_path: Some(output_path),
-                extension: extension,
-                ask_result: ask_result,
+                ThreadTask {
+                    args: args.clone(),
+                    input_path: image_file,
+                    output_path: Some(output_path),
+                    extension: Some(extension),
+                    ask_result: ask_result,
+                }
+            }
+            else {
+                ThreadTask {
+                    args: args.clone(),
+                    input_path: image_file,
+                    output_path: None,
+                    extension: None,
+                    ask_result: AskResult::NoProblem,
+                }
             };
-
+            
             thread_tasks.push(thread_task);
         }
     }
@@ -672,7 +688,12 @@ async fn main() -> Result<(), String> {
                         //view(&viuer_image).map_err(|e| e.to_string()).unwrap();
                         // because the viuer crate does not support DynamicImage of the image crate version 0.25.x yet,
                         // read the image file again and display it.
-                        view(&thread_results.save_result.output_path.clone().unwrap(), viuer_image.width(), viuer_image.height()).map_err(|e| e.to_string()).unwrap();
+                        if thread_results.save_result.output_path.is_some() {
+                            view(&thread_results.save_result.output_path.clone().unwrap(), viuer_image.width(), viuer_image.height()).map_err(|e| e.to_string()).unwrap();
+                        }
+                        else {
+                            view(&thread_results.save_result.input_path, viuer_image.width(), viuer_image.height()).map_err(|e| e.to_string()).unwrap();
+                        }
                     }
 
                     match thread_results.save_result.status {
