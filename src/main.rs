@@ -4,7 +4,6 @@ use std::fmt;
 use std::io::{stdout, Write};
 use glob::glob;
 use image::DynamicImage;
-use older_image::DynamicImage as OlderDynamicImage;
 use parse::ArgStruct;
 use colored::*;
 use std::sync::{Arc, Mutex};
@@ -266,6 +265,8 @@ fn save_print(before_path: &PathBuf, after_path: &Option<PathBuf>, before_size: 
 }
 
 // viuer で表示
+// read the image data from memory and display it
+/*
 fn view(image: &DynamicImage) -> Result<(), RusimgError> {
     let width = image.width();
     let height = image.height();
@@ -280,6 +281,23 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
     
     let older_version_image = image.clone() as OlderDynamicImage;
     viuer::print(&older_version_image, &conf).map_err(|e| RusimgError::FailedToViewImage(e.to_string()))?;
+
+    Ok(())
+}
+*/
+// because the viuer crate does not support DynamicImage of the image crate version 0.25.x yet,
+// read the image file again and display it.
+fn view(image_filepath: &PathBuf, width: u32, height: u32) -> Result<(), RusimgError> {
+    let conf_width = width as f64 / std::cmp::max(width, height) as f64 * 100 as f64;
+    let conf_height = height as f64 / std::cmp::max(width, height) as f64 as f64 * 50 as f64;
+    let conf = viuer::Config {
+        absolute_offset: false,
+        width: Some(conf_width as u32),
+        height: Some(conf_height as u32),    
+        ..Default::default()
+    };
+
+    viuer::print_from_file(image_filepath, &conf).map_err(|e| RusimgError::FailedToViewImage(e.to_string()))?;
 
     Ok(())
 }
@@ -508,7 +526,14 @@ async fn main() -> Result<(), String> {
         };
         for image_file in image_files_temp {
             // 出力先パスを決定
-            let extension = convert_str_to_extension(&args.destination_extension.clone().unwrap_or("".to_string())).unwrap();
+            let extension = convert_str_to_extension(&args.destination_extension.clone().unwrap_or("".to_string()));
+            let extension = match extension {
+                Ok(e) => e,
+                Err(e) => {
+                    println!("{}: {}", "Error".red(), e.to_string());
+                    continue;
+                },
+            };
             let output_path = get_output_path(&args, &image_file, &extension);
 
             // 出力先が既に存在する場合、上書きするかどうかを確認
@@ -644,7 +669,10 @@ async fn main() -> Result<(), String> {
 
                     // 表示 (viuer)
                     if let Some(viuer_image) = thread_results.viuer_image {
-                        view(&viuer_image).map_err(|e| e.to_string()).unwrap();
+                        //view(&viuer_image).map_err(|e| e.to_string()).unwrap();
+                        // because the viuer crate does not support DynamicImage of the image crate version 0.25.x yet,
+                        // read the image file again and display it.
+                        view(&thread_results.save_result.output_path.clone().unwrap(), viuer_image.width(), viuer_image.height()).map_err(|e| e.to_string()).unwrap();
                     }
 
                     match thread_results.save_result.status {

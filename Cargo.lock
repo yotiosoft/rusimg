@@ -1432,7 +1432,6 @@ dependencies = [
  "colored",
  "futures",
  "glob",
- "image 0.24.9",
  "image 0.25.2",
  "mozjpeg",
  "oxipng",
