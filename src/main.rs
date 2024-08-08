@@ -297,7 +297,7 @@ fn view(image_filepath: &PathBuf, width: u32, height: u32) -> Result<(), RusimgE
         ..Default::default()
     };
 
-    viuer::print_from_file(image_filepath, &conf).map_err(|e| RusimgError::FailedToViewImage(e.to_string()))?;
+    viuer::print_from_file(image_filepath, &conf).expect("Image printing failed.");
 
     Ok(())
 }
@@ -689,10 +689,10 @@ async fn main() -> Result<(), String> {
                         // because the viuer crate does not support DynamicImage of the image crate version 0.25.x yet,
                         // read the image file again and display it.
                         if thread_results.save_result.output_path.is_some() {
-                            view(&thread_results.save_result.output_path.clone().unwrap(), viuer_image.width(), viuer_image.height()).map_err(|e| e.to_string()).unwrap();
+                            view(&thread_results.save_result.output_path.clone().unwrap(), viuer_image.width(), viuer_image.height()).map_err(|e| e.to_string())?;
                         }
                         else {
-                            view(&thread_results.save_result.input_path, viuer_image.width(), viuer_image.height()).map_err(|e| e.to_string()).unwrap();
+                            view(&thread_results.save_result.input_path, viuer_image.width(), viuer_image.height()).map_err(|e| e.to_string())?;
                         }
                     }
 
