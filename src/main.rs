@@ -288,6 +288,7 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
 // because the viuer crate does not support DynamicImage of the image crate version 0.25.x yet,
 // read the image file again and display it.
 fn view(image_filepath: &PathBuf, width: u32, height: u32) -> Result<(), RusimgError> {
+    println!("image file path: {}", image_filepath.display());
     let conf_width = width as f64 / std::cmp::max(width, height) as f64 * 100 as f64;
     let conf_height = height as f64 / std::cmp::max(width, height) as f64 as f64 * 50 as f64;
     let conf = viuer::Config {
@@ -297,7 +298,7 @@ fn view(image_filepath: &PathBuf, width: u32, height: u32) -> Result<(), RusimgE
         ..Default::default()
     };
 
-    viuer::print_from_file(image_filepath, &conf).expect("Image printing failed.");
+    viuer::print_from_file(image_filepath, &conf).map_err(|e| RusimgError::FailedToViewImage(e.to_string()))?;
 
     Ok(())
 }
@@ -688,11 +689,14 @@ async fn main() -> Result<(), String> {
                         //view(&viuer_image).map_err(|e| e.to_string()).unwrap();
                         // because the viuer crate does not support DynamicImage of the image crate version 0.25.x yet,
                         // read the image file again and display it.
-                        if thread_results.save_result.output_path.is_some() {
-                            view(&thread_results.save_result.output_path.clone().unwrap(), viuer_image.width(), viuer_image.height()).map_err(|e| e.to_string())?;
+                        let view_result = if thread_results.save_result.output_path.is_some() {
+                            view(&thread_results.save_result.output_path.clone().unwrap(), viuer_image.width(), viuer_image.height())
                         }
                         else {
-                            view(&thread_results.save_result.input_path, viuer_image.width(), viuer_image.height()).map_err(|e| e.to_string())?;
+                            view(&thread_results.save_result.input_path, viuer_image.width(), viuer_image.height())
+                        };
+                        if view_result.is_err() {
+                            println!("{}: {}", "Viuer error".red(), view_result.err().unwrap());
                         }
                     }
 
