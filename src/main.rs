@@ -303,6 +303,38 @@ fn view(image_filepath: &PathBuf, width: u32, height: u32) -> Result<(), RusimgE
     Ok(())
 }
 
+/// convert
+fn process_convert(thread_task: ThreadTask) -> Result<Option<ConvertResult>, RusimgError> {
+    if let Some(extension) = thread_task.extension {
+        let before_extension = image.extension.clone();
+
+        // 変換
+        image.convert(&extension).map_err(rierr)?;
+        save_required = true;
+
+        Ok(Some(ConvertResult {
+            before_extension: before_extension,
+            after_extension: extension,
+        }))
+    }
+    else {
+        Err(RusimgError::FailedToConvertExtension)
+    }
+}
+
+/// trimming
+fn process_trim(thread_task: ThreadTask) -> Result<Option<TrimResult>, RusimgError> {
+    // トリミング
+    let before_size = image.get_image_size().map_err(rierr)?;
+    let after_size = image.trim(trim).map_err(rierr)?;
+    save_required = true;
+
+    Ok(Some(TrimResult {
+        before_size: before_size,
+        after_size: after_size,
+    }))
+}
+
 // 各スレッドでの処理
 async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Result<ProcessResult, ProcessingError> {
     let args = thread_task.args;
@@ -321,21 +353,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
 
     // --convert -> 画像形式変換
     let convert_result = if let Some(_c) = args.destination_extension {
-        if let Some(extension) = thread_task.extension {
-            let before_extension = image.extension.clone();
-
-            // 変換
-            image.convert(&extension).map_err(rierr)?;
-            save_required = true;
-
-            Ok(Some(ConvertResult {
-                before_extension: before_extension,
-                after_extension: extension,
-            }))
-        }
-        else {
-            Err(RusimgError::FailedToConvertExtension)
-        }
+        process_convert(thread_task)?
     }
     else {
         Ok(None)
@@ -344,17 +362,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
 
     // --trim -> トリミング
     let trim_result = if let Some(trim) = args.trim {
-        // トリミング
-        let before_size = image.get_image_size().map_err(rierr)?;
-        let trimmed_size = image.trim_rect(trim).map_err(rierr)?;
-        if before_size != trimmed_size {
-            save_required = true;
-        }
-
-        Some(TrimResult {
-            before_size: before_size,
-            after_size: trimmed_size,
-        })
+        process_trim(thread_task)?
     }
     else {
         None
