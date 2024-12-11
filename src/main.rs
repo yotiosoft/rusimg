@@ -13,13 +13,15 @@ use futures::stream::FuturesUnordered;
 use rusimg::{RusImg, RusimgError};
 mod parse;
 
-// error type
+// Error types
 type ErrorOccuredFilePath = String;
 type ErrorMessage = std::io::Error;
+/// Error structure containing the error and the file path where the error occurred.
 struct ErrorStruct<T> {
     error: T,
     filepath: ErrorOccuredFilePath,
 }
+/// ProcessingError is an error type that occurs during image processing.
 enum ProcessingError {
     RusimgError(ErrorStruct<RusimgError>),
     IOError(ErrorStruct<ErrorMessage>),
@@ -34,24 +36,41 @@ impl fmt::Display for ProcessingError {
 }
 
 // result status
+/// FileOverwriteAsk is an enum that represents the status of whether to overwrite a file.
+/// This is used to determine whether to overwrite a file when it already exists.
+/// - YesToAll: Overwrite all files without asking. This is used when the --yes option is specified.
+/// - NoToAll: Skip all files without asking. This is used when the --no option is specified.
+/// - AskEverytime: Ask every time.
 #[derive(Debug, Clone, PartialEq)]
 enum FileOverwriteAsk {
     YesToAll,
     NoToAll,
     AskEverytime,
 }
+/// ExistsCheckResult is an enum that represents the result of checking whether a file exists.
+/// - AllOverwrite: Overwrite all files without asking. This is used when the --yes option is specified.
+/// - AllSkip: Skip all files without asking. This is used when the --no option is specified.
+/// - NeedToAsk: Ask every time.
+/// - NoProblem: No problem. This means that the file does not exist.
 enum ExistsCheckResult {
     AllOverwrite,
     AllSkip,
     NeedToAsk,
     NoProblem,
 }
+/// AskResult is an enum that represents the result of asking whether to overwrite a file.
+/// - Overwrite: Overwrite the file.
+/// - Skip: Skip the file.
+/// - NoProblem: No problem. This means that the file does not exist.
 enum AskResult {
     Overwrite,
     Skip,
     NoProblem,
 }
-
+/// RusimgStatus is an enum that represents the status of the image processing result.
+/// - Success: The processing was successful.
+/// - Cancel: The processing was canceled.
+/// - NotNeeded: The processing was not needed. This is used when no processing is required.
 #[derive(Debug, Clone, PartialEq)]
 enum RusimgStatus {
     Success,
@@ -59,7 +78,12 @@ enum RusimgStatus {
     NotNeeded,
 }
 
-// thread task
+/// ThreadTask is a structure that represents the task to be executed by each thread.
+/// - args: Arguments passed to the program.
+/// - input_path: The path to the input image file.
+/// - output_path: The path to the output image file.
+/// - extension: The extension of the output image file.
+/// - ask_result: The result of asking whether to overwrite the file.
 struct ThreadTask {
     args: ArgStruct,
     input_path: PathBuf,
@@ -68,25 +92,50 @@ struct ThreadTask {
     ask_result: AskResult,
 }
 
-// process results
+/// ConvertResult is a structure that represents the result of converting an image.
+/// This structure will be used to display the result of the conversion.
+/// - before_extension: The extension of the image before conversion.
+/// - after_extension: The extension of the image after conversion.
 struct ConvertResult {
     before_extension: rusimg::Extension,
     after_extension: rusimg::Extension,
 }
+/// TrimResult is a structure that represents the result of trimming an image.
+/// This structure will be used to display the result of the trimming.
+/// - before_size: The size of the image before trimming.
+/// - after_size: The size of the image after trimming.
 struct TrimResult {
     before_size: rusimg::ImgSize,
     after_size: rusimg::ImgSize,
 }
+/// ResizeResult is a structure that represents the result of resizing an image.
+/// This structure will be used to display the result of the resizing.
+/// - before_size: The size of the image before resizing.
+/// - after_size: The size of the image after resizing.
 struct ResizeResult {
     before_size: rusimg::ImgSize,
     after_size: rusimg::ImgSize,
 }
+/// GrayscaleResult is a structure that represents the result of converting an image to grayscale.
+/// This structure will be used to display the result of the grayscale conversion.
+/// - status: The status of the grayscale conversion.
 struct GrayscaleResult {
     status: bool,
 }
+/// CompressResult is a structure that represents the result of compressing an image.
+/// This structure will be used to display the result of the compression.
+/// - status: The status of the compression.
 struct CompressResult {
     status: bool,
 }
+/// SaveResult is a structure that represents the result of saving an image.
+/// This structure will be used to display the result of the saving.
+/// - status: The status of the saving.
+/// - input_path: The path to the input image file.
+/// - output_path: The path to the output image file.
+/// - before_filesize: The size of the image before saving.
+/// - after_filesize: The size of the image after saving. If the image was not saved, this value will be None.
+/// - delete: Whether to delete the original file.
 struct SaveResult {
     status: RusimgStatus,
     input_path: PathBuf,
@@ -95,6 +144,8 @@ struct SaveResult {
     after_filesize: Option<u64>,
     delete: bool,
 }
+/// ProcessResult is a structure that represents the result of processing an image.
+/// This structure contains the results of each processing step.
 struct ProcessResult {
     viuer_image: Option<DynamicImage>,
     convert_result: Option<ConvertResult>,
@@ -104,11 +155,17 @@ struct ProcessResult {
     compress_result: Option<CompressResult>,
     save_result: SaveResult,
 }
+/// ThreadResult is a structure that represents the result of processing an image in a thread.
+/// This structure contains the processing result and a flag indicating whether the processing is complete.
 struct ThreadResult {
     process_result: Option<Result<ProcessResult, ProcessingError>>,
     finish: bool,
 }
 
+/// Get the list of files in the directory.
+/// This function used to get the list of image files in the directory when the --source option is specified with a directory path.
+/// - dir_path: The path to the directory.
+/// - recursive: Whether to search recursively.
 fn get_files_in_dir(dir_path: &PathBuf, recursive: bool) -> Result<Vec<PathBuf>, String> {
     let mut files = fs::read_dir(&dir_path).expect("cannot read directory");
     let mut ret = Vec::new();
@@ -139,6 +196,8 @@ fn get_files_in_dir(dir_path: &PathBuf, recursive: bool) -> Result<Vec<PathBuf>,
     Ok(ret)
 }
 
+/// Get the list of files by wildcard.
+/// This function used to get the list of image files by wildcard when the --source option is specified with a wildcard pattern.
 fn get_files_by_wildcard(source_path: &PathBuf) -> Result<Vec<PathBuf>, String> {
     let mut ret = Vec::new();
     for entry in glob(source_path.to_str().unwrap()).expect("Failed to read glob pattern") {
@@ -155,7 +214,7 @@ fn get_files_by_wildcard(source_path: &PathBuf) -> Result<Vec<PathBuf>, String> 
     Ok(ret)
 }
 
-// 拡張子に.を含まない
+/// Convert a string to an image extension.
 fn convert_str_to_extension(extension_str: &str) -> Result<rusimg::Extension, RusimgError> {
     match extension_str {
         "bmp" => Ok(rusimg::Extension::Bmp),
@@ -166,7 +225,7 @@ fn convert_str_to_extension(extension_str: &str) -> Result<rusimg::Extension, Ru
     }
 }
 
-// 拡張子に.を含む
+/// Get the extension of the file.
 fn get_extension(path: &Path) -> Result<rusimg::Extension, RusimgError> {
     let path = path.to_str().ok_or(RusimgError::FailedToConvertPathToString)?.to_ascii_lowercase();
     match Path::new(&path).extension().and_then(|s| s.to_str()) {
@@ -180,14 +239,13 @@ fn get_extension(path: &Path) -> Result<rusimg::Extension, RusimgError> {
     }
 }
 
-// 保存先パスの決定
+/// Determine the output path.
 fn get_output_path(args: &ArgStruct, input_path: &PathBuf, extension: &rusimg::Extension) -> PathBuf {
-    // 出力先パスを決定
     let mut output_path = match &args.destination_path {
         Some(path) => path.clone(),                                                             // If --output is specified, use it
         None => Path::new(input_path).with_extension(extension.to_string()),       // If not, use the input filepath as the input file
     };
-    // append_name が指定されている場合、ファイル名に追加
+    // If append_name is specified, add it to the file name.
     if let Some(append_name) = &args.destination_append_name {
         let mut output_path_tmp = output_path.file_stem().unwrap().to_str().unwrap().to_string();
         output_path_tmp.push_str(append_name);
@@ -198,10 +256,9 @@ fn get_output_path(args: &ArgStruct, input_path: &PathBuf, extension: &rusimg::E
     output_path
 }
 
-// ファイルの存在チェック
+/// Check if the file exists.
+/// If the file exists, check if it should be overwritten.
 fn check_file_exists(path: &PathBuf, file_overwrite_ask: &FileOverwriteAsk) -> ExistsCheckResult {
-    // ファイルの存在チェック
-    // ファイルが存在する場合、上書きするかどうかを確認
     if Path::new(path).exists() {
         println!("The image file \"{}\" already exists.", path.display().to_string().yellow().bold());
         match file_overwrite_ask {
@@ -219,7 +276,7 @@ fn check_file_exists(path: &PathBuf, file_overwrite_ask: &FileOverwriteAsk) -> E
     return ExistsCheckResult::NoProblem;
 }
 
-// ファイルを上書きするか確認する
+/// Ask if the file should be overwritten.
 fn ask_file_exists() -> bool {
     print!(" Do you want to overwrite it? [y/N]: ");
     loop {
@@ -241,7 +298,7 @@ fn ask_file_exists() -> bool {
     }
 }
 
-// 保存先などの表示
+/// Show the result of saving the image.
 fn save_print(before_path: &PathBuf, after_path: &Option<PathBuf>, before_size: u64, after_size: Option<u64>) {
     match (after_path, after_size) {
         (Some(after_path), Some(after_size)) => {
@@ -264,8 +321,8 @@ fn save_print(before_path: &PathBuf, after_path: &Option<PathBuf>, before_size: 
     }
 }
 
-// viuer で表示
-// read the image data from memory and display it
+/// Show the image in the terminal using viuer.
+/// Read the image data from memory and display it.
 fn view(image: &DynamicImage) -> Result<(), RusimgError> {
     let width = image.width();
     let height = image.height();
@@ -283,7 +340,7 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
     Ok(())
 }
 
-/// convert
+/// Convert an image.
 fn process_convert<C: Fn(RusimgError) -> ProcessingError>(extension: &Option<rusimg::Extension>, image: &mut RusImg, rierr: C) -> Result<Option<ConvertResult>, ProcessingError> {
     if let Some(extension) = extension {
         let before_extension = image.extension.clone();
@@ -301,7 +358,7 @@ fn process_convert<C: Fn(RusimgError) -> ProcessingError>(extension: &Option<rus
     }
 }
 
-/// trimming
+/// Trim an image.
 fn process_trim<C: Fn(RusimgError) -> ProcessingError>(image: &mut RusImg, trim: rusimg::Rect, rierr: C) -> Result<Option<TrimResult>, ProcessingError> {
     // トリミング
     let before_size = image.get_image_size().map_err(&rierr)?;
@@ -313,7 +370,7 @@ fn process_trim<C: Fn(RusimgError) -> ProcessingError>(image: &mut RusImg, trim:
     }))
 }
 
-// 各スレッドでの処理
+/// Process the image in a thread.
 async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Result<ProcessResult, ProcessingError> {
     let args = thread_task.args;
     let image_file_path = thread_task.input_path;
@@ -323,13 +380,13 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
     let rierr = |e: RusimgError| ProcessingError::RusimgError(ErrorStruct { error: e, filepath: image_file_path.to_str().unwrap().to_string() });
     let ioerr = |e: std::io::Error| ProcessingError::IOError(ErrorStruct { error: e, filepath: image_file_path.to_str().unwrap().to_string() });
 
-    // ファイルを開く
+    // Open the image
     let mut image = rusimg::open_image(&image_file_path).map_err(rierr)?;
 
-    // 保存が必要か？
+    // Is saving the image required? (default: false)
     let mut save_required = false;
 
-    // --convert -> 画像形式変換
+    // --convert -> Convert the image.
     let convert_result = if let Some(_c) = args.destination_extension {
         save_required = true;
         process_convert(&thread_task.extension, &mut image, rierr)?
@@ -338,7 +395,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
         None
     };
 
-    // --trim -> トリミング
+    // --trim -> Trim the image.
     let trim_result = if let Some(trim) = args.trim {
         save_required = true;
         process_trim(&mut image, trim, rierr)?
@@ -347,9 +404,8 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
         None
     };
 
-    // --resize -> リサイズ
+    // --resize -> Resize the image.
     let resize_result = if let Some(resize) = args.resize {
-        // リサイズ
         let before_size = image.get_image_size().map_err(rierr)?;
         let after_size = image.resize(resize).map_err(rierr)?;
         save_required = true;
@@ -363,9 +419,8 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
         None
     };
 
-    // --grayscale -> グレースケール
+    // --grayscale -> Convert the image to grayscale.
     let grayscale_result = if args.grayscale {
-        // グレースケール
         image.grayscale().map_err(rierr)?;
         save_required = true;
 
@@ -377,9 +432,8 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
         None
     };
 
-    // --quality -> 圧縮
+    // --quality -> Compress the image.
     let compress_result = if let Some(q) = args.quality {
-        // 圧縮
         image.compress(Some(q)).map_err(rierr)?;
         save_required = true;
 
@@ -391,7 +445,9 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
         None
     };
 
-    // for viuer
+    // --view -> View the image in the terminal.
+    // Viuer will be called after all processing is complete.
+    // So, store the image data in memory.
     let viuer_image = if args.view {
         Some(image.get_dynamic_image().map_err(rierr)?)
     }
@@ -399,14 +455,15 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
         None
     };
 
-    // 出力
+    // Save the image if necessary.
     let save_status = if save_required == true {
-        // ファイルの存在チェック
+        // Check if the file exists and ask if it should be overwritten.
         match ask_result {
             AskResult::Overwrite => {
-                // そのまま保存へ
+                // If AskResult::Overwrite, overwrite the file without asking.
             },
             AskResult::Skip => {
+                // If AskResult::Skip, skip the file.
                 return Ok(ProcessResult {
                     viuer_image: viuer_image,
                     convert_result: convert_result,
@@ -425,15 +482,16 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
                 });
             },
             AskResult::NoProblem => {
-                // そのまま保存へ
+                // If no problem, save the file.
             },
         }
 
-        // 出力先パス
+        // Get the output path
         let output_path = output_file_path.unwrap();
 
-        // 保存
-        // 出力処理は同時に実行すると負荷がかかるため、排他制御を行う
+        // Save the image
+        // Saving images at the same time can be a heavy load, so we need to lock the file I/O.
+        // *lock is used to lock the file I/O.
         let save_status = {
             let mut lock = file_io_lock.lock().unwrap();
             *lock += 1;
@@ -441,7 +499,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
             ret
         };
 
-        // --delete -> 元ファイルの削除 (optinal)
+        // --delete -> Delete the original file. 
         let delete = if let Some(saved_filepath) = save_status.output_path.clone() {
             if args.delete && image_file_path != saved_filepath {
                 fs::remove_file(&image_file_path).map_err(ioerr)?;
@@ -455,6 +513,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
             false
         };
 
+        // Return the result of saving the image.
         SaveResult {
             status: RusimgStatus::Success,
             input_path: image.get_input_filepath(),
@@ -465,6 +524,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
         }
     }
     else {
+        // If saving is not required, return the status as NotNeeded.
         SaveResult {
             status: RusimgStatus::NotNeeded,
             input_path: image.get_input_filepath(),
@@ -475,6 +535,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
         }
     };
 
+    // Return the processing result.
     let thread_results = ProcessResult {
         viuer_image: viuer_image,
         convert_result: convert_result,
@@ -484,19 +545,21 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
         compress_result: compress_result,
         save_result: save_status,
     };
-
     Ok(thread_results)
 }
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-    // 引数のパース
+    // Parse the arguments.
     let args = parse::parser().map_err(|e| e.to_string())?;
 
-    // スレッド数
+    // Number of threads.
     let threads = args.threads;
 
-    // 上書きが必要な場合、毎回確認するかどうか
+    // Is it necessary to confirm every time if overwriting is required?
+    // -y, --yes: Always overwrite
+    // -n, --no: Always skip
+    // If neither is specified, ask every time.
     let file_overwrite_ask = if args.yes {
         FileOverwriteAsk::YesToAll
     }
@@ -507,7 +570,8 @@ async fn main() -> Result<(), String> {
         FileOverwriteAsk::AskEverytime
     };
 
-    // 作業ディレクトリの指定（default: current dir）
+    // Specify the source path.
+    // Default: current directory
     let source_paths = args.souce_path.clone().or(Some(vec![PathBuf::from(".")])).unwrap();
     let mut thread_tasks = Vec::new();
     for source_path in source_paths {
@@ -519,7 +583,7 @@ async fn main() -> Result<(), String> {
         };
         for image_file in image_files_temp {
             let thread_task = if let Some(extension_str) = &args.destination_extension {
-                // 出力先パスを決定
+                // Determine the output path.
                 let extension = convert_str_to_extension(&extension_str.clone());
                 let extension = match extension {
                     Ok(e) => e,
@@ -530,8 +594,9 @@ async fn main() -> Result<(), String> {
                 };
                 let output_path = get_output_path(&args, &image_file, &extension);
 
-                // 出力先が既に存在する場合、上書きするかどうかを確認
+                // If the output file already exists, check if it should be overwritten.
                 let ask_result = match check_file_exists(&output_path, &file_overwrite_ask) {
+                    // Print the result of checking if the file exists.
                     ExistsCheckResult::AllOverwrite => {
                         println!("{}", " => Overwrite (default: yes)".bold());
                         AskResult::Overwrite
@@ -541,6 +606,7 @@ async fn main() -> Result<(), String> {
                         AskResult::Skip
                     },
                     ExistsCheckResult::NeedToAsk => {
+                        // If the file exists, ask if it should be overwritten.
                         if ask_file_exists() {
                             AskResult::Overwrite
                         }
@@ -553,6 +619,7 @@ async fn main() -> Result<(), String> {
                     },
                 };
 
+                // Make a thread task.
                 ThreadTask {
                     args: args.clone(),
                     input_path: image_file,
@@ -562,6 +629,7 @@ async fn main() -> Result<(), String> {
                 }
             }
             else {
+                // If saving is not required, create a thread task without an output path.
                 ThreadTask {
                     args: args.clone(),
                     input_path: image_file,
@@ -571,27 +639,30 @@ async fn main() -> Result<(), String> {
                 }
             };
             
+            // Add the thread task to the thread_tasks.
             thread_tasks.push(thread_task);
         }
     }
 
-    // 検出した画像ファイルパスの表示
+    // Display the number of images detected.
     let total_image_count = thread_tasks.len();
     println!("{}", format!("🔎 {} images are detected.", total_image_count).bold());
 
-    // thread_tasks をスレッド間で共有
+    // Share thread_tasks between threads.
     let thread_tasks = Arc::new(Mutex::new(thread_tasks));
 
-    // 各画像に対する処理
+    // Processing for each image..
     let mut error_count = 0;
     let count = Arc::new(Mutex::new(0));
     let tasks = FuturesUnordered::new();
     
-    // チャネルを用意
+    // Prepare a channel to communicate between threads.
     let (tx, mut rx) = mpsc::channel::<ThreadResult>(32);
 
+    // Lock for file I/O
     let file_io_lock = Arc::new(Mutex::new(0));
 
+    // Start processing in each thread.
     for _thread_num in 0..threads {
         let thread_tasks = Arc::clone(&thread_tasks);
         let count = Arc::clone(&count);
@@ -632,7 +703,7 @@ async fn main() -> Result<(), String> {
                     }
                 }
 
-                // カウント
+                // Count up the number of processed images.
                 let mut count = count.lock().unwrap();
                 *count += 1;
             }
@@ -640,12 +711,13 @@ async fn main() -> Result<(), String> {
         tasks.push(thread);
     }
 
-    // スレッドの実行結果を表示
+    // Display the results of the threads.
     let mut count = 0;
     let mut thread_finished = 0;
     while let Some(rx_result) = rx.recv().await {
         if let Some(process_result) = rx_result.process_result {
             match process_result {
+                // If the processing is successful, display the result.
                 Ok(thread_results) => {
                     count = count + 1;
                     let processing_str = format!("[{}/{}] Finish: {}", count + error_count, total_image_count, &Path::new(&thread_results.save_result.input_path).file_name().unwrap().to_str().unwrap());
@@ -671,7 +743,7 @@ async fn main() -> Result<(), String> {
                         }
                     }
 
-                    // 表示 (viuer)
+                    // Show the image in the terminal.
                     // Use viuer crate to display the image.
                     if let Some(viuer_image) = thread_results.viuer_image {
                         view(&viuer_image).map_err(|e| e.to_string()).unwrap();
@@ -679,7 +751,7 @@ async fn main() -> Result<(), String> {
 
                     match thread_results.save_result.status {
                         RusimgStatus::Success => {
-                            // 保存先などの表示
+                            // Print the result of saving the image.
                             save_print(&thread_results.save_result.input_path, &thread_results.save_result.output_path,
                                 thread_results.save_result.before_filesize, thread_results.save_result.after_filesize);
 
@@ -692,6 +764,7 @@ async fn main() -> Result<(), String> {
                         RusimgStatus::NotNeeded => println!("{}", "Nothing to do.".yellow().bold()),
                     };
                 }
+                // If an error occurs during processing, display the error.
                 Err(e) => {
                     error_count = error_count + 1;
                     match e {
@@ -713,11 +786,13 @@ async fn main() -> Result<(), String> {
         if rx_result.finish {
             thread_finished = thread_finished + 1;
         }
+        // If all threads are finished, break the loop.
         if thread_finished == threads {
             break;
         }
     }
 
+    // Show the result of processing all images.
     if error_count > 0 {
         println!("\n✅ {} images are processed.", total_image_count - error_count);
         println!("❌ {} images are failed to process.", error_count);
