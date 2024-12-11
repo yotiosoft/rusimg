@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
 use futures::stream::FuturesUnordered;
 
-use rusimg::RusimgError;
+use rusimg::{RusImg, RusimgError};
 mod parse;
 
 // error type
@@ -266,7 +266,6 @@ fn save_print(before_path: &PathBuf, after_path: &Option<PathBuf>, before_size: 
 
 // viuer で表示
 // read the image data from memory and display it
-/*
 fn view(image: &DynamicImage) -> Result<(), RusimgError> {
     let width = image.width();
     let height = image.height();
@@ -279,38 +278,21 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
         ..Default::default()
     };
     
-    let older_version_image = image.clone() as OlderDynamicImage;
-    viuer::print(&older_version_image, &conf).map_err(|e| RusimgError::FailedToViewImage(e.to_string()))?;
-
-    Ok(())
-}
-*/
-// because the viuer crate does not support DynamicImage of the image crate version 0.25.x yet,
-// read the image file again and display it.
-fn view(image_filepath: &PathBuf, width: u32, height: u32) -> Result<(), RusimgError> {
-    println!("image file path: {}", image_filepath.display());
-    let conf_width = width as f64 / std::cmp::max(width, height) as f64 * 100 as f64;
-    let conf_height = height as f64 / std::cmp::max(width, height) as f64 as f64 * 50 as f64;
-    let conf = viuer::Config {
-        absolute_offset: false,
-        width: Some(conf_width as u32),
-        height: Some(conf_height as u32),    
-        ..Default::default()
-    };
-
-    viuer::print_from_file(image_filepath, &conf).map_err(|e| RusimgError::FailedToViewImage(e.to_string()))?;
+    viuer::print(&image, &conf).map_err(|e| RusimgError::FailedToViewImage(e.to_string()))?;
 
     Ok(())
 }
 
 /// convert
-fn process_convert(thread_task: ThreadTask) -> Result<Option<ConvertResult>, RusimgError> {
+fn process_convert(thread_task: ThreadTask, image: &RusImg) -> Result<Option<ConvertResult>, RusimgError> {
     if let Some(extension) = thread_task.extension {
         let before_extension = image.extension.clone();
 
+        let image_file_path = thread_task.input_path;
+        let rierr = |e: RusimgError| ProcessingError::RusimgError(ErrorStruct { error: e, filepath: image_file_path.to_str().unwrap().to_string() });
+
         // 変換
         image.convert(&extension).map_err(rierr)?;
-        save_required = true;
 
         Ok(Some(ConvertResult {
             before_extension: before_extension,
@@ -323,11 +305,13 @@ fn process_convert(thread_task: ThreadTask) -> Result<Option<ConvertResult>, Rus
 }
 
 /// trimming
-fn process_trim(thread_task: ThreadTask) -> Result<Option<TrimResult>, RusimgError> {
+fn process_trim(thread_task: ThreadTask, image: &RusImg, trim: rusimg::Rect) -> Result<Option<TrimResult>, RusimgError> {
+    let image_file_path = thread_task.input_path;
+    let rierr = |e: RusimgError| ProcessingError::RusimgError(ErrorStruct { error: e, filepath: image_file_path.to_str().unwrap().to_string() });
+
     // トリミング
     let before_size = image.get_image_size().map_err(rierr)?;
-    let after_size = image.trim(trim).map_err(rierr)?;
-    save_required = true;
+    let after_size = image.trim_rect(trim).map_err(rierr)?;
 
     Ok(Some(TrimResult {
         before_size: before_size,
@@ -353,16 +337,17 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
 
     // --convert -> 画像形式変換
     let convert_result = if let Some(_c) = args.destination_extension {
-        process_convert(thread_task)?
+        save_required = true;
+        process_convert(thread_task, &image)?
     }
     else {
         Ok(None)
     };
-    let convert_result = convert_result.map_err(rierr)?;
 
     // --trim -> トリミング
     let trim_result = if let Some(trim) = args.trim {
-        process_trim(thread_task)?
+        save_required = true;
+        process_trim(thread_task, &image, trim)?
     }
     else {
         None
@@ -693,19 +678,9 @@ async fn main() -> Result<(), String> {
                     }
 
                     // 表示 (viuer)
+                    // Use viuer crate to display the image.
                     if let Some(viuer_image) = thread_results.viuer_image {
-                        //view(&viuer_image).map_err(|e| e.to_string()).unwrap();
-                        // because the viuer crate does not support DynamicImage of the image crate version 0.25.x yet,
-                        // read the image file again and display it.
-                        let view_result = if thread_results.save_result.output_path.is_some() {
-                            view(&thread_results.save_result.output_path.clone().unwrap(), viuer_image.width(), viuer_image.height())
-                        }
-                        else {
-                            view(&thread_results.save_result.input_path, viuer_image.width(), viuer_image.height())
-                        };
-                        if view_result.is_err() {
-                            println!("{}: {}", "Viuer error".red(), view_result.err().unwrap());
-                        }
+                        view(&viuer_image).map_err(|e| e.to_string()).unwrap();
                     }
 
                     match thread_results.save_result.status {
