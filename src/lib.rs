@@ -13,6 +13,9 @@ use std::path::{Path, PathBuf};
 use std::fmt;
 use image::DynamicImage;
 
+/// Error type for Rusimg.
+/// This error type is used in Rusimg functions.
+/// Some error types have a string parameter to store the error message.
 #[derive(Debug, Clone, PartialEq)]
 pub enum RusimgError {
     FailedToOpenFile(String),
@@ -36,6 +39,7 @@ pub enum RusimgError {
     FailedToGetDynamicImage,
     FailedToConvertExtension,
 }
+/// Implement Display trait for RusimgError.
 impl fmt::Display for RusimgError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -70,10 +74,15 @@ impl fmt::Display for RusimgError {
     }
 }
 
+/// RusImg object.
+/// This object contains an image object and its metadata.
 pub struct RusImg {
     pub extension: Extension,
     pub data: Box<(dyn RusimgTrait)>,
 }
+
+/// Rectangle object for rusimg.
+/// This object is used for trimming an image.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Rect {
     pub x: u32,
@@ -82,6 +91,9 @@ pub struct Rect {
     pub h: u32,
 }
 
+/// RusimgTrait is a trait for RusImg objects.
+/// This trait is used for image operations.
+/// Implement this trait for each image format.
 pub trait RusimgTrait {
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
     fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
@@ -100,6 +112,7 @@ pub trait RusimgTrait {
     fn get_metadata_dest(&self) -> Option<Metadata>;
     fn get_size(&self) -> ImgSize;
 
+    /// Get a file path for saving an image.
     fn save_filepath(&self, source_filepath: &PathBuf, destination_filepath: Option<PathBuf>, new_extension: &String) -> Result<PathBuf, RusimgError> {
         if let Some(path) = destination_filepath {
             if Path::new(&path).is_dir() {
@@ -119,6 +132,7 @@ pub trait RusimgTrait {
     }
 }
 
+/// Image size object.
 #[derive(Debug, Clone, PartialEq, Copy, Default)]
 pub struct ImgSize {
     pub width: usize,
@@ -133,6 +147,10 @@ impl ImgSize {
     }
 }
 
+/// Save status object.
+/// This object is used for tracking the status of saving an image.
+/// It contains the output file path, the file size before saving, and the file size after saving.
+/// If the image has compression, the file size after saving will be different from the file size before saving.
 #[derive(Debug, Clone, PartialEq)]
 pub struct SaveStatus {
     pub output_path: Option<PathBuf>,
@@ -140,6 +158,12 @@ pub struct SaveStatus {
     pub after_filesize: Option<u64>,
 }
 
+/// Image extension object.
+/// By default, Rusimg supports BMP, JPEG, PNG, and WebP.
+/// If you want to use another format, you can use ExternalFormat like this:
+/// ```
+/// let ext = Extension::ExternalFormat("tiff".to_string());
+/// ```
 #[derive(Debug, Clone, PartialEq)]
 pub enum Extension {
     Bmp,
@@ -160,13 +184,15 @@ impl fmt::Display for Extension {
     }
 }
 
-// 画像フォーマットを取得
+// Get image format from image buffer.
 fn guess_image_format(image_buf: &[u8]) -> Result<image::ImageFormat, RusimgError> {
     let format = image::guess_format(image_buf).map_err(|e| RusimgError::FailedToOpenImage(e.to_string()))?;
     Ok(format)
 }
 
-/// Open specified image file format and return a RusImg object.
+/// Open a bmp image file and make a RusImg object.
+/// If the bmp feature is enabled, it will open a BMP image.
+/// If not, it will return an UnsupportedFileExtension error.
 #[cfg(feature="bmp")]
 pub fn open_bmp_image(path: &Path, buf: Vec<u8>, metadata_input: Metadata) -> Result<RusImg, RusimgError> {
     let image = bmp::BmpImage::open(path.to_path_buf(), buf, metadata_input)?;
@@ -177,6 +203,9 @@ pub fn open_bmp_image(path: &Path, buf: Vec<u8>, metadata_input: Metadata) -> Re
 pub fn open_bmp_image(_path: &Path, _buf: Vec<u8>, _metadata_input: Metadata) -> Result<RusImg, RusimgError> {
     Err(RusimgError::UnsupportedFileExtension)
 }
+/// Open a jpeg image file and make a RusImg object.
+/// If the jpeg feature is enabled, it will open a JPEG image.
+/// If not, it will return an UnsupportedFileExtension error.
 #[cfg(feature="jpeg")]
 pub fn open_jpeg_image(path: &Path, buf: Vec<u8>, metadata_input: Metadata) -> Result<RusImg, RusimgError> {
     let image = jpeg::JpegImage::open(path.to_path_buf(), buf, metadata_input)?;
@@ -187,6 +216,9 @@ pub fn open_jpeg_image(path: &Path, buf: Vec<u8>, metadata_input: Metadata) -> R
 pub fn open_jpeg_image(_path: &Path, _buf: Vec<u8>, _metadata_input: Metadata) -> Result<RusImg, RusimgError> {
     Err(RusimgError::UnsupportedFileExtension)
 }
+/// Open a png image file and make a RusImg object.
+/// If the png feature is enabled, it will open a PNG image.
+/// If not, it will return an UnsupportedFileExtension error.
 #[cfg(feature="png")]
 pub fn open_png_image(path: &Path, buf: Vec<u8>, metadata_input: Metadata) -> Result<RusImg, RusimgError> {
     let image = png::PngImage::open(path.to_path_buf(), buf, metadata_input)?;
@@ -197,6 +229,9 @@ pub fn open_png_image(path: &Path, buf: Vec<u8>, metadata_input: Metadata) -> Re
 pub fn open_png_image(_path: &Path, _buf: Vec<u8>, _metadata_input: Metadata) -> Result<RusImg, RusimgError> {
     Err(RusimgError::UnsupportedFileExtension)
 }
+/// Open a webp image file and make a RusImg object.
+/// If the webp feature is enabled, it will open a WebP image.
+/// If not, it will return an UnsupportedFileExtension error.
 #[cfg(feature="webp")]
 pub fn open_webp_image(path: &Path, buf: Vec<u8>, metadata_input: Metadata) -> Result<RusImg, RusimgError> {
     let image = webp::WebpImage::open(path.to_path_buf(), buf, metadata_input)?;
@@ -232,7 +267,10 @@ pub fn open_image(path: &Path) -> Result<RusImg, RusimgError> {
     }
 }
 
-/// Converter interfaces
+// Converter interfaces.
+/// Convert a DynamicImage object to a BMP image object.
+/// If the bmp feature is enabled, it will convert the DynamicImage to a BMP image.
+/// If not, it will return an UnsupportedFileExtension error.
 #[cfg(feature="bmp")]
 pub fn convert_to_bmp_image(dynamic_image: DynamicImage, filepath: PathBuf, metadata: Metadata) -> Result<Box<(dyn RusimgTrait)>, RusimgError> {
     let bmp = bmp::BmpImage::import(dynamic_image, filepath, metadata)?;
@@ -242,6 +280,9 @@ pub fn convert_to_bmp_image(dynamic_image: DynamicImage, filepath: PathBuf, meta
 pub fn convert_to_bmp_image(_dynamic_image: DynamicImage, _filepath: PathBuf, _metadata: Metadata) -> Result<Box<(dyn RusimgTrait)>, RusimgError> {
     Err(RusimgError::UnsupportedFileExtension)
 }
+/// Convert a DynamicImage object to a JPEG image object.
+/// If the jpeg feature is enabled, it will convert the DynamicImage to a JPEG image.
+/// If not, it will return an UnsupportedFileExtension error.
 #[cfg(feature="jpeg")]
 pub fn convert_to_jpeg_image(dynamic_image: DynamicImage, filepath: PathBuf, metadata: Metadata) -> Result<Box<(dyn RusimgTrait)>, RusimgError> {
     let jpeg = jpeg::JpegImage::import(dynamic_image, filepath, metadata)?;
@@ -251,6 +292,9 @@ pub fn convert_to_jpeg_image(dynamic_image: DynamicImage, filepath: PathBuf, met
 pub fn convert_to_jpeg_image(_dynamic_image: DynamicImage, _filepath: PathBuf, _metadata: Metadata) -> Result<Box<(dyn RusimgTrait)>, RusimgError> {
     Err(RusimgError::UnsupportedFileExtension)
 }
+/// Convert a DynamicImage object to a PNG image object.
+/// If the png feature is enabled, it will convert the DynamicImage to a PNG image.
+/// If not, it will return an UnsupportedFileExtension error.
 #[cfg(feature="png")]
 pub fn convert_to_png_image(dynamic_image: DynamicImage, filepath: PathBuf, metadata: Metadata) -> Result<Box<(dyn RusimgTrait)>, RusimgError> {
     let png = png::PngImage::import(dynamic_image, filepath, metadata)?;
@@ -260,6 +304,9 @@ pub fn convert_to_png_image(dynamic_image: DynamicImage, filepath: PathBuf, meta
 pub fn convert_to_png_image(_dynamic_image: DynamicImage, _filepath: PathBuf, _metadata: Metadata) -> Result<Box<(dyn RusimgTrait)>, RusimgError> {
     Err(RusimgError::UnsupportedFileExtension)
 }
+/// Convert a DynamicImage object to a WebP image object.
+/// If the webp feature is enabled, it will convert the DynamicImage to a WebP image.
+/// If not, it will return an UnsupportedFileExtension error.
 #[cfg(feature="webp")]
 pub fn convert_to_webp_image(dynamic_image: DynamicImage, filepath: PathBuf, metadata: Metadata) -> Result<Box<(dyn RusimgTrait)>, RusimgError> {
     let webp = webp::WebpImage::import(dynamic_image, filepath, metadata)?;
@@ -270,6 +317,8 @@ pub fn convert_to_webp_image(_dynamic_image: DynamicImage, _filepath: PathBuf, _
     Err(RusimgError::UnsupportedFileExtension)
 }
 
+/// RusImg object implementation.
+/// The RusImg object wraps RusimgTrait functions.
 impl RusImg {
     /// Get image size.
     pub fn get_image_size(&self) -> Result<ImgSize, RusimgError> {
@@ -285,12 +334,14 @@ impl RusImg {
         Ok(size)
     }
 
-    /// Trim an image.
+    /// Trim an image. Set the trim area with four u32 values: x, y, w, h.
     /// It must be called after open_image().
     pub fn trim(&mut self, trim_x: u32, trim_y: u32, trim_w: u32, trim_h: u32) -> Result<ImgSize, RusimgError> {
         let size = self.data.trim(Rect{x: trim_x, y: trim_y, w: trim_w, h: trim_h})?;
         Ok(size)
     }
+    /// Trim an image. Set the trim area with a rusimg::Rect object.
+    /// It must be called after open_image().
     pub fn trim_rect(&mut self, trim_area: Rect) -> Result<ImgSize, RusimgError> {
         let size = self.data.trim(trim_area)?;
         Ok(size)

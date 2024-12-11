@@ -21,6 +21,7 @@ pub struct WebpImage {
 }
 
 impl RusimgTrait for WebpImage {
+    /// Import an image from a DynamicImage object.
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> {
         let (width, height) = (image.width() as usize, image.height() as usize);
 
@@ -38,6 +39,7 @@ impl RusimgTrait for WebpImage {
         })
     }
 
+    /// Open an image from a image buffer.
     fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> {
         let webp_decoder = dep_webp::Decoder::new(&image_buf).decode();
         if let Some(webp_decoder) = webp_decoder {
@@ -62,6 +64,7 @@ impl RusimgTrait for WebpImage {
         }
     }
 
+    /// Save the image to a file.
     fn save(&mut self, path: Option<PathBuf>) -> Result<(), RusimgError> {
         let save_path = Self::save_filepath(&self, &self.filepath_input, path, &"webp".to_string())?;
 
@@ -97,13 +100,19 @@ impl RusimgTrait for WebpImage {
         Ok(())
     }
 
+    /// Compress the image.
+    /// quality: Option<f32> 0.0 - 100.0
+    /// Because the webp crate compresses the image when saving it, the compress() method does not need to do anything.
+    /// So this method only sets the quality value.
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {
-        // webp の場合、圧縮は save() で行う
+        // compress later when saving
         self.required_quality = quality;
         self.operations_count += 1;
         Ok(())
     }
 
+    /// Resize the image.
+    /// Set the resize_ratio between 1 and 100.
     fn resize(&mut self, resize_ratio: u8) -> Result<ImgSize, RusimgError> {
         let nwidth = (self.width as f32 * (resize_ratio as f32 / 100.0)) as usize;
         let nheight = (self.height as f32 * (resize_ratio as f32 / 100.0)) as usize;
@@ -117,6 +126,8 @@ impl RusimgTrait for WebpImage {
         Ok(ImgSize::new(self.width, self.height))
     }
 
+    /// Trim the image.
+    /// trim: rusimg::Rect { x: u32, y: u32, w: u32, h: u32 }
     fn trim(&mut self, trim: Rect) -> Result<ImgSize, RusimgError> {
         let mut w = trim.w;
         let mut h = trim.h;
@@ -124,7 +135,6 @@ impl RusimgTrait for WebpImage {
             if self.width > trim.x as usize && self.height > trim.y as usize {
                 w = if self.width < (trim.x + trim.w) as usize { self.width as u32 - trim.x } else { trim.w };
                 h = if self.height < (trim.y + trim.h) as usize { self.height as u32 - trim.y } else { trim.h };
-                //println!("Required width or height is larger than image size. Corrected size: {}x{} -> {}x{}", trim_wh.0, trim_wh.1, w, h);
             }
             else {
                 return Err(RusimgError::InvalidTrimXY);
@@ -139,36 +149,44 @@ impl RusimgTrait for WebpImage {
         Ok(ImgSize::new(self.width, self.height))
     }
 
+    /// Convert the image to grayscale.
     fn grayscale(&mut self) {
         self.image = self.image.grayscale();
         self.operations_count += 1;
     }
 
+    /// Set the image to a DynamicImage object.
     fn set_dynamic_image(&mut self, image: DynamicImage) -> Result<(), RusimgError> {
         self.image = image;
         Ok(())
     }
 
+    /// Get the DynamicImage object.
     fn get_dynamic_image(&mut self) -> Result<DynamicImage, RusimgError> {
         Ok(self.image.clone())
     }
 
+    /// Get the source file path.
     fn get_source_filepath(&self) -> PathBuf {
         self.filepath_input.clone()
     }
 
+    /// Get the destination file path.
     fn get_destination_filepath(&self) -> Option<PathBuf> {
         self.filepath_output.clone()
     }
 
+    /// Get the source metadata.
     fn get_metadata_src(&self) -> Metadata {
         self.metadata_input.clone()
     }
 
+    /// Get the destination metadata.
     fn get_metadata_dest(&self) -> Option<Metadata> {
         self.metadata_output.clone()
     }
 
+    /// Get the image size.
     fn get_size(&self) -> ImgSize {
         ImgSize::new(self.width, self.height)
     }
