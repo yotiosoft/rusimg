@@ -284,34 +284,28 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
 }
 
 /// convert
-fn process_convert(thread_task: ThreadTask, image: &RusImg) -> Result<Option<ConvertResult>, RusimgError> {
-    if let Some(extension) = thread_task.extension {
+fn process_convert<C: Fn(RusimgError) -> ProcessingError>(extension: &Option<rusimg::Extension>, image: &mut RusImg, rierr: C) -> Result<Option<ConvertResult>, ProcessingError> {
+    if let Some(extension) = extension {
         let before_extension = image.extension.clone();
-
-        let image_file_path = thread_task.input_path;
-        let rierr = |e: RusimgError| ProcessingError::RusimgError(ErrorStruct { error: e, filepath: image_file_path.to_str().unwrap().to_string() });
 
         // 変換
         image.convert(&extension).map_err(rierr)?;
 
         Ok(Some(ConvertResult {
             before_extension: before_extension,
-            after_extension: extension,
+            after_extension: extension.clone(),
         }))
     }
     else {
-        Err(RusimgError::FailedToConvertExtension)
+        Err(rierr(RusimgError::FailedToConvertExtension))
     }
 }
 
 /// trimming
-fn process_trim(thread_task: ThreadTask, image: &RusImg, trim: rusimg::Rect) -> Result<Option<TrimResult>, RusimgError> {
-    let image_file_path = thread_task.input_path;
-    let rierr = |e: RusimgError| ProcessingError::RusimgError(ErrorStruct { error: e, filepath: image_file_path.to_str().unwrap().to_string() });
-
+fn process_trim<C: Fn(RusimgError) -> ProcessingError>(image: &mut RusImg, trim: rusimg::Rect, rierr: C) -> Result<Option<TrimResult>, ProcessingError> {
     // トリミング
-    let before_size = image.get_image_size().map_err(rierr)?;
-    let after_size = image.trim_rect(trim).map_err(rierr)?;
+    let before_size = image.get_image_size().map_err(&rierr)?;
+    let after_size = image.trim_rect(trim).map_err(&rierr)?;
 
     Ok(Some(TrimResult {
         before_size: before_size,
@@ -338,16 +332,16 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
     // --convert -> 画像形式変換
     let convert_result = if let Some(_c) = args.destination_extension {
         save_required = true;
-        process_convert(thread_task, &image)?
+        process_convert(&thread_task.extension, &mut image, rierr)?
     }
     else {
-        Ok(None)
+        None
     };
 
     // --trim -> トリミング
     let trim_result = if let Some(trim) = args.trim {
         save_required = true;
-        process_trim(thread_task, &image, trim)?
+        process_trim(&mut image, trim, rierr)?
     }
     else {
         None
