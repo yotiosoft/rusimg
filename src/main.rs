@@ -323,6 +323,7 @@ fn save_print(before_path: &PathBuf, after_path: &Option<PathBuf>, before_size: 
 
 /// Show the image in the terminal using viuer.
 /// Read the image data from memory and display it.
+#[cfg(feature="app")]
 fn view(image: &DynamicImage) -> Result<(), RusimgError> {
     let width = image.width();
     let height = image.height();
@@ -338,6 +339,10 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
     viuer::print(&image, &conf).map_err(|e| RusimgError::FailedToViewImage(e.to_string()))?;
 
     Ok(())
+}
+#[cfg(not(feature="app"))]
+fn view(_image: &DynamicImage) -> Result<(), RusimgError> {
+    Err(RusimgError::ViuerIsNotAvailable)
 }
 
 /// Convert an image.
