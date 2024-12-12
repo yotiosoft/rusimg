@@ -25,12 +25,14 @@ struct ErrorStruct<T> {
 enum ProcessingError {
     RusimgError(ErrorStruct<RusimgError>),
     IOError(ErrorStruct<ErrorMessage>),
+    AppFeatureIsNotAvailable,
 }
 impl fmt::Display for ProcessingError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ProcessingError::RusimgError(e) => write!(f, "{}", e.error),
             ProcessingError::IOError(e) => write!(f, "{}", e.error),
+            ProcessingError::AppFeatureIsNotAvailable => write!(f, "The feature is not available.\nPlease recompile and install like this: 'cargo install rusimg --features app'."),
         }
     }
 }
@@ -324,7 +326,7 @@ fn save_print(before_path: &PathBuf, after_path: &Option<PathBuf>, before_size: 
 /// Show the image in the terminal using viuer.
 /// Read the image data from memory and display it.
 #[cfg(feature="app")]
-fn view(image: &DynamicImage) -> Result<(), RusimgError> {
+fn view(image: &DynamicImage) -> Result<(), ProcessingError> {
     let width = image.width();
     let height = image.height();
     let conf_width = width as f64 / std::cmp::max(width, height) as f64 * 100 as f64;
@@ -336,13 +338,13 @@ fn view(image: &DynamicImage) -> Result<(), RusimgError> {
         ..Default::default()
     };
     
-    viuer::print(&image, &conf).map_err(|e| RusimgError::FailedToViewImage(e.to_string()))?;
+    viuer::print(&image, &conf).map_err(|e| ProcessingError::RusimgError(ErrorStruct { error: RusimgError::ViuerError(e), filepath: "".to_string() }))?;
 
     Ok(())
 }
 #[cfg(not(feature="app"))]
-fn view(_image: &DynamicImage) -> Result<(), RusimgError> {
-    Err(RusimgError::ViuerIsNotAvailable)
+fn view(_image: &DynamicImage) -> Result<(), ProcessingError> {
+    Err(ProcessingError::AppFeatureIsNotAvailable)
 }
 
 /// Convert an image.
