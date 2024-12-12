@@ -4,8 +4,9 @@ use regex::Regex;
 use rusimg::Rect;
 use std::fmt;
 
-const DEFAULT_THREADS: usize = 4;
+const DEFAULT_THREADS: u8 = 4;
 
+/// Argument errors
 pub enum ArgError {
     InvalidTrimFormat,
     FailedToParseTrim(String),
@@ -26,6 +27,21 @@ impl fmt::Display for ArgError {
 
 }
 
+/// Argument structure
+/// souce_path: Option<Vec<PathBuf>>: Source file path (file name or directory path)
+/// destination_path: Option<PathBuf>: Destination file path (file name or directory path)
+/// destination_extension: Option<String>: Destination file extension (e.g. jpeg, png, webp, bmp)
+/// destination_append_name: Option<String>: Name to be appended to the source file name (e.g. image.jpg -> image_output.jpg)
+/// recursive: bool: Recusive search (default: false)
+/// quality: Option<f32>: Image quality (for compress, must be 0.0 <= q <= 100.0)
+/// delete: bool: Delete source file (default: false)
+/// resize: Option<u8>: Resize images in parcent (must be 0 < size)
+/// trim: Option<Rect>: Trim image. trim: rusimg::Rect { x: u32, y: u32, w: u32, h: u32 }
+/// grayscale: bool: Grayscale image (default: false)
+/// view: bool: View result in the comand line (default: false)
+/// yes: bool: Yes to all (default: false) to overwrite files
+/// no: bool: No to all (default: false) to overwrite files
+/// threads: u8: Number of threads (default: 4)
 #[derive(Debug, Clone)]
 pub struct ArgStruct {
     pub souce_path: Option<Vec<PathBuf>>,
@@ -41,7 +57,7 @@ pub struct ArgStruct {
     pub view: bool,
     pub yes: bool,
     pub no: bool,
-    pub threads: usize,
+    pub threads: u8,
 }
 
 #[derive(clap::Parser, Debug)]
@@ -91,21 +107,21 @@ struct Args {
     #[arg(short, long)]
     view: bool,
 
-    /// Yes to all
+    /// Yes to all to overwrite files
     #[arg(short, long)]
     yes: bool,
 
-    /// Number of threads
-    #[arg(short='T', long, default_value_t = DEFAULT_THREADS)]
-    threads: usize,
-
-    /// No to all
+    /// No to all to overwrite files
     #[arg(short, long)]
     no: bool,
+
+    /// Number of threads
+    #[arg(short='T', long, default_value_t = DEFAULT_THREADS)]
+    threads: u8,
 }
 
 pub fn parser() -> Result<ArgStruct, ArgError> {
-    // 引数のパース
+    // Parse arguments.
     let args = Args::parse();
 
     // If trim option is specified, check the format.
