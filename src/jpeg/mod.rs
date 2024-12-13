@@ -1,5 +1,5 @@
 use mozjpeg::{Compress, ColorSpace, ScanMode};
-use image::{DynamicImage, ImageReader};
+use image::DynamicImage;
 
 use std::fs::Metadata;
 use std::io::Write;

@@ -26,6 +26,7 @@ enum ProcessingError {
     RusimgError(ErrorStruct<RusimgError>),
     IOError(ErrorStruct<ErrorMessage>),
     AppFeatureIsNotAvailable,
+    FailedToViewImage(String),
 }
 impl fmt::Display for ProcessingError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -33,6 +34,7 @@ impl fmt::Display for ProcessingError {
             ProcessingError::RusimgError(e) => write!(f, "{}", e.error),
             ProcessingError::IOError(e) => write!(f, "{}", e.error),
             ProcessingError::AppFeatureIsNotAvailable => write!(f, "The feature is not available.\nPlease recompile and install like this: 'cargo install rusimg --features app'."),
+            ProcessingError::FailedToViewImage(s) => write!(f, "Failed to view image: {}", s),
         }
     }
 }
@@ -325,7 +327,6 @@ fn save_print(before_path: &PathBuf, after_path: &Option<PathBuf>, before_size: 
 
 /// Show the image in the terminal using viuer.
 /// Read the image data from memory and display it.
-#[cfg(feature="app")]
 fn view(image: &DynamicImage) -> Result<(), ProcessingError> {
     let width = image.width();
     let height = image.height();
@@ -338,13 +339,11 @@ fn view(image: &DynamicImage) -> Result<(), ProcessingError> {
         ..Default::default()
     };
     
-    viuer::print(&image, &conf).map_err(|e| ProcessingError::RusimgError(ErrorStruct { error: RusimgError::ViuerError(e), filepath: "".to_string() }))?;
-
-    Ok(())
-}
-#[cfg(not(feature="app"))]
-fn view(_image: &DynamicImage) -> Result<(), ProcessingError> {
-    Err(ProcessingError::AppFeatureIsNotAvailable)
+    let result = viuer::print(&image, &conf);
+    match result {
+        Ok(_) => Ok(()),
+        Err(e) => Err(ProcessingError::FailedToViewImage(e.to_string())),
+    }
 }
 
 /// Convert an image.
@@ -555,6 +554,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
     Ok(thread_results)
 }
 
+#[cfg(feature="app")]
 #[tokio::main]
 async fn main() -> Result<(), String> {
     // Parse the arguments.
@@ -785,6 +785,12 @@ async fn main() -> Result<(), String> {
                             println!("{}", processing_str.red().bold());
                             println!("{}: {}", "Error".red(), e.error);
                         },
+                        ProcessingError::AppFeatureIsNotAvailable => {
+                            println!("{}: {}", "Error".red(), e.to_string());
+                        },
+                        ProcessingError::FailedToViewImage(s) => {
+                            println!("{}: {}", "Error".red(), s);
+                        },
                     }
                 }
             }
@@ -809,4 +815,9 @@ async fn main() -> Result<(), String> {
     }
 
     Ok(())
+}
+
+#[cfg(not(feature="app"))]
+fn main() {
+    println!("'app' feature is not available.\nPlease recompile and install like this: 'cargo install rusimg --features app'.");
 }

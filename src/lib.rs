@@ -31,7 +31,6 @@ pub enum RusimgError {
     FailedToEncodeWebp(String),
     FailedToCompressImage(Option<String>),
     FailedToConvertPathToString,
-    FailedToViewImage(String),
     InvalidTrimXY,
     ImageFormatCannotBeCompressed,
     UnsupportedFileExtension,
@@ -63,7 +62,6 @@ impl fmt::Display for RusimgError {
                 }
             }
             RusimgError::FailedToConvertPathToString => write!(f, "Failed to convert path to string"),
-            RusimgError::FailedToViewImage(s) => write!(f, "Failed to view image: {}", s),
             RusimgError::InvalidTrimXY => write!(f, "Invalid trim XY"),
             RusimgError::ImageFormatCannotBeCompressed => write!(f, "this image format cannot be compressed"),
             RusimgError::UnsupportedFileExtension => write!(f, "Unsupported file extension"),
