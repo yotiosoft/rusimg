@@ -243,16 +243,22 @@ fn get_extension(path: &Path) -> Result<rusimg::Extension, RusimgError> {
 
 /// Determine the output path.
 fn get_output_path(args: &ArgStruct, input_path: &PathBuf, extension: &rusimg::Extension) -> PathBuf {
+    let extension = if args.double_extension {
+        format!("{}.{}", input_path.extension().unwrap().to_str().unwrap(), extension.to_string())
+    }
+    else {
+        extension.to_string()
+    };
     let mut output_path = match &args.destination_path {
         Some(path) => path.clone(),                                                             // If --output is specified, use it
-        None => Path::new(input_path).with_extension(extension.to_string()),       // If not, use the input filepath as the input file
+        None => Path::new(input_path).with_extension(&extension),       // If not, use the input filepath as the input file
     };
     // If append_name is specified, add it to the file name.
     if let Some(append_name) = &args.destination_append_name {
         let mut output_path_tmp = output_path.file_stem().unwrap().to_str().unwrap().to_string();
         output_path_tmp.push_str(append_name);
         output_path_tmp.push_str(".");
-        output_path_tmp.push_str(&extension.to_string());
+        output_path_tmp.push_str(&extension);
         output_path = PathBuf::from(output_path_tmp);
     }
     output_path
@@ -580,13 +586,13 @@ async fn main() -> Result<(), String> {
     let source_paths = args.souce_path.clone().or(Some(vec![PathBuf::from(".")])).unwrap();
     let mut thread_tasks = Vec::new();
     for source_path in source_paths {
-        let image_files_temp = if source_path.is_dir() {
+        let image_files_list = if source_path.is_dir() {
             get_files_in_dir(&source_path, args.recursive)?
         }
         else {
             get_files_by_wildcard(&source_path)?
         };
-        for image_file in image_files_temp {
+        for image_file in image_files_list {
             let thread_task = if let Some(extension_str) = &args.destination_extension {
                 // Determine the output path.
                 let extension = convert_str_to_extension(&extension_str.clone());

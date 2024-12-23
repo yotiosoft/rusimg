@@ -18,7 +18,7 @@ impl fmt::Display for ArgError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ArgError::InvalidTrimFormat => write!(f, "Invalid trim format. Please use 'XxY+W+H' (e.g.100x100+50x50)."),
-            ArgError::FailedToParseTrim(e) => write!(f, "Failed to parse trim format: {}", e),
+            ArgError::FailedToParseTrim(e) => write!(f, "Failed to parse trim format: \n\t{}", e),
             ArgError::InvalidQuality => write!(f, "Quality must be 0.0 <= q <= 100.0"),
             ArgError::InvalidResize => write!(f, "Resize must be size > 0"),
             ArgError::InvalidThreads => write!(f, "Threads must be threads => 1"),
@@ -57,6 +57,7 @@ pub struct ArgStruct {
     pub view: bool,
     pub yes: bool,
     pub no: bool,
+    pub double_extension: bool,
     pub threads: u8,
 }
 
@@ -114,6 +115,10 @@ struct Args {
     /// No to all to overwrite files
     #[arg(short, long)]
     no: bool,
+
+    /// Set output file extension to double extension (e.g. image.jpg -> image.jpg.webp)
+    #[arg(short='D', short, long)]
+    double_extension: bool,
 
     /// Number of threads
     #[arg(short='T', long, default_value_t = DEFAULT_THREADS)]
@@ -173,6 +178,7 @@ pub fn parser() -> Result<ArgStruct, ArgError> {
         view: args.view,
         yes: args.yes,
         no: args.no,
+        double_extension: args.double_extension,
         threads: args.threads,
     })
 }

@@ -24,14 +24,16 @@ tokio = { version = "1.37.0", features = ["full"], optional = true }
 futures = { version = "0.3.30", optional = true }
 
 [features]
-default = ["bmp", "jpeg", "png", "webp"]
+default = ["bmp", "jpeg", "png", "webp", "app"]
 bmp = []
 jpeg = ["mozjpeg"]
 png = ["oxipng"]
 webp = ["dep_webp"]
 app = ["clap", "regex", "viuer", "glob", "colored", "tokio", "futures"]
 
+# Use --no-default-features to disable default features
+[lib]
+name = "rusimg"
+
 [[bin]]
 name = "rusimg"
-path = "src/main.rs"
-required-features = ["app"]
