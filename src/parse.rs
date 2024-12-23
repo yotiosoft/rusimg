@@ -100,9 +100,9 @@ struct Args {
     #[arg(short, long)]
     quality: Option<f32>,
 
-    /// Delete source file
+    /// Set output file extension to double extension (e.g. image.jpg -> image.jpg.webp)
     #[arg(short, long)]
-    delete: bool,
+    double_extension: bool,
 
     /// View result in the comand line
     #[arg(short, long)]
@@ -116,9 +116,9 @@ struct Args {
     #[arg(short, long)]
     no: bool,
 
-    /// Set output file extension to double extension (e.g. image.jpg -> image.jpg.webp)
+    /// Delete source file
     #[arg(short='D', long)]
-    double_extension: bool,
+    delete: bool,
 
     /// Number of threads
     #[arg(short='T', long, default_value_t = DEFAULT_THREADS)]
