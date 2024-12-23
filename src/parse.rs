@@ -117,7 +117,7 @@ struct Args {
     no: bool,
 
     /// Set output file extension to double extension (e.g. image.jpg -> image.jpg.webp)
-    #[arg(short='D', short, long)]
+    #[arg(short='D', long)]
     double_extension: bool,
 
     /// Number of threads
