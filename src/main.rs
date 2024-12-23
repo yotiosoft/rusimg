@@ -25,7 +25,6 @@ struct ErrorStruct<T> {
 enum ProcessingError {
     RusimgError(ErrorStruct<RusimgError>),
     IOError(ErrorStruct<ErrorMessage>),
-    AppFeatureIsNotAvailable,
     FailedToViewImage(String),
 }
 impl fmt::Display for ProcessingError {
@@ -33,7 +32,6 @@ impl fmt::Display for ProcessingError {
         match self {
             ProcessingError::RusimgError(e) => write!(f, "{}", e.error),
             ProcessingError::IOError(e) => write!(f, "{}", e.error),
-            ProcessingError::AppFeatureIsNotAvailable => write!(f, "The feature is not available.\nPlease recompile and install like this: 'cargo install rusimg --features app'."),
             ProcessingError::FailedToViewImage(s) => write!(f, "Failed to view image: {}", s),
         }
     }
@@ -784,9 +782,6 @@ async fn main() -> Result<(), String> {
                             let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, &Path::new(&e.filepath).file_name().unwrap().to_str().unwrap());
                             println!("{}", processing_str.red().bold());
                             println!("{}: {}", "Error".red(), e.error);
-                        },
-                        ProcessingError::AppFeatureIsNotAvailable => {
-                            println!("{}: {}", "Error".red(), e.to_string());
                         },
                         ProcessingError::FailedToViewImage(s) => {
                             println!("{}: {}", "Error".red(), s);
