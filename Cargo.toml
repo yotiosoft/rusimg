@@ -31,7 +31,7 @@ png = ["oxipng"]
 webp = ["dep_webp"]
 app = ["clap", "regex", "viuer", "glob", "colored", "tokio", "futures"]
 
-# Use --no-default-features to disable default features
+# Use ``--no-default-features`` to disable default features
 [lib]
 name = "rusimg"
 
