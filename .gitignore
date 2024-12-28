@@ -5,3 +5,5 @@
 *.png
 *.webp
 rust-project.json
+.vscode
+
