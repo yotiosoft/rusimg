@@ -134,7 +134,7 @@ pub fn convert(&mut self, new_extension: &Extension) -> Result<(), RusimgError>;
 
 ### rusimg::RusImg.save_image()
 
-Given a struct RusImg, save_image() saves the image to the specified file path.  
+``save_image()`` saves the image to the specified file path.  
 If the destination file path is not specified, the image is saved to the same file path as the source file (excluding the file extension).
 
 ```rust
