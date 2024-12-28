@@ -85,7 +85,7 @@ impl RusimgTrait for WebpImage {
             q       // 指定されていればその値
         }
         else {
-            100.0    // 既定: 100.0（最高品質, compress を必要としない場合）
+            75.0    // 既定: 100.0（最高品質, compress を必要としない場合）
         };
        
         // DynamicImage を （圧縮＆）保存

@@ -67,11 +67,11 @@ struct Args {
     /// Source file path (file name or directory path)
     source: Option<Vec<PathBuf>>,
 
-    /// Recusive search
+    /// Recursively process all files in the directory.
     #[arg(long)]
     recursive: bool,
 
-    /// Destination file path (file name or directory path)
+    /// Specify output directory or output file name. 
     #[arg(short, long)]
     output: Option<PathBuf>,
 
@@ -80,7 +80,7 @@ struct Args {
     #[arg(short, long)]
     append: Option<String>,
 
-    /// Destination file extension (e.g. jpeg, png, webp, bmp)
+    /// Destination file extension (e.g. jpeg, png, webp, bmp).
     #[arg(short, long)]
     convert: Option<String>,
 
@@ -88,7 +88,7 @@ struct Args {
     #[arg(short, long)]
     resize: Option<u8>,
 
-    /// Trim image
+    /// Trim image. Input format: 'XxY+W+H' (e.g.100x100+50x50)
     #[arg(short, long)]
     trim: Option<String>,
 
@@ -120,7 +120,7 @@ struct Args {
     #[arg(short='D', long)]
     delete: bool,
 
-    /// Number of threads
+    /// Number of threads.
     #[arg(short='T', long, default_value_t = DEFAULT_THREADS)]
     threads: u8,
 }

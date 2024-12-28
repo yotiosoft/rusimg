@@ -108,7 +108,7 @@ impl RusimgTrait for PngImage {
             }
         }
         else {
-            4       // default
+            5       // default
         };
 
         match oxipng::optimize_from_memory(&self.binary_data, &oxipng::Options::from_preset(level)) {
