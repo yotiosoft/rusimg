@@ -31,7 +31,7 @@ Rusimg can convert images to the following formats.
 Rusimg can set the quality of the converted image. This depends on each image format.
 
 - For binary crates, the quality can be specified with the ``-q`` option. 
-- For library crates, the quality can be specified by calling the ``rusimg::data.compress()`` function.
+- For library crates, the quality can be specified by calling the ``rusimg::RusImg.compress()`` function.
 
 | format | quality                                                      | note                                                         |
 | ------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
@@ -45,21 +45,21 @@ Rusimg can set the quality of the converted image. This depends on each image fo
 Resize images. The resize ratio is specified by a scaling factor (0, 100].
 
 - For binary crates, the resize ratio can be specified with the ``-r`` option.
-- For library crates, the resize ratio can be specified by calling the ``rusimg::data.resize()`` function.
+- For library crates, the resize ratio can be specified by calling the ``rusimg::RusImg.resize()`` function.
 
 ### Image Cropping
 
 Crop images.
 
 - For binary crates, the crop size can be specified with the ``-t`` option.
-- For library crates, the crop size can be specified by calling the ``rusimg::data.trim()`` function.
+- For library crates, the crop size can be specified by calling the ``rusimg::RusImg.trim()`` or ``rusimg::RusImg.trim_rect()`` function.
 
 ### Grayscale Conversion
 
 Convert images to grayscale.
 
 - For binary crates, the grayscale conversion can be specified with the ``-g`` option.
-- For library crates, the grayscale conversion can be specified by calling the ``rusimg::data.grayscale()`` function.
+- For library crates, the grayscale conversion can be specified by calling the ``rusimg::RusImg.grayscale()`` function.
 
 ### Save the image
 
@@ -115,7 +115,9 @@ Or, use ``cargo`` to add the library crate.
 $ cargo add rusimg --no-default-features
 ```
 
-### rusimg::open_image()
+### Library crate typical features
+
+#### rusimg::open_image()
 Given a file path, open_image() returns struct RusImg, which contains the data for that image.
 Struct ``RusImg`` has public processing functions for that image in ``RusimgTrait``.
 
@@ -123,7 +125,7 @@ Struct ``RusImg`` has public processing functions for that image in ``RusimgTrai
 pub fn open_image(path: &Path) -> Result<RusImg, RusimgError>;
 ```
 
-### rusimg::RusImg.convert()
+#### rusimg::RusImg.convert()
 
 Converts the image to the specified format.  
 If conversion is successful, the image data is updated in the struct RusImg.
@@ -132,7 +134,7 @@ If conversion is successful, the image data is updated in the struct RusImg.
 pub fn convert(&mut self, new_extension: &Extension) -> Result<(), RusimgError>;
 ```
 
-### rusimg::RusImg.save_image()
+#### rusimg::RusImg.save_image()
 
 ``save_image()`` saves the image to the specified file path.  
 If the destination file path is not specified, the image is saved to the same file path as the source file (excluding the file extension).
@@ -141,8 +143,11 @@ If the destination file path is not specified, the image is saved to the same fi
 pub fn save_image(&mut self, path: Option<&str>) -> Result<SaveStatus, RusimgError>;
 ```
 
-### struct RusImg
-struct RusImg holds the file extension Extension and the image data ``RusimgTrait``.
+### Structs
+
+#### struct RusImg
+struct ``RusImg`` holds the file extension and the image data (``RusimgTrait``).  
+``RusimgTrait`` is a trait that contains the image processing functions, but struct ``RusImg`` implements these wrapper functions.
 ```rust
 pub struct RusImg {
     pub extension: Extension,
@@ -150,7 +155,7 @@ pub struct RusImg {
 }
 ```
 
-#### struct RusImg implements
+##### struct RusImg implements
 
 struct ``RusImg`` implements following functions.
 
@@ -203,9 +208,55 @@ impl RusImg {
 }
 ```
 
-### Extensions
+#### Rect
 
-enum Extension indicates the file extension.  
+Struct ``Rect`` is used to specify the crop area.  
+``rusimg::RusImg.trim_rect()`` needs a ``Rect`` object to specify the crop area.
+
+```rust
+#[derive(Debug, Clone, PartialEq)]
+pub struct Rect {
+    pub x: u32,
+    pub y: u32,
+    pub w: u32,
+    pub h: u32,
+}
+```
+
+#### ImgSize
+
+Struct ``ImgSize`` is used to get the image size.  
+``rusimg::RusImg.get_image_size()``, ``rusimg::RusImg.resize()``, ``rusimg::RusImg.trim()``, and ``rusimg::RusImg.trim_rect()`` return this struct.
+
+```rust
+#[derive(Debug, Clone, PartialEq, Copy, Default)]
+pub struct ImgSize {
+    pub width: usize,
+    pub height: usize,
+}
+```
+
+#### SaveStatus
+
+Struct ``SaveStatus`` is used for tracking the status of saving an image.  
+It contains the output file path, the file size before saving, and the file size after saving.  
+If the image has compression, the file size after saving will be different from the file size before saving.  
+``rusimg::RusImg.save_image()`` returns this enum.
+
+```rust
+#[derive(Debug, Clone, PartialEq)]
+pub struct SaveStatus {
+    pub output_path: Option<PathBuf>,
+    pub before_filesize: u64,
+    pub after_filesize: Option<u64>,
+}
+```
+
+### Enum
+
+#### Extension
+
+Enum ``Extension`` indicates the file extension.  
 ExternalFormat(String) is provided for the library crate users to use if they wish to implement their own alternate image file format.
 
 ```rust
