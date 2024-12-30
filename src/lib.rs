@@ -76,7 +76,7 @@ impl fmt::Display for RusimgError {
 /// This object contains an image object and its metadata.
 pub struct RusImg {
     pub extension: Extension,
-    data: Box<(dyn RusimgTrait)>,
+    pub data: Box<(dyn RusimgTrait)>,
 }
 
 /// Rectangle object for rusimg.
