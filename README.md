@@ -102,17 +102,28 @@ The binary crates contain ``app`` features required to run the application by de
 
 ### Install
 
-Add this to your ``Cargo.toml``.
+Use ``cargo`` to add the library crate.
+
+```bash
+$ cargo add rusimg --no-default-features --features bmp,jpeg,png,webp
+```
+
+Or, add this to your ``Cargo.toml``.
 
 ```toml
 [dependencies]
-rusimg = { version = "0.1.0", default-features = false }
+rusimg = { version = "0.1.0", default-features = false, features = ["bmp", "jpeg", "png", "webp"] }
 ```
 
-Or, use ``cargo`` to add the library crate.
+Note that this crate includes the ``app`` feature by default, **which is only necessary for the binary crate but not for the library crate**.  
+This feature includes following dependencies: ``clap``, ``regex``, ``viuer``, ``glob``, ``colored``, ``tokio``, ``futures``.
 
-```bash
-$ cargo add rusimg --no-default-features
+If you don't use the specified image format, you can remove it from the features.  
+For example, if don't use the bmp format, leave ``bmp`` out of the features.
+
+```toml
+[dependencies]
+rusimg = { version = "0.1.0", default-features = false, features = ["jpeg", "png", "webp"] }
 ```
 
 ### Library crate typical features
