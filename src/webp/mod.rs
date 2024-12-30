@@ -66,7 +66,7 @@ impl RusimgTrait for WebpImage {
 
     /// Save the image to a file.
     fn save(&mut self, path: Option<PathBuf>) -> Result<(), RusimgError> {
-        let save_path = Self::save_filepath(&self, &self.filepath_input, path, &"webp".to_string())?;
+        let save_path = Self::get_save_filepath(&self, &self.filepath_input, path, &"webp".to_string())?;
 
         // 元が webp かつ操作回数が 0 なら encode しない
         let source_is_webp = Path::new(&self.filepath_input).extension().and_then(|s| s.to_str()).unwrap_or("").to_string() == "webp";

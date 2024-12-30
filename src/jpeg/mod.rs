@@ -60,7 +60,7 @@ impl RusimgTrait for JpegImage {
 
     /// Save the image to a file.
     fn save(&mut self, path: Option<PathBuf>) -> Result<(), RusimgError> {
-        let save_path = Self::save_filepath(&self, &self.filepath_input, path, &self.extension_str)?;
+        let save_path = Self::get_save_filepath(&self, &self.filepath_input, path, &self.extension_str)?;
         
         // image_bytes == None の場合、DynamicImage を 保存
         if self.image_bytes.is_none() {

@@ -93,25 +93,41 @@ pub struct Rect {
 /// This trait is used for image operations.
 /// Implement this trait for each image format.
 pub trait RusimgTrait {
+    /// Import an image from a DynamicImage object.
     fn import(image: DynamicImage, source_path: PathBuf, source_metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
+    /// Open an image from a image buffer.
+    /// The ``path`` parameter is the file path of the image, but it is used for copying the file path to the object.
+    /// This returns a RusImg object.
     fn open(path: PathBuf, image_buf: Vec<u8>, metadata: Metadata) -> Result<Self, RusimgError> where Self: Sized;
+    /// Save the image to a file to the ``path``.
     fn save(&mut self, path: Option<PathBuf>) -> Result<(), RusimgError>;
+    /// Compress the image with the quality parameter.
     fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError>;
+    /// Resize the image with the resize_ratio parameter.
     fn resize(&mut self, resize_ratio: u8) -> Result<ImgSize, RusimgError>;
+    /// Trim the image with the trim parameter.
+    /// The trim parameter is a Rect object.
     fn trim(&mut self, trim: Rect) -> Result<ImgSize, RusimgError>;
+    /// Grayscale the image.
     fn grayscale(&mut self);
-
+    /// Set a image::DynamicImage to the image object.
+    /// After setting the image, the image object will be updated.
     fn set_dynamic_image(&mut self, image: DynamicImage) -> Result<(), RusimgError>;
-
+    /// Get a image::DynamicImage from the image object.
     fn get_dynamic_image(&mut self) -> Result<DynamicImage, RusimgError>;
+    /// Get the source file path.
     fn get_source_filepath(&self) -> PathBuf;
+    /// Get the destination file path.
     fn get_destination_filepath(&self) -> Option<PathBuf>;
+    /// Get the source metadata.
     fn get_metadata_src(&self) -> Metadata;
+    /// Get the destination metadata.
     fn get_metadata_dest(&self) -> Option<Metadata>;
+    /// Get the image size.
     fn get_size(&self) -> ImgSize;
 
     /// Get a file path for saving an image.
-    fn save_filepath(&self, source_filepath: &PathBuf, destination_filepath: Option<PathBuf>, new_extension: &String) -> Result<PathBuf, RusimgError> {
+    fn get_save_filepath(&self, source_filepath: &PathBuf, destination_filepath: Option<PathBuf>, new_extension: &String) -> Result<PathBuf, RusimgError> {
         if let Some(path) = destination_filepath {
             if Path::new(&path).is_dir() {
                 let filename = match Path::new(&source_filepath).file_name() {
@@ -319,6 +335,7 @@ fn convert_to_webp_image(_dynamic_image: DynamicImage, _filepath: PathBuf, _meta
 /// The RusImg object wraps RusimgTrait functions.
 impl RusImg {
     /// Get image size.
+    /// This uses the ``get_size()`` function from ``RusimgTrait``.
     pub fn get_image_size(&self) -> Result<ImgSize, RusimgError> {
         let size = self.data.get_size();
         Ok(size)
@@ -327,6 +344,7 @@ impl RusImg {
     /// Resize an image.
     /// It must be called after open_image().
     /// Set ratio to 100 to keep the original size.
+    /// This uses the ``resize()`` function from ``RusimgTrait``.
     pub fn resize(&mut self, ratio: u8) -> Result<ImgSize, RusimgError> {
         let size = self.data.resize(ratio)?;
         Ok(size)
@@ -334,12 +352,15 @@ impl RusImg {
 
     /// Trim an image. Set the trim area with four u32 values: x, y, w, h.
     /// It must be called after open_image().
+    /// The values will be assigned to a Rect object.
+    /// This uses the ``trim()`` function from ``RusimgTrait``.
     pub fn trim(&mut self, trim_x: u32, trim_y: u32, trim_w: u32, trim_h: u32) -> Result<ImgSize, RusimgError> {
         let size = self.data.trim(Rect{x: trim_x, y: trim_y, w: trim_w, h: trim_h})?;
         Ok(size)
     }
     /// Trim an image. Set the trim area with a rusimg::Rect object.
     /// It must be called after open_image().
+    /// This uses the ``trim()`` function from ``RusimgTrait``.
     pub fn trim_rect(&mut self, trim_area: Rect) -> Result<ImgSize, RusimgError> {
         let size = self.data.trim(trim_area)?;
         Ok(size)
@@ -347,6 +368,7 @@ impl RusImg {
 
     /// Grayscale an image.
     /// It must be called after open_image().
+    /// This uses the ``grayscale()`` function from ``RusimgTrait``.
     pub fn grayscale(&mut self) -> Result<(), RusimgError> {
         self.data.grayscale();
         Ok(())
@@ -355,6 +377,7 @@ impl RusImg {
     /// Compress an image.
     /// It must be called after open_image().
     /// Set quality to 100 to keep the original quality.
+    /// This uses the ``compress()`` function from ``RusimgTrait``.
     pub fn compress(&mut self, quality: Option<f32>) -> Result<(), RusimgError> {
         self.data.compress(quality)?;
         Ok(())
@@ -363,6 +386,7 @@ impl RusImg {
     /// Convert an image to another format.
     /// And replace the original image with the new one.
     /// It must be called after open_image().
+    /// This uses the ``get_dynamic_image()`` function to get the DynamicImage object, ``get_metadata_src()`` to get the metadata, and ``compress()`` to compress the image.
     pub fn convert(&mut self, new_extension: &Extension) -> Result<(), RusimgError> {
         let dynamic_image = self.data.get_dynamic_image()?;
         let filepath = self.data.get_source_filepath();
@@ -390,30 +414,36 @@ impl RusImg {
         Ok(())
     }
 
-    /// Set a DynamicImage to an Img.
+    /// Set a ``image::DynamicImage`` to an RusImg.
+    /// After setting the image, the image object will be updated.
+    /// This uses the ``set_dynamic_image()`` function from ``RusimgTrait``.
     pub fn set_dynamic_image(&mut self, image: DynamicImage) -> Result<(), RusimgError> {
         self.data.set_dynamic_image(image)?;
         Ok(())
     }
 
-    /// Get a DynamicImage from an Img.
+    /// Get a ``image::DynamicImage`` from an RusImg.
+    /// This uses the ``get_dynamic_image()`` function from ``RusimgTrait``.
     pub fn get_dynamic_image(&mut self) -> Result<DynamicImage, RusimgError> {
         let dynamic_image = self.data.get_dynamic_image()?;
         Ok(dynamic_image)
     }
 
     /// Get file extension.
+    /// This returns the file extension of the image.
     pub fn get_extension(&self) -> Extension {
         self.extension.clone()
     }
 
     /// Get input file path.
+    /// This returns the file path of the image.
     pub fn get_input_filepath(&self) -> PathBuf {
         self.data.get_source_filepath()
     }
 
     /// Save an image to a file.
     /// If path is None, the original file will be overwritten.
+    /// This uses the ``get_destination_filepath()`` to get the destination file path, ``get_metadata_src()`` to get the source file size, and ``get_metadata_dest()`` to get the destination file size, and ``save()`` to save the image.
     pub fn save_image(&mut self, path: Option<&str>) -> Result<SaveStatus, RusimgError> {
         let path_buf = match path {
             Some(p) => Some(PathBuf::from(p)),
