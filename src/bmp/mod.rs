@@ -75,7 +75,7 @@ impl RusimgTrait for BmpImage {
     }
 
     /// Trim the image.
-    /// Set the trim area with the rusimg::Rect structure.
+    /// Set the trim area with the librusimg::Rect structure.
     fn trim(&mut self, trim: Rect) -> Result<ImgSize, RusimgError> {
         let mut w = trim.w;
         let mut h = trim.h;

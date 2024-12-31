@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use clap::Parser;
 use regex::Regex;
-use rusimg::Rect;
+use librusimg::Rect;
 use std::fmt;
 
 const DEFAULT_THREADS: u8 = 4;
@@ -36,7 +36,7 @@ impl fmt::Display for ArgError {
 /// quality: Option<f32>: Image quality (for compress, must be 0.0 <= q <= 100.0)
 /// delete: bool: Delete source file (default: false)
 /// resize: Option<u8>: Resize images in parcent (must be 0 < size)
-/// trim: Option<Rect>: Trim image. trim: rusimg::Rect { x: u32, y: u32, w: u32, h: u32 }
+/// trim: Option<Rect>: Trim image. trim: librusimg::Rect { x: u32, y: u32, w: u32, h: u32 }
 /// grayscale: bool: Grayscale image (default: false)
 /// view: bool: View result in the comand line (default: false)
 /// yes: bool: Yes to all (default: false) to overwrite files
@@ -130,7 +130,7 @@ pub fn parser() -> Result<ArgStruct, ArgError> {
     let args = Args::parse();
 
     // If trim option is specified, check the format.
-    let trim: Result<Option<rusimg::Rect>, String> = if args.trim.is_some() {
+    let trim: Result<Option<librusimg::Rect>, String> = if args.trim.is_some() {
         let re = Regex::new(r"(\d+)x(\d+)\+(\d+)x(\d+)").unwrap();
         if let Some(captures) = re.captures(&args.trim.unwrap()) {
             let x = captures.get(1).unwrap().as_str().parse().map_err(|e: std::num::ParseIntError| e.to_string()).unwrap();

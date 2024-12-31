@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
 use futures::stream::FuturesUnordered;
 
-use rusimg::{RusImg, RusimgError};
+use librusimg::{RusImg, RusimgError};
 mod parse;
 
 // Error types
@@ -90,7 +90,7 @@ struct ThreadTask {
     args: ArgStruct,
     input_path: PathBuf,
     output_path: Option<PathBuf>,
-    extension: Option<rusimg::Extension>,
+    extension: Option<librusimg::Extension>,
     ask_result: AskResult,
 }
 
@@ -99,24 +99,24 @@ struct ThreadTask {
 /// - before_extension: The extension of the image before conversion.
 /// - after_extension: The extension of the image after conversion.
 struct ConvertResult {
-    before_extension: rusimg::Extension,
-    after_extension: rusimg::Extension,
+    before_extension: librusimg::Extension,
+    after_extension: librusimg::Extension,
 }
 /// TrimResult is a structure that represents the result of trimming an image.
 /// This structure will be used to display the result of the trimming.
 /// - before_size: The size of the image before trimming.
 /// - after_size: The size of the image after trimming.
 struct TrimResult {
-    before_size: rusimg::ImgSize,
-    after_size: rusimg::ImgSize,
+    before_size: librusimg::ImgSize,
+    after_size: librusimg::ImgSize,
 }
 /// ResizeResult is a structure that represents the result of resizing an image.
 /// This structure will be used to display the result of the resizing.
 /// - before_size: The size of the image before resizing.
 /// - after_size: The size of the image after resizing.
 struct ResizeResult {
-    before_size: rusimg::ImgSize,
-    after_size: rusimg::ImgSize,
+    before_size: librusimg::ImgSize,
+    after_size: librusimg::ImgSize,
 }
 /// GrayscaleResult is a structure that represents the result of converting an image to grayscale.
 /// This structure will be used to display the result of the grayscale conversion.
@@ -217,24 +217,24 @@ fn get_files_by_wildcard(source_path: &PathBuf) -> Result<Vec<PathBuf>, String> 
 }
 
 /// Convert a string to an image extension.
-fn convert_str_to_extension(extension_str: &str) -> Result<rusimg::Extension, RusimgError> {
+fn convert_str_to_extension(extension_str: &str) -> Result<librusimg::Extension, RusimgError> {
     match extension_str {
-        "bmp" => Ok(rusimg::Extension::Bmp),
-        "jpg" | "jpeg" | "jfif" => Ok(rusimg::Extension::Jpeg),
-        "png" => Ok(rusimg::Extension::Png),
-        "webp" => Ok(rusimg::Extension::Webp),
+        "bmp" => Ok(librusimg::Extension::Bmp),
+        "jpg" | "jpeg" | "jfif" => Ok(librusimg::Extension::Jpeg),
+        "png" => Ok(librusimg::Extension::Png),
+        "webp" => Ok(librusimg::Extension::Webp),
         _ => Err(RusimgError::UnsupportedFileExtension),
     }
 }
 
 /// Get the extension of the file.
-fn get_extension(path: &Path) -> Result<rusimg::Extension, RusimgError> {
+fn get_extension(path: &Path) -> Result<librusimg::Extension, RusimgError> {
     let path = path.to_str().ok_or(RusimgError::FailedToConvertPathToString)?.to_ascii_lowercase();
     match Path::new(&path).extension().and_then(|s| s.to_str()) {
-        Some("bmp") => Ok(rusimg::Extension::Bmp),
-        Some("jpg") | Some("jpeg") | Some("jfif") => Ok(rusimg::Extension::Jpeg),
-        Some("png") => Ok(rusimg::Extension::Png),
-        Some("webp") => Ok(rusimg::Extension::Webp),
+        Some("bmp") => Ok(librusimg::Extension::Bmp),
+        Some("jpg") | Some("jpeg") | Some("jfif") => Ok(librusimg::Extension::Jpeg),
+        Some("png") => Ok(librusimg::Extension::Png),
+        Some("webp") => Ok(librusimg::Extension::Webp),
         _ => {
             Err(RusimgError::UnsupportedFileExtension)
         },
@@ -242,7 +242,7 @@ fn get_extension(path: &Path) -> Result<rusimg::Extension, RusimgError> {
 }
 
 /// Determine the output path.
-fn get_output_path(args: &ArgStruct, input_path: &PathBuf, extension: &rusimg::Extension) -> PathBuf {
+fn get_output_path(args: &ArgStruct, input_path: &PathBuf, extension: &librusimg::Extension) -> PathBuf {
     let extension = if args.double_extension {
         format!("{}.{}", input_path.extension().unwrap().to_str().unwrap(), extension.to_string())
     }
@@ -351,7 +351,7 @@ fn view(image: &DynamicImage) -> Result<(), ProcessingError> {
 }
 
 /// Convert an image.
-fn process_convert<C: Fn(RusimgError) -> ProcessingError>(extension: &Option<rusimg::Extension>, image: &mut RusImg, rierr: C) -> Result<Option<ConvertResult>, ProcessingError> {
+fn process_convert<C: Fn(RusimgError) -> ProcessingError>(extension: &Option<librusimg::Extension>, image: &mut RusImg, rierr: C) -> Result<Option<ConvertResult>, ProcessingError> {
     if let Some(extension) = extension {
         let before_extension = image.extension.clone();
 
@@ -369,7 +369,7 @@ fn process_convert<C: Fn(RusimgError) -> ProcessingError>(extension: &Option<rus
 }
 
 /// Trim an image.
-fn process_trim<C: Fn(RusimgError) -> ProcessingError>(image: &mut RusImg, trim: rusimg::Rect, rierr: C) -> Result<Option<TrimResult>, ProcessingError> {
+fn process_trim<C: Fn(RusimgError) -> ProcessingError>(image: &mut RusImg, trim: librusimg::Rect, rierr: C) -> Result<Option<TrimResult>, ProcessingError> {
     // トリミング
     let before_size = image.get_image_size().map_err(&rierr)?;
     let after_size = image.trim_rect(trim).map_err(&rierr)?;
@@ -391,7 +391,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
     let ioerr = |e: std::io::Error| ProcessingError::IOError(ErrorStruct { error: e, filepath: image_file_path.to_str().unwrap().to_string() });
 
     // Open the image
-    let mut image = rusimg::open_image(&image_file_path).map_err(rierr)?;
+    let mut image = librusimg::open_image(&image_file_path).map_err(rierr)?;
 
     // Is saving the image required? (default: false)
     let mut save_required = false;
@@ -558,7 +558,6 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
     Ok(thread_results)
 }
 
-#[cfg(feature="app")]
 #[tokio::main]
 async fn main() -> Result<(), String> {
     // Parse the arguments.
@@ -816,9 +815,4 @@ async fn main() -> Result<(), String> {
     }
 
     Ok(())
-}
-
-#[cfg(not(feature="app"))]
-fn main() {
-    println!("'app' feature is not available.\nPlease recompile and install like this: 'cargo install rusimg --features app'.");
 }

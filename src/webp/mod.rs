@@ -127,7 +127,7 @@ impl RusimgTrait for WebpImage {
     }
 
     /// Trim the image.
-    /// trim: rusimg::Rect { x: u32, y: u32, w: u32, h: u32 }
+    /// trim: librusimg::Rect { x: u32, y: u32, w: u32, h: u32 }
     fn trim(&mut self, trim: Rect) -> Result<ImgSize, RusimgError> {
         let mut w = trim.w;
         let mut h = trim.h;
