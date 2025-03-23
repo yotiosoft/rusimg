@@ -391,7 +391,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
     let ioerr = |e: std::io::Error| ProcessingError::IOError(ErrorStruct { error: e, filepath: image_file_path.to_str().unwrap().to_string() });
 
     // Open the image
-    let mut image = librusimg::open_image(&image_file_path).map_err(rierr)?;
+    let mut image = librusimg::RusImg::open(&image_file_path).map_err(rierr)?;
 
     // Is saving the image required? (default: false)
     let mut save_required = false;
