@@ -471,6 +471,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
         match ask_result {
             AskResult::Overwrite => {
                 // If AskResult::Overwrite, overwrite the file without asking.
+                // So we don't need to check if the file exists.
             },
             AskResult::Skip => {
                 // If AskResult::Skip, skip the file.
