@@ -65,7 +65,8 @@ pub struct ArgStruct {
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Source file path (file name or directory path)
-    source: Option<Vec<PathBuf>>,
+    #[arg(short, long)]
+    input: Option<Vec<PathBuf>>,
 
     /// Recursively process all files in the directory.
     #[arg(long)]
@@ -165,7 +166,7 @@ pub fn parser() -> Result<ArgStruct, ArgError> {
     }
 
     Ok(ArgStruct {
-        souce_path: args.source,
+        souce_path: args.input,
         destination_path: args.output,
         destination_extension: args.convert,
         destination_append_name: args.append,
