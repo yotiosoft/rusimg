@@ -484,7 +484,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
                     compress_result: compress_result,
                     save_result: SaveResult {
                         status: RusimgStatus::Cancel,
-                        input_path: image.get_input_filepath(),
+                        input_path: image.get_input_filepath().map_err(rierr)?,
                         output_path: None,
                         before_filesize: 0,
                         after_filesize: None,
@@ -527,9 +527,9 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
         // Return the result of saving the image.
         SaveResult {
             status: RusimgStatus::Success,
-            input_path: image.get_input_filepath(),
+            input_path: image.get_input_filepath().map_err(rierr)?,
             output_path: save_status.output_path,
-            before_filesize: save_status.before_filesize,
+            before_filesize: save_status.before_filesize.unwrap_or(0),
             after_filesize: save_status.after_filesize,
             delete: delete,
         }
@@ -538,7 +538,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
         // If saving is not required, return the status as NotNeeded.
         SaveResult {
             status: RusimgStatus::NotNeeded,
-            input_path: image.get_input_filepath(),
+            input_path: image.get_input_filepath().map_err(rierr)?,
             output_path: None,
             before_filesize: 0,
             after_filesize: None,
