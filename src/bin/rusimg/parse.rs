@@ -45,7 +45,7 @@ impl fmt::Display for ArgError {
 #[derive(Debug, Clone)]
 pub struct ArgStruct {
     pub souce_path: Option<Vec<PathBuf>>,
-    pub destination_path: Option<PathBuf>,
+    pub destination_path: Option<Vec<PathBuf>>,
     pub destination_extension: Option<String>,
     pub destination_append_name: Option<String>,
     pub recursive: bool,
@@ -74,7 +74,7 @@ struct Args {
 
     /// Specify output directory or output file name. 
     #[arg(short, long)]
-    output: Option<PathBuf>,
+    output: Option<Vec<PathBuf>>,
 
     /// Name to be appended to the source file name
     /// (e.g. image.jpg -> image_output.jpg)
