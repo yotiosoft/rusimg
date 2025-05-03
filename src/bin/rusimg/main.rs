@@ -242,19 +242,19 @@ fn get_extension(path: &Path) -> Result<librusimg::Extension, RusimgError> {
 }
 
 /// Determine the output path.
-fn get_output_path(args: &ArgStruct, input_path: &PathBuf, extension: &librusimg::Extension) -> PathBuf {
-    let extension = if args.double_extension {
+fn get_output_path(input_path: &PathBuf, output_path: Option<&PathBuf>, double_extension: bool, destination_append_name: Option<String>, extension: &librusimg::Extension) -> PathBuf {
+    let extension = if double_extension {
         format!("{}.{}", input_path.extension().unwrap().to_str().unwrap(), extension.to_string())
     }
     else {
         extension.to_string()
     };
-    let mut output_path = match &args.destination_path {
+    let mut output_path = match output_path {
         Some(path) => path.clone(),                                                             // If --output is specified, use it
         None => Path::new(input_path).with_extension(&extension),       // If not, use the input filepath as the input file
     };
     // If append_name is specified, add it to the file name.
-    if let Some(append_name) = &args.destination_append_name {
+    if let Some(append_name) = &destination_append_name {
         let mut output_path_tmp = output_path.file_stem().unwrap().to_str().unwrap().to_string();
         output_path_tmp.push_str(append_name);
         output_path_tmp.push_str(".");
@@ -603,7 +603,7 @@ async fn main() -> Result<(), String> {
                         continue;
                     },
                 };
-                let output_path = get_output_path(&args, &image_file, &extension);
+                let output_path = get_output_path(&image_file, args.destination_path, args.double_extension, args.destination_append_name, &extension);
 
                 // If the output file already exists, check if it should be overwritten.
                 let ask_result = match check_file_exists(&output_path, &file_overwrite_ask) {
