@@ -177,7 +177,7 @@ fn get_files_in_dir(dir_path: &PathBuf, recursive: bool) -> Result<Vec<PathBuf>,
         match dir_entry {
             Ok(dir_entry) => {
                 let path = dir_entry.path();
-                // recursive に探索
+                // recursively search the directory
                 if path.is_dir() && recursive {
                     let mut files = get_files_in_dir(&path, recursive)?;
                     ret.append(&mut files);
@@ -205,7 +205,7 @@ fn get_files_by_wildcard(source_path: &PathBuf) -> Result<Vec<PathBuf>, String> 
     for entry in glob(source_path.to_str().unwrap()).expect("Failed to read glob pattern") {
         match entry {
             Ok(path) => {
-                // 画像形式であればファイルリストに追加
+                // If the file is an image format, add it to the file list.
                 if get_extension(&path).is_ok() {
                     ret.push(path);
                 }
@@ -242,7 +242,7 @@ fn get_extension(path: &Path) -> Result<librusimg::Extension, RusimgError> {
 }
 
 /// Determine the output path.
-fn get_output_path(input_path: &PathBuf, output_path: Option<&PathBuf>, double_extension: bool, destination_append_name: Option<String>, extension: &librusimg::Extension) -> PathBuf {
+fn get_output_path(input_path: &PathBuf, output_path: &Option<PathBuf>, double_extension: bool, destination_append_name: &Option<String>, extension: &librusimg::Extension) -> PathBuf {
     let extension = if double_extension {
         format!("{}.{}", input_path.extension().unwrap().to_str().unwrap(), extension.to_string())
     }
@@ -251,14 +251,14 @@ fn get_output_path(input_path: &PathBuf, output_path: Option<&PathBuf>, double_e
     };
     let mut output_path = match output_path {
         Some(path) => path.clone(),                                                             // If --output is specified, use it
-        None => Path::new(input_path).with_extension(&extension),       // If not, use the input filepath as the input file
+        None => Path::new(input_path).with_extension(&extension.to_string()),       // If not, use the input filepath as the input file
     };
     // If append_name is specified, add it to the file name.
     if let Some(append_name) = &destination_append_name {
         let mut output_path_tmp = output_path.file_stem().unwrap().to_str().unwrap().to_string();
         output_path_tmp.push_str(append_name);
         output_path_tmp.push_str(".");
-        output_path_tmp.push_str(&extension);
+        output_path_tmp.push_str(&extension.to_string());
         output_path = PathBuf::from(output_path_tmp);
     }
     output_path
@@ -603,7 +603,7 @@ async fn main() -> Result<(), String> {
                         continue;
                     },
                 };
-                let output_path = get_output_path(&image_file, args.destination_path, args.double_extension, args.destination_append_name, &extension);
+                let output_path = get_output_path(&image_file, &args.destination_path, args.double_extension, &args.destination_append_name, &extension);
 
                 // If the output file already exists, check if it should be overwritten.
                 let ask_result = match check_file_exists(&output_path, &file_overwrite_ask) {

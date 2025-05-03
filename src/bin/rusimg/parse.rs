@@ -45,7 +45,7 @@ impl fmt::Display for ArgError {
 #[derive(Debug, Clone)]
 pub struct ArgStruct {
     pub souce_path: Option<Vec<PathBuf>>,
-    pub destination_path: Option<Vec<PathBuf>>,
+    pub destination_path: Option<PathBuf>,
     pub destination_extension: Option<String>,
     pub destination_append_name: Option<String>,
     pub recursive: bool,
@@ -64,7 +64,9 @@ pub struct ArgStruct {
 #[derive(clap::Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Source file path (file name or directory path)
+    /// Source file path (file name or directory path).  
+    /// If not specified, the current directory will be used.  
+    /// This option can be used multiple times.
     #[arg(short, long)]
     input: Option<Vec<PathBuf>>,
 
@@ -73,8 +75,10 @@ struct Args {
     recursive: bool,
 
     /// Specify output directory or output file name. 
+    /// If not specified, the input file name will be used.  
+    /// This option can be used only once.
     #[arg(short, long)]
-    output: Option<Vec<PathBuf>>,
+    output: Option<PathBuf>,
 
     /// Name to be appended to the source file name
     /// (e.g. image.jpg -> image_output.jpg)
