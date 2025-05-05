@@ -218,6 +218,25 @@ fn get_files_by_wildcard(source_path: &PathBuf) -> Result<Vec<PathBuf>, String> 
     Ok(ret)
 }
 
+/// Is saving the image required?
+fn is_save_required(args: &ArgStruct) -> bool {
+    if args.destination_extension.is_some() || args.trim.is_some() || args.resize.is_some() || args.grayscale || args.quality.is_some() {
+        return true;
+    }
+    false
+}
+
+/// Get destination's extension.
+fn get_destination_extension(source_filepath: &PathBuf, dest_extension: &Option<librusimg::Extension>) -> librusimg::Extension {
+    if let Some(extension) = dest_extension {
+        extension.clone()
+    }
+    else {
+        // If the destination extension is not specified, use the same extension as the source file.
+        get_extension(source_filepath.as_path()).unwrap_or(librusimg::Extension::Png)
+    }
+}
+
 /// Convert a string to an image extension.
 fn convert_str_to_extension(extension_str: &str) -> Result<librusimg::Extension, RusimgError> {
     match extension_str {
@@ -624,18 +643,17 @@ async fn main() -> Result<(), String> {
         else {
             get_files_by_wildcard(&source_path)?
         };
-        for image_file in image_files_list {
-            let thread_task = if let Some(extension_str) = &args.destination_extension {
+        for image_filepath in image_files_list {
+            let thread_task = if is_save_required(&args) {
                 // Determine the output path.
-                let extension = convert_str_to_extension(&extension_str.clone());
-                let extension = match extension {
-                    Ok(e) => e,
-                    Err(e) => {
-                        println!("{}: {}", "Error".red(), e.to_string());
-                        continue;
-                    },
+                let arg_dest_extension = if let Some(ext) = &args.destination_extension {
+                    Some(convert_str_to_extension(ext).map_err(|e| e.to_string())?)
+                }
+                else {
+                    None
                 };
-                let output_path = get_output_path(&image_file, &args.destination_path, args.double_extension, &args.destination_append_name, &extension);
+                let extension = get_destination_extension(&image_filepath, &arg_dest_extension);
+                let output_path = get_output_path(&image_filepath, &args.destination_path, args.double_extension, &args.destination_append_name, &extension);
 
                 // If the output file already exists, check if it should be overwritten.
                 let ask_result = match check_file_exists(&output_path, &file_overwrite_ask) {
@@ -665,7 +683,7 @@ async fn main() -> Result<(), String> {
                 // Make a thread task.
                 ThreadTask {
                     args: args.clone(),
-                    input_path: image_file,
+                    input_path: image_filepath,
                     output_path: Some(output_path),
                     extension: Some(extension),
                     ask_result: ask_result,
@@ -675,7 +693,7 @@ async fn main() -> Result<(), String> {
                 // If saving is not required, create a thread task without an output path.
                 ThreadTask {
                     args: args.clone(),
-                    input_path: image_file,
+                    input_path: image_filepath,
                     output_path: None,
                     extension: None,
                     ask_result: AskResult::NoProblem,
