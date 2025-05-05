@@ -252,7 +252,34 @@ fn get_output_path(input_path: &PathBuf, output_path: &Option<PathBuf>, double_e
         extension.to_string()
     };
     let mut output_path = match output_path {
-        Some(path) => path.clone(),                                                             // If --output is specified, use it
+        //Some(path) => path.clone(),                                                             // If --output is specified, use it
+        Some(path) => {
+            // Is the path a file or a directory?
+            if path.is_dir() {
+                // If the path is a directory, use the input file name as the output file name.
+                let mut output_path_tmp = path.clone();
+                output_path_tmp.push(input_path.file_name().unwrap());
+                output_path_tmp.set_extension(&extension.to_string());
+                output_path_tmp
+            }
+            else {
+                // Otherwise, if an extension is specified, use it as the output file name.
+                if path.extension().is_some() {
+                    path.clone()
+                }
+                else {
+                    // If the extension is not specified, use the input file name as the output file name.
+                    let mut output_path_tmp = path.clone();
+                    output_path_tmp.push(input_path.file_name().unwrap());
+                    output_path_tmp.set_extension(&extension.to_string());
+                    // Make the directory if it does not exist.
+                    if !output_path_tmp.parent().unwrap().exists() {
+                        fs::create_dir_all(output_path_tmp.parent().unwrap()).unwrap();
+                    }
+                    output_path_tmp
+                }
+            }
+        }
         None => Path::new(input_path).with_extension(&extension.to_string()),       // If not, use the input filepath as the input file
     };
     // If append_name is specified, add it to the file name.
