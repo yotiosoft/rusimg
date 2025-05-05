@@ -382,7 +382,7 @@ fn view(image: &DynamicImage) -> Result<(), ProcessingError> {
 /// Convert an image.
 fn process_convert<C: Fn(RusimgError) -> ProcessingError>(extension: &Option<librusimg::Extension>, image: &mut RusImg, rierr: C) -> Result<Option<ConvertResult>, ProcessingError> {
     if let Some(extension) = extension {
-        let before_extension = image.extension.clone();
+        let before_extension = image.get_extension();
 
         // 変換
         image.convert(&extension).map_err(rierr)?;
