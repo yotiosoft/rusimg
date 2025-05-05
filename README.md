@@ -81,6 +81,7 @@ The binary crates contain ``app`` features required to run the application by de
 
 |option|description|
 |--|--|
+|-i, --input \<INPUT\>|Specify input file path. \<INPUT\> is the input file path. Multiple files and wildcards are supported. (e.g. *.jpg, *.png, *.webp, *.bmp)|
 |-o, --output \<OUTPUT\>|Specify output directory or output file name. \<OUTPUT\> is the output directory or output file name.|
 |-c, --convert \<CONVERT\>|Image Conversion（jpeg, png, webp, bmp）. \<CONVERT\> is the image format to convert to.|
 |-r, --resize \<RESIZE\>|Image resizing (specified by scaling factor: (0, 100]). \<RESIZE\> is the scaling factor percentage.|
