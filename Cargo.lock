@@ -829,7 +829,7 @@ dependencies = [
 [[package]]
 name = "librusimg"
 version = "0.1.0"
-source = "git+https://github.com/yotiosoft/librusimg.git#752f61c6e27ea071b574e70cfa6a69cd5f635f2c"
+source = "git+https://github.com/yotiosoft/librusimg.git#919683a8709895010396d283afcb2f1dca4ea004"
 dependencies = [
  "image",
  "mozjpeg",

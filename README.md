@@ -18,12 +18,14 @@ Rusimg can convert images to the following formats.
 - For binary crates, the conversion format can be specified with the ``-c`` option.
 - For library crates, the conversion format can be specified by calling the ``rusimg::RusImg.convert()`` function.
 
-| format | binary crate option | library crate extension |
-| ------ | ------------------- | ----------------------- |
-| jpeg   | -c jpeg             | Extension::Jpeg         |
-| png    | -c png              | Extension::Png          |
-| webp   | -c webp             | Extension::Webp         |
-| bmp    | -c bmp              | Extension::Bmp          |
+| format | binary crate option | library crate extension             |
+| ------ | ------------------- | ----------------------------------- |
+| jpeg   | -c jpeg             | Extension::Jpeg or Extension::Jpg * |
+| png    | -c png              | Extension::Png                      |
+| webp   | -c webp             | Extension::Webp                     |
+| bmp    | -c bmp              | Extension::Bmp                      |
+
+* The ``rusimg::Extension::Jpeg`` and ``rusimg::Extension::Jpg`` are the same, but file names will be saved as ``.jpeg`` and ``.jpg`` respectively.
 
 
 ### Set Conversion Quality

@@ -241,7 +241,8 @@ fn get_destination_extension(source_filepath: &PathBuf, dest_extension: &Option<
 fn convert_str_to_extension(extension_str: &str) -> Result<librusimg::Extension, RusimgError> {
     match extension_str {
         "bmp" => Ok(librusimg::Extension::Bmp),
-        "jpg" | "jpeg" | "jfif" => Ok(librusimg::Extension::Jpeg),
+        "jpg" => Ok(librusimg::Extension::Jpg),
+        "jpeg" | "jfif" => Ok(librusimg::Extension::Jpeg),
         "png" => Ok(librusimg::Extension::Png),
         "webp" => Ok(librusimg::Extension::Webp),
         _ => Err(RusimgError::UnsupportedFileExtension),
@@ -253,7 +254,8 @@ fn get_extension(path: &Path) -> Result<librusimg::Extension, RusimgError> {
     let path = path.to_str().ok_or(RusimgError::FailedToConvertPathToString)?.to_ascii_lowercase();
     match Path::new(&path).extension().and_then(|s| s.to_str()) {
         Some("bmp") => Ok(librusimg::Extension::Bmp),
-        Some("jpg") | Some("jpeg") | Some("jfif") => Ok(librusimg::Extension::Jpeg),
+        Some("jpg") => Ok(librusimg::Extension::Jpg),
+        Some("jpeg") | Some("jfif") => Ok(librusimg::Extension::Jpeg),
         Some("png") => Ok(librusimg::Extension::Png),
         Some("webp") => Ok(librusimg::Extension::Webp),
         _ => {
