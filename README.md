@@ -25,7 +25,7 @@ Rusimg can convert images to the following formats.
 | webp   | -c webp             | Extension::Webp                     |
 | bmp    | -c bmp              | Extension::Bmp                      |
 
-* The ``rusimg::Extension::Jpeg`` and ``rusimg::Extension::Jpg`` are the same, but file names will be saved as ``.jpeg`` and ``.jpg`` respectively.
+\* The ``rusimg::Extension::Jpeg`` and ``rusimg::Extension::Jpg`` are the same, but file names will be saved as ``.jpeg`` and ``.jpg`` respectively.
 
 
 ### Set Conversion Quality
