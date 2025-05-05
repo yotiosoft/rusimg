@@ -829,7 +829,7 @@ dependencies = [
 [[package]]
 name = "librusimg"
 version = "0.1.0"
-source = "git+https://github.com/yotiosoft/librusimg.git#919683a8709895010396d283afcb2f1dca4ea004"
+source = "git+https://github.com/yotiosoft/librusimg.git#d5082bf98d6ef0e3fb653276a9b88569d24b192a"
 dependencies = [
  "image",
  "mozjpeg",
@@ -929,12 +929,11 @@ dependencies = [
 
 [[package]]
 name = "mozjpeg"
-version = "0.10.13"
+version = "0.9.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7891b80aaa86097d38d276eb98b3805d6280708c4e0a1e6f6aed9380c51fec9"
+checksum = "e8a807fbca64e7df4847726d172f459fb13e65cbf5e23b01f27408581d58258f"
 dependencies = [
  "arrayvec",
- "bytemuck",
  "libc",
  "mozjpeg-sys",
  "rgb",
@@ -942,9 +941,9 @@ dependencies = [
 
 [[package]]
 name = "mozjpeg-sys"
-version = "2.2.3"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f0dc668bf9bf888c88e2fb1ab16a406d2c380f1d082b20d51dd540ab2aa70c1"
+checksum = "74c4fe4006093b2948ccb37bb413b6b9da2d654a9a50419b5861b0f4e8ad4da9"
 dependencies = [
  "cc",
  "dunce",
@@ -954,12 +953,9 @@ dependencies = [
 
 [[package]]
 name = "nasm-rs"
-version = "0.3.0"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12fcfa1bd49e0342ec1d07ed2be83b59963e7acbeb9310e1bb2c07b69dadd959"
-dependencies = [
- "jobserver",
-]
+checksum = "fe4d98d0065f4b1daf164b3eafb11974c94662e5e2396cf03f32d0bb5c17da51"
 
 [[package]]
 name = "new_debug_unreachable"
