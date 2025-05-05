@@ -26,6 +26,7 @@ enum ProcessingError {
     RusimgError(ErrorStruct<RusimgError>),
     IOError(ErrorStruct<ErrorMessage>),
     FailedToViewImage(String),
+    FailedToConvertExtension(ErrorStruct<ErrorMessage>),
 }
 impl fmt::Display for ProcessingError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -33,6 +34,7 @@ impl fmt::Display for ProcessingError {
             ProcessingError::RusimgError(e) => write!(f, "{}", e.error),
             ProcessingError::IOError(e) => write!(f, "{}", e.error),
             ProcessingError::FailedToViewImage(s) => write!(f, "Failed to view image: {}", s),
+            ProcessingError::FailedToConvertExtension(e) => write!(f, "Failed to convert extension: {}", e.error),
         }
     }
 }
@@ -364,7 +366,10 @@ fn process_convert<C: Fn(RusimgError) -> ProcessingError>(extension: &Option<lib
         }))
     }
     else {
-        Err(rierr(RusimgError::FailedToConvertExtension))
+        Err(ProcessingError::FailedToConvertExtension(ErrorStruct {
+            error: std::io::Error::new(std::io::ErrorKind::Other, "Failed to convert extension."),
+            filepath: image.get_input_filepath().map_err(rierr)?.to_str().unwrap().to_string(),
+        }))
     }
 }
 
@@ -791,6 +796,11 @@ async fn main() -> Result<(), String> {
                         },
                         ProcessingError::FailedToViewImage(s) => {
                             println!("{}: {}", "Error".red(), s);
+                        },
+                        ProcessingError::FailedToConvertExtension(e) => {
+                            let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, &Path::new(&e.filepath).file_name().unwrap().to_str().unwrap());
+                            println!("{}", processing_str.red().bold());
+                            println!("{}: {}", "Error".red(), e.error);
                         },
                     }
                 }
