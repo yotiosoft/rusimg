@@ -6,6 +6,9 @@ description = "A image processing CLI-tool/library for bmp, jpeg, png and webp."
 license = "MIT OR Apache-2.0"
 edition = "2021"
 autobins = true
+repository = "https://github.com/yotiosoft/rusimg"
+categories = ["multimedia::images"]
+homepage = "https://rusimg-app.yotiosoft.com"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
