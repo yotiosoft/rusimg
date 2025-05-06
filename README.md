@@ -23,7 +23,7 @@ Rusimg can convert images to the following formats.
 
 | format | binary crate option | library crate extension             |
 | ------ | ------------------- | ----------------------------------- |
-| jpeg   | -c jpeg             | Extension::Jpeg or Extension::Jpg * |
+| jpeg   | -c jpeg or -c jpg   | Extension::Jpeg or Extension::Jpg * |
 | png    | -c png              | Extension::Png                      |
 | webp   | -c webp             | Extension::Webp                     |
 | bmp    | -c bmp              | Extension::Bmp                      |
@@ -89,7 +89,7 @@ The binary crates contain ``app`` features required to run the application by de
 |-i, --input \<INPUT\>|Specify input file path. \<INPUT\> is the input file path. Multiple files and wildcards are supported. (e.g. *.jpg, *.png, *.webp, *.bmp)|
 |-o, --output \<OUTPUT\>|Specify output directory or output file name. \<OUTPUT\> is the output directory or output file name.|
 |-c, --convert \<CONVERT\>|Image Conversion（jpeg, png, webp, bmp）. \<CONVERT\> is the image format to convert to.|
-|-r, --resize \<RESIZE\>|Image resizing (specified by scaling factor: (0, 100]). \<RESIZE\> is the scaling factor percentage.|
+|-r, --resize \<RESIZE\>|Image resizing. \<RESIZE\> is the scaling factor percentage. \<RESIZE\> must be more than 0.|
 |-t, --trim \<TRIM\>|Image cropping. Input format: 'XxY+W+H' (e.g.100x100+50x50)|
 |-g, --grayscale|Grayscale conversion.|
 |-q, --quality \<QUALITY\>|Image quality. \<QUALITY\> is the image quality (0, 100].|
@@ -104,6 +104,6 @@ The binary crates contain ``app`` features required to run the application by de
 |-V, --version|Display version information.|
 |--recursive|Recursively process all files in the directory.|
 
-## Library crate
+## Use as a library
 
-See [librusimg](https://github.com/yotiosoft/librusimg) for the library crate information.
+See [librusimg](https://crates.io/crates/librusimg) for the library crate information.
