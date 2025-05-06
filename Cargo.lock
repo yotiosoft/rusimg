@@ -829,7 +829,8 @@ dependencies = [
 [[package]]
 name = "librusimg"
 version = "0.1.0"
-source = "git+https://github.com/yotiosoft/librusimg.git#a5e83809f680af642cbf094476540422625f2f66"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a15b58c1ec4643056ac32eecdea7c25a938b3518afb04a6e844a197d15a1cc3d"
 dependencies = [
  "image",
  "jpeg-encoder",
