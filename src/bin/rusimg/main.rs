@@ -1077,6 +1077,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore] // This test requires the machine to have the rusimg binary installed.
     fn run_test() {
         // Create a test directory and test image.
         let test_dir = PathBuf::from("test_dir3");
