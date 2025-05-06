@@ -3,6 +3,8 @@
 ![Crates.io Version](https://img.shields.io/crates/v/rusimg)
 [![Rust](https://github.com/yotiosoft/rusimg/actions/workflows/rust.yml/badge.svg)](https://github.com/yotiosoft/rusimg/actions/workflows/rust.yml)
 
+<img width="1341" alt="スクリーンショット 2025-05-06 18 45 19" src="https://github.com/user-attachments/assets/63299de0-75f1-4acb-9b90-a9e6a76736db" />
+
 A CLI tool for image processing with unified support for BMP, JPEG, PNG, and WebP formats.
 
 ## Features
