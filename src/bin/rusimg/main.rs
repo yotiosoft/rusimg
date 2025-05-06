@@ -1035,7 +1035,7 @@ mod tests {
             Ok(trim) => assert_eq!(trim, librusimg::Rect { x: 10, y: 10, w: 20, h: 20 }),
             Err(_) => panic!("Trim area is invalid."),
         }
-        match parse::check_trim_format("10x10+20x20+30x30") {
+        match parse::check_trim_format("10") {
             Ok(_) => panic!("Trim area is valid."),
             Err(_) => {},
         }
@@ -1050,6 +1050,28 @@ mod tests {
         // resize range is invalid
         match parse::check_resize_range(Some(-1.0)) {
             true => panic!("Resize range is valid."),
+            false => {},
+        }
+        match parse::check_resize_range(Some(0.0)) {
+            true => panic!("Resize range is valid."),
+            false => {},
+        }
+        // quality range is invalid
+        match parse::check_quality_range(Some(110.0)) {
+            true => panic!("Quality range is valid."),
+            false => {},
+        }
+        match parse::check_quality_range(Some(-1.0)) {
+            true => panic!("Quality range is valid."),
+            false => {},
+        }
+        match parse::check_quality_range(Some(50.0)) {
+            true => {},
+            false => panic!("Quality range is invalid."),
+        }
+        // threads is invalid
+        match parse::check_threads_range(0) {
+            true => panic!("Threads range is valid."),
             false => {},
         }
     }

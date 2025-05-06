@@ -156,7 +156,7 @@ pub fn check_quality_range(quality: Option<f32>) -> bool {
 
 pub fn check_resize_range(resize: Option<f32>) -> bool {
     if let Some(r) = resize {
-        if r < 0.0 {
+        if r <= 0.0 {
             return false;
         }
     }
