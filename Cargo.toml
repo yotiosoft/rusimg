@@ -1,6 +1,6 @@
 [package]
 name = "rusimg"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["yotio <yotio@yotiosoft.com>"]
 description = "A CLI tool for image processing with unified support for BMP, JPEG, PNG, and WebP formats."
 license = "MIT OR Apache-2.0"
