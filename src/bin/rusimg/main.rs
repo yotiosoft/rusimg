@@ -881,8 +881,6 @@ mod tests {
     use super::*;
     use std::path::PathBuf;
     use std::fs;
-    use assert_cmd::Command;
-    use clap::Parser;
     use image::{ImageBuffer, Rgb, DynamicImage};
     use librusimg::RusImg;
     use librusimg::Extension;
@@ -1077,8 +1075,10 @@ mod tests {
     }
 
     #[test]
-    #[ignore] // This test requires the machine to have the rusimg binary installed.
+    #[ignore] // This test requires the machine to have the rusimg binary installed. Run with `cargo test -- --ignored`.
     fn run_test() {
+        use std::process::Command;
+
         // Create a test directory and test image.
         let test_dir = PathBuf::from("test_dir3");
         fs::create_dir_all(&test_dir).unwrap();
@@ -1093,7 +1093,7 @@ mod tests {
             generate_test_image(image_file, original_size.width as u32, original_size.height as u32);
         }
 
-        let mut cmd = Command::cargo_bin("rusimg").unwrap();
+        let mut cmd = Command::new("rusimg");
         cmd.arg("-i")
             .arg(test_dir.clone())
             .arg("-o")
@@ -1111,8 +1111,8 @@ mod tests {
             .arg("-v")
             .arg("-y")
             .arg("-D");
-        let assert = cmd.assert().success().code(0);
-        assert.success().code(0);
+        let assert = cmd.output().unwrap();
+        assert!(assert.status.success(), "Command failed: {}", String::from_utf8_lossy(&assert.stderr));
 
         // Check output images
         let image_files_output = vec![
