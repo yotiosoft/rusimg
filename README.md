@@ -40,7 +40,7 @@ Rusimg can set the quality of the converted image. This depends on each image fo
 
 | format | quality                                                      | note                                                         |
 | ------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| jpeg   | 0-100                                                        | By default, the quality is set to 75.                        |
+| jpeg   | 0-100                                                        | By default, the quality is set to 100.0.                     |
 | png    | [0, 17.0], (17.0, 34.0], (34.0, 51.0], (51.0, 68.0], (68.0, 85.0], (85.0, 100.0] | Because the ``oxipng`` crate must be set to the 6 compression levels, input values will be converted into 6 levels. By default, the quality is set to 68.0-85.0. |
 | webp   | 0-100                                                        | By default, the quality is set to 75.0.                      |
 | bmp    | none                                                         | BMP does not have a quality setting because it is a lossless format. |
