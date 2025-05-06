@@ -56,6 +56,7 @@ enum FileOverwriteAsk {
 /// - AllSkip: Skip all files without asking. This is used when the --no option is specified.
 /// - NeedToAsk: Ask every time.
 /// - NoProblem: No problem. This means that the file does not exist.
+#[derive(Debug, Clone, PartialEq)]
 enum ExistsCheckResult {
     AllOverwrite,
     AllSkip,
@@ -873,4 +874,259 @@ async fn main() -> Result<(), String> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+    use std::fs;
+    use assert_cmd::Command;
+    use clap::Parser;
+    use image::{ImageBuffer, Rgb, DynamicImage};
+    use librusimg::RusImg;
+    use librusimg::Extension;
+
+    fn generate_test_image(filename: &str, width: u32, height: u32) {
+        let mut img: ImageBuffer<Rgb<u8>, Vec<u8>> = ImageBuffer::new(width, height);
+        for x in 0..width {
+            for y in 0..height {
+                let r = (x * 3) as u8;
+                let g = (y * 5) as u8;
+                let b = (x * y) as u8;
+                img.put_pixel(x, y, Rgb([r, g, b]));
+            }
+        }
+        let mut test_image = RusImg::new(&Extension::Png, DynamicImage::ImageRgb8(img.clone())).unwrap();
+        test_image.save_image(Some(filename)).unwrap();
+    }
+
+    #[test]
+    fn test_get_files_in_dir() {
+        let dir_path = PathBuf::from("test_dir1");
+        fs::create_dir_all(&dir_path).unwrap();
+        generate_test_image("test_dir1/test_image1.png", 100, 100);
+        generate_test_image("test_dir1/test_image2.jpg", 200, 200);
+        generate_test_image("test_dir1/test_image3.bmp", 300, 300);
+
+        let files = get_files_in_dir(&dir_path, false).unwrap();
+        assert_eq!(files.len(), 3);
+        assert!(files.iter().any(|f| f.ends_with("test_image1.png")));
+        assert!(files.iter().any(|f| f.ends_with("test_image2.jpg")));
+        assert!(files.iter().any(|f| f.ends_with("test_image3.bmp")));
+
+        fs::remove_dir_all(&dir_path).unwrap();
+    }
+
+    #[test]
+    fn test_get_files_by_wildcard() {
+        let wildcard_path = PathBuf::from("test_dir2/*.png");
+        fs::create_dir_all("test_dir2").unwrap();
+        generate_test_image("test_dir2/test_image1.png", 100, 100);
+        generate_test_image("test_dir2/test_image2.jpg", 200, 200);
+        generate_test_image("test_dir2/test_image3.bmp", 300, 300);
+
+        let files = get_files_by_wildcard(&wildcard_path).unwrap();
+        assert_eq!(files.len(), 1);
+        assert!(files.iter().any(|f| f.ends_with("test_image1.png")));
+
+        fs::remove_dir_all("test_dir2").unwrap();
+    }
+
+    #[test]
+    fn test_get_extension() {
+        let path = PathBuf::from("test_image.png");
+        let ext = get_extension(&path).unwrap();
+        assert_eq!(ext, librusimg::Extension::Png);
+
+        let path = PathBuf::from("test_image.jpg");
+        let ext = get_extension(&path).unwrap();
+        assert_eq!(ext, librusimg::Extension::Jpg);
+
+        let path = PathBuf::from("test_image.bmp");
+        let ext = get_extension(&path).unwrap();
+        assert_eq!(ext, librusimg::Extension::Bmp);
+
+        let path = PathBuf::from("test_image.webp");
+        let ext = get_extension(&path).unwrap();
+        assert_eq!(ext, librusimg::Extension::Webp);
+    }
+
+    #[test]
+    fn test_convert_str_to_extension() {
+        let ext = convert_str_to_extension("jpg").unwrap();
+        assert_eq!(ext, librusimg::Extension::Jpg);
+
+        let ext = convert_str_to_extension("jpeg").unwrap();
+        assert_eq!(ext, librusimg::Extension::Jpeg);
+
+        let ext = convert_str_to_extension("png").unwrap();
+        assert_eq!(ext, librusimg::Extension::Png);
+
+        let ext = convert_str_to_extension("bmp").unwrap();
+        assert_eq!(ext, librusimg::Extension::Bmp);
+
+        let ext = convert_str_to_extension("webp").unwrap();
+        assert_eq!(ext, librusimg::Extension::Webp);
+    }
+
+    #[test]
+    fn test_get_destination_extension() {
+        let source_path = PathBuf::from("test_image.png");
+        let dest_extension = get_destination_extension(&source_path, &Some(librusimg::Extension::Jpg));
+        assert_eq!(dest_extension, librusimg::Extension::Jpg);
+
+        let dest_extension = get_destination_extension(&source_path, &None);
+        assert_eq!(dest_extension, librusimg::Extension::Png);
+    }
+
+    #[test]
+    fn test_get_output_path() {
+        let input_path = PathBuf::from("test_image.png");
+        let output_path = get_output_path(&input_path, &None, false, &None, &librusimg::Extension::Jpg);
+        assert_eq!(output_path.to_str().unwrap(), "test_image.jpg");
+
+        let output_path = get_output_path(&input_path, &Some(PathBuf::from("output_dir3")), false, &None, &librusimg::Extension::Jpg);
+        assert_eq!(output_path, PathBuf::from("output_dir3").join("test_image.jpg"));
+
+        let output_path = get_output_path(&input_path, &Some(PathBuf::from("output_dir3/test_image2.jpg")), false, &None, &librusimg::Extension::Jpg);
+        assert_eq!(output_path, PathBuf::from("output_dir3").join("test_image2.jpg"));
+
+        fs::remove_dir_all("output_dir3").unwrap_or(());
+    }
+
+    #[test]
+    fn test_check_file_exists() {
+        let path = PathBuf::from("test_image.png");
+        fs::write(&path, b"test").unwrap();
+        let result = check_file_exists(&path, &FileOverwriteAsk::NoToAll);
+        assert_eq!(result, ExistsCheckResult::AllSkip);
+        let result = check_file_exists(&path, &FileOverwriteAsk::YesToAll);
+        assert_eq!(result, ExistsCheckResult::AllOverwrite);
+        let result = check_file_exists(&path, &FileOverwriteAsk::AskEverytime);
+        assert_eq!(result, ExistsCheckResult::NeedToAsk);
+        let not_exists_result = check_file_exists(&PathBuf::from("not_exists.png"), &FileOverwriteAsk::NoToAll);
+        assert_eq!(not_exists_result, ExistsCheckResult::NoProblem);
+        fs::remove_file(&path).unwrap();
+    }
+
+    #[test]
+    fn test_parser_default() {
+        let args = parse::parser().unwrap();
+        assert_eq!(args.souce_path, None);
+        assert_eq!(args.destination_path, None);
+        assert_eq!(args.destination_append_name, None);
+        assert_eq!(args.destination_extension, None);
+        assert_eq!(args.resize, None);
+        assert_eq!(args.trim, None);
+        assert_eq!(args.grayscale, false);
+        assert_eq!(args.quality, None);
+        assert_eq!(args.double_extension, false);
+        assert_eq!(args.view, false);
+        assert_eq!(args.yes, false);
+        assert_eq!(args.no, false);
+        assert_eq!(args.delete, false);
+    }
+
+    #[test]
+    fn test_parser_error_cases() {
+        // trim area is invalid
+        match parse::check_trim_format("10x10+20x20") {
+            Ok(trim) => assert_eq!(trim, librusimg::Rect { x: 10, y: 10, w: 20, h: 20 }),
+            Err(_) => panic!("Trim area is invalid."),
+        }
+        match parse::check_trim_format("10x10+20x20+30x30") {
+            Ok(_) => panic!("Trim area is valid."),
+            Err(_) => {},
+        }
+        match parse::check_trim_format("10x10") {
+            Ok(_) => panic!("Trim area is valid."),
+            Err(_) => {},
+        }
+        match parse::check_trim_format("10+10+20+20") {
+            Ok(_) => panic!("Trim area is valid."),
+            Err(_) => {},
+        }
+        // resize area is invalid
+        match parse::check_resize_format("10x10") {
+            Ok(resize) => assert_eq!(resize, librusimg::ImgSize { width: 10, height: 10 }),
+            Err(_) => panic!("Resize area is invalid."),
+        }
+    }
+
+    #[test]
+    fn run_test() {
+        // Create a test directory and test image.
+        let test_dir = PathBuf::from("test_dir3");
+        fs::create_dir_all(&test_dir).unwrap();
+
+        let image_files = vec![
+            "test_dir3/test_image1.png",
+            "test_dir3/test_image2.jpg",
+            "test_dir3/test_image3.bmp",
+        ];
+        let original_size = librusimg::ImgSize { width: 100, height: 100 };
+        for image_file in &image_files {
+            generate_test_image(image_file, original_size.width as u32, original_size.height as u32);
+        }
+
+        let mut cmd = Command::cargo_bin("rusimg").unwrap();
+        cmd.arg("-i")
+            .arg(test_dir.clone())
+            .arg("-o")
+            .arg("test_dir3/output_dir")
+            .arg("-c")
+            .arg("webp")
+            .arg("-r")
+            .arg("80")
+            .arg("-t")
+            .arg("10x10+20x20")
+            .arg("-g")
+            .arg("-q")
+            .arg("80.0")
+            .arg("-d")
+            .arg("-v")
+            .arg("-y")
+            .arg("-D");
+        let assert = cmd.assert().success().code(0);
+        assert.success().code(0);
+
+        // Check output images
+        let image_files_output = vec![
+            "test_dir3/output_dir/test_image1.png.webp",
+            "test_dir3/output_dir/test_image2.jpg.webp",
+            "test_dir3/output_dir/test_image3.bmp.webp",
+        ];
+        for (image_file_output, image_file_input) in image_files_output.iter().zip(image_files.iter()) {
+            let image_file_output = PathBuf::from(image_file_output);
+            let image_file_input = PathBuf::from(image_file_input);
+            // Is the output image created?
+            let output_image = PathBuf::from("test_dir3/output_dir").join(image_file_output.file_name().unwrap());
+            assert!(output_image.exists(), "Output image does not exist: {}", output_image.display());
+            // Is the output image extension webp?
+            let output_extension = get_extension(&output_image).unwrap();
+            assert_eq!(output_extension, librusimg::Extension::Webp, "Output image extension is not webp: {}", output_image.display());
+            // Is the original image deleted?
+            assert!(!image_file_input.exists(), "Original image is not deleted: {}", image_file_input.display());
+            // Is the output image size smaller than the original image size?
+            let mut output_image = RusImg::open(&output_image).unwrap();
+            let output_size = output_image.get_image_size().unwrap();
+            assert!(output_size.width < original_size.width, "Output image size is not smaller than original image size: {} -> {}", original_size.width, output_size.width);
+            assert!(output_size.height < original_size.height, "Output image size is not smaller than original image size: {} -> {}", original_size.height, output_size.height);
+            // Is the output image grayscale?
+            let output_image = output_image.get_dynamic_image().unwrap();
+            let output_image = output_image.grayscale().to_rgb8();
+            let mut is_grayscale = true;
+            for pixel in output_image.pixels() {
+                if pixel[0] != pixel[1] || pixel[1] != pixel[2] {
+                    is_grayscale = false;
+                    break;
+                }
+            }
+            assert!(is_grayscale, "Output image is not grayscale.");
+        }
+
+        // Clean up test directory and images
+        fs::remove_dir_all(&test_dir).unwrap_or(());
+    }
 }

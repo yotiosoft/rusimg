@@ -7,6 +7,7 @@ use std::fmt;
 const DEFAULT_THREADS: u8 = 4;
 
 /// Argument errors
+#[derive(Debug)]
 pub enum ArgError {
     InvalidTrimFormat,
     FailedToParseTrim(String),
@@ -63,7 +64,7 @@ pub struct ArgStruct {
 
 #[derive(clap::Parser, Debug)]
 #[command(author, version, about, long_about = None)]
-struct Args {
+pub struct Args {
     /// Source file path (file name or directory path).  
     /// If not specified, the current directory will be used.  
     /// This option can be used multiple times.
@@ -91,7 +92,7 @@ struct Args {
 
     /// Resize images in parcent (must be 0 < size)
     #[arg(short, long)]
-    resize: Option<u8>,
+    resize: Option<f32>,
 
     /// Trim image. Input format: 'XxY+W+H' (e.g.100x100+50x50)
     #[arg(short, long)]
@@ -130,22 +131,55 @@ struct Args {
     threads: u8,
 }
 
-pub fn parser() -> Result<ArgStruct, ArgError> {
-    // Parse arguments.
-    let args = Args::parse();
+pub fn check_trim_format(trim: &str) -> Result<Rect, String> {
+    let re = Regex::new(r"(\d+)x(\d+)\+(\d+)x(\d+)").unwrap();
+    if let Some(captures) = re.captures(trim) {
+        let x = captures.get(1).unwrap().as_str().parse().map_err(|e: std::num::ParseIntError| e.to_string()).unwrap();
+        let y = captures.get(2).unwrap().as_str().parse().map_err(|e: std::num::ParseIntError| e.to_string()).unwrap();
+        let w = captures.get(3).unwrap().as_str().parse().map_err(|e: std::num::ParseIntError| e.to_string()).unwrap();
+        let h = captures.get(4).unwrap().as_str().parse().map_err(|e: std::num::ParseIntError| e.to_string()).unwrap();
+        Ok(Rect{x, y, w, h})
+    }
+    else {
+        Err("Invalid trim format".to_string())
+    }
+}
 
+pub fn check_quality_range(quality: Option<f32>) -> bool {
+    if let Some(q) = quality {
+        if q < 0.0 || q > 100.0 {
+            return false;
+        }
+    }
+    true
+}
+
+pub fn check_resize_range(resize: Option<f32>) -> bool {
+    if let Some(r) = resize {
+        if r < 0.0 {
+            return false;
+        }
+    }
+    true
+}
+
+pub fn check_threads_range(threads: u8) -> bool {
+    if threads < 1 {
+        return false;
+    }
+    true
+}
+
+fn check_and_generate(args: Args) -> Result<ArgStruct, ArgError> {
     // If trim option is specified, check the format.
     let trim: Result<Option<librusimg::Rect>, String> = if args.trim.is_some() {
-        let re = Regex::new(r"(\d+)x(\d+)\+(\d+)x(\d+)").unwrap();
-        if let Some(captures) = re.captures(&args.trim.unwrap()) {
-            let x = captures.get(1).unwrap().as_str().parse().map_err(|e: std::num::ParseIntError| e.to_string()).unwrap();
-            let y = captures.get(2).unwrap().as_str().parse().map_err(|e: std::num::ParseIntError| e.to_string()).unwrap();
-            let w = captures.get(3).unwrap().as_str().parse().map_err(|e: std::num::ParseIntError| e.to_string()).unwrap();
-            let h = captures.get(4).unwrap().as_str().parse().map_err(|e: std::num::ParseIntError| e.to_string()).unwrap();
-            Ok(Some(Rect{x, y, w, h}))
+        let trim = check_trim_format(args.trim.as_ref().unwrap());
+        if trim.is_err() {
+            return Err(ArgError::InvalidTrimFormat);
         }
         else {
-            return Err(ArgError::InvalidTrimFormat);
+            let trim = trim.unwrap();
+            Ok(Some(trim))
         }
     }
     else {
@@ -158,14 +192,15 @@ pub fn parser() -> Result<ArgStruct, ArgError> {
         trim.unwrap()
     };
 
-    if (args.quality < Some(0.0) || args.quality > Some(100.0)) && args.quality.is_some() {
+    if args.quality.is_some() && !check_quality_range(args.quality) {
         return Err(ArgError::InvalidQuality);
     }
-    if args.resize < Some(0) && args.resize.is_some() {
+
+    if args.resize.is_some() && !check_resize_range(args.resize) {
         return Err(ArgError::InvalidResize);
     }
 
-    if args.threads < 1 {
+    if !check_threads_range(args.threads) {
         return Err(ArgError::InvalidThreads);
     }
 
@@ -186,4 +221,12 @@ pub fn parser() -> Result<ArgStruct, ArgError> {
         double_extension: args.double_extension,
         threads: args.threads,
     })
+}
+
+pub fn parser() -> Result<ArgStruct, ArgError> {
+    // Parse arguments.
+    let args = Args::parse();
+    // Check and generate arguments.
+    let args = check_and_generate(args)?;
+    Ok(args)
 }
