@@ -114,6 +114,16 @@
                     </thead>
                     <tbody>
                       <tr>
+                        <td>Specify Input File/Directory</td>
+                        <td>Read images from the specified file or directory.<br>You can use wildcards to specify multiple files.</td>
+                        <td>-i ./image/*.jpg</td>
+                      </tr>
+                      <tr>
+                        <td>Specify Output File/Directory</td>
+                        <td>Specify the output file or directory for the processed images.<br>If not specified, the original file will be overwritten.</td>
+                        <td>-o ./output/</td>
+                      </tr>
+                      <tr>
                         <td>Image Conversion</td>
                         <td>Convert images to JPEG, PNG, WebP, and BMP formats.</td>
                         <td>-c jpeg</td>
@@ -129,7 +139,7 @@
                         <td>-r 50</td>
                       </tr>
                       <tr>
-                        <td>Image Cropping</td>
+                        <td>Image Cropping (Trimming)</td>
                         <td>Crop images.</td>
                         <td>-t XxY+WxZ (e.g., 100x100+50x50)</td>
                       </tr>
@@ -158,11 +168,12 @@
             </div>
             <div class="content_sub">
               <div class="text">
-                <p>You can install Rusimg via cargo:</p>
+                <p>To get started with Rusimg, <b>you need to have Rust installed on your system</b>. If you haven't installed Rust yet, you can do so by following the instructions on the official Rust website: <a href="https://www.rust-lang.org/tools/install" target="_blank">Install Rust</a>.</p>
+                <p>Then you can install Rusimg via cargo:</p>
                 <code>
 $ cargo install rusimg
                 </code>
-                <p>This command will install the Rusimg binary crate, which includes the <code>app</code> features required to run the application. Once installed, you can use Rusimg from the command line to process images.</p>
+                <p>This command will install the Rusimg binary crate. Once installed, you can use Rusimg from the command line to process images.</p>
               </div>
             </div>
           </div>
