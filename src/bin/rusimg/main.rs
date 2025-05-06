@@ -369,7 +369,7 @@ fn save_print(before_path: &PathBuf, after_path: &Option<PathBuf>, before_size: 
                 println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
             }
             else if get_extension(before_path.as_path()) != get_extension(after_path.as_path()) {
-                println!("{}: {} -> {}", "Convert", before_path.display(), after_path.display());
+                println!("{}: {}", "Create", after_path.display());
                 println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
             }
             else {
@@ -793,7 +793,7 @@ async fn main() -> Result<(), String> {
                 // If the processing is successful, display the result.
                 Ok(thread_results) => {
                     count = count + 1;
-                    let processing_str = format!("[{}/{}] Finish: {}", count + error_count, total_image_count, &Path::new(&thread_results.save_result.input_path).file_name().unwrap().to_str().unwrap());
+                    let processing_str = format!("[{}/{}] Finish: {}", count + error_count, total_image_count, &thread_results.save_result.input_path.display().to_string());
                     println!("{}", processing_str.yellow().bold());
 
                     if let Some(convert_result) = thread_results.convert_result {
@@ -842,12 +842,12 @@ async fn main() -> Result<(), String> {
                     error_count = error_count + 1;
                     match e {
                         ProcessingError::RusimgError(e) => {
-                            let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, &Path::new(&e.filepath).file_name().unwrap().to_str().unwrap());
+                            let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, &e.filepath);
                             println!("{}", processing_str.red().bold());
                             println!("{}: {}", "Error".red(), e.error);
                         },
                         ProcessingError::IOError(e) => {
-                            let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, &Path::new(&e.filepath).file_name().unwrap().to_str().unwrap());
+                            let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, &e.filepath);
                             println!("{}", processing_str.red().bold());
                             println!("{}: {}", "Error".red(), e.error);
                         },
@@ -855,7 +855,7 @@ async fn main() -> Result<(), String> {
                             println!("{}: {}", "Error".red(), s);
                         },
                         ProcessingError::FailedToConvertExtension(e) => {
-                            let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, &Path::new(&e.filepath).file_name().unwrap().to_str().unwrap());
+                            let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, &e.filepath);
                             println!("{}", processing_str.red().bold());
                             println!("{}: {}", "Error".red(), e.error);
                         },
