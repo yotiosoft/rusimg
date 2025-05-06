@@ -828,9 +828,9 @@ dependencies = [
 
 [[package]]
 name = "librusimg"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a15b58c1ec4643056ac32eecdea7c25a938b3518afb04a6e844a197d15a1cc3d"
+checksum = "d3a54b0aab494d5634b3946236be73ac2882157b448b1562d921c37ac9c3c2a1"
 dependencies = [
  "image",
  "jpeg-encoder",
