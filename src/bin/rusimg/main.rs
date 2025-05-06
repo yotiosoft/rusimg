@@ -224,6 +224,9 @@ fn is_save_required(args: &ArgStruct) -> bool {
     if args.destination_extension.is_some() || args.trim.is_some() || args.resize.is_some() || args.grayscale || args.quality.is_some() {
         return true;
     }
+    if args.destination_path.is_some() {
+        return true;
+    }
     false
 }
 
@@ -366,11 +369,11 @@ fn save_print(before_path: &PathBuf, after_path: &Option<PathBuf>, before_size: 
                 println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
             }
             else if get_extension(before_path.as_path()) != get_extension(after_path.as_path()) {
-                println!("{}: {} -> {}", "Rename", before_path.display(), after_path.display());
+                println!("{}: {} -> {}", "Convert", before_path.display(), after_path.display());
                 println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
             }
             else {
-                println!("{}: {} -> {}", "Move", before_path.display(), after_path.display());
+                println!("{}: {} -> {}", "Copy", before_path.display(), after_path.display());
                 println!("File Size: {} -> {} ({:.1}%)", before_size, after_size, (after_size as f64 / before_size as f64) * 100.0);
             }
         },
@@ -518,6 +521,12 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
     else {
         None
     };
+
+    // Move or copy the image to the output path.
+    // If the output path is not specified, the image will be saved in the same directory as the input file.
+    if !save_required && output_file_path.is_some() && image_file_path != output_file_path.clone().unwrap() {
+        save_required = true;
+    }
 
     // Save the image if necessary.
     let save_status = if save_required == true {
