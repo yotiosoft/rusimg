@@ -1047,10 +1047,10 @@ mod tests {
             Ok(_) => panic!("Trim area is valid."),
             Err(_) => {},
         }
-        // resize area is invalid
-        match parse::check_resize_format("10x10") {
-            Ok(resize) => assert_eq!(resize, librusimg::ImgSize { width: 10, height: 10 }),
-            Err(_) => panic!("Resize area is invalid."),
+        // resize range is invalid
+        match parse::check_resize_range(Some(-1.0)) {
+            true => panic!("Resize range is valid."),
+            false => {},
         }
     }
 

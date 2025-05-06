@@ -52,7 +52,7 @@ pub struct ArgStruct {
     pub recursive: bool,
     pub quality: Option<f32>,
     pub delete: bool,
-    pub resize: Option<u8>,
+    pub resize: Option<f32>,
     pub trim: Option<Rect>,
     pub grayscale: bool,
     pub view: bool,
