@@ -107,3 +107,9 @@ The binary crates contain ``app`` features required to run the application by de
 ## Use as a library
 
 See [librusimg](https://crates.io/crates/librusimg) for the library crate information.
+
+## License
+
+This project is licensed under the MIT License or Apache License 2.0.  
+- For the MIT License, see [LICENSE-MIT](LICENSE-MIT) file.
+- For the Apache License 2.0, see [LICENSE-APACHE](LICENSE-APACHE2.0) file.
