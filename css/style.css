@@ -5,7 +5,8 @@
 }
 
 html, body {
-  font-family: 'Noto Sans JP', 
+  font-family: 'Work Sans', 
+  'Noto Sans JP', 
   sans-serif;
 
   width: 100%;
@@ -15,6 +16,8 @@ html, body {
   margin: 0;
 
   background-color: #eeeeee;
+
+  line-height: 30px;
 }
 
 ol {

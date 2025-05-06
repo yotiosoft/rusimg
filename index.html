@@ -28,6 +28,17 @@
     <script src="js/common.js"></script>
     <script src="js/side.js"></script>
     <script src="js/jump.js"></script>
+
+    <style>
+      code {
+        font-family: 'Source Code Pro', monospace;
+        font-size: 0.9em;
+        background-color: #3a3a3a;
+        padding: 2px 4px;
+        border-radius: 4px;
+        color: #f8f8f2;
+      }
+    </style>
   </head>
 
   <body>
@@ -38,18 +49,10 @@
         </div>
       </header>
       
-      <div class="pageheader" id="pegeheader_id" style="background: #00bfff;">
-        <div class="pageheader_wrap" id="particles">
-          <div class="pageheader_title">Rusimg : A image processing CLI tool written by Rust.</div>
-          <div class="pageheader_summary" style="max-width: 400px; margin-top: 10px">
-            <!-- bash command -->
-            <pre class="prettyprint sunburst">
-$ cargo install rusimg
-            </pre>
-          </div>
+      <div class="pageheader" id="pegeheader_id" style="background: #00bfba;">
+        <div class="pageheader_title">Rusimg : A image processing CLI tool written by Rust.</div>
+        <div class="pageheader_summary" style="max-width: 400px; margin-top: 10px">
         </div>
-        <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-        <script src="js/particles.js"></script>
       </div>
 
       <div id="under-header"></div>
@@ -67,6 +70,9 @@ $ cargo install rusimg
               <div id="sidebar_h">
                 <a href="#how-to-get">How to get ?</a>
               </div>
+              <div id="sidebar_h">
+                <a href="#license">License</a>
+              </div>
             </div>
           </div>
         </div>
@@ -80,46 +86,98 @@ $ cargo install rusimg
             </div>
             <div class="content_sub">
               <div class="text">
-                <p>Rusimg is a image processing CLI tool written by Rust.</p>
-                <p>It can be used to process images in various ways, such as resizing, trimming, compressing, converting formats, and more.</p>
-                <p>Futhermore, Rusimg can be used as a library, so you can use it in your Rust project.</p>
+                <p>Rusimg is a versatile command-line tool written in Rust for image processing. It allows users to perform various image manipulations directly from the terminal, making it ideal for automating image processing tasks or integrating into scripts.</p>
+                <p>Key features include image format conversion (JPEG, PNG, WebP, BMP), quality setting, resizing, cropping, and grayscale conversion. These features can be accessed through simple and intuitive command-line options.</p>
+                <p>Rusimg also offers a library crate (<a href="https://github.com/yotiosoft/librusimg" target="_blank">librusimg</a>), enabling developers to incorporate its image processing capabilities into their own Rust projects. This provides a flexible and efficient way to handle image processing tasks within Rust applications.</p>
+                <p>Whether you need to quickly convert a batch of images, optimize images for web use, or integrate image processing into a larger workflow, Rusimg provides a powerful and convenient solution.</p>
               </div>
             </div>
           </div>
 
           <div class="column">
-            <div id="history"></div>
-            <div id="2014"></div>
+            <div id="features"></div>
             <div class="content_h1">
               Features
             </div>
 
             <div class="content_main">
-              <div class="content_h2">
-                <div class="content_h2_box" style="background-color: #00bfff;"></div>
-                <div class="content">
-                    <div class="title">Converting</div>
-                    <div class="title-summary">Supports: BMP, JPEG, PNG, WebP</div>
+              <div class="content_sub">
+                <div class="text">
+                  <p>Rusimg offers a suite of some image processing features, all accessible via simple command-line options. These features allow you to easily convert, resize, crop, and adjust the quality of your images. Whether you need to optimize images for the web, prepare them for print, or simply manipulate them for fun, Rusimg provides the tools you need. The table below outlines the key features and their corresponding command-line options:</p>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Feature</th>
+                        <th>Description</th>
+                        <th>Command Line Option (Example)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Image Conversion</td>
+                        <td>Convert images to JPEG, PNG, WebP, and BMP formats.</td>
+                        <td>-c jpeg</td>
+                      </tr>
+                      <tr>
+                        <td>Quality Setting (Compression)</td>
+                        <td>Set the quality of the converted image.</td>
+                        <td>-q 75</td>
+                      </tr>
+                      <tr>
+                        <td>Image Resizing</td>
+                        <td>Resize images by a scaling factor.</td>
+                        <td>-r 50</td>
+                      </tr>
+                      <tr>
+                        <td>Image Cropping</td>
+                        <td>Crop images.</td>
+                        <td>-t XxY+WxZ (e.g., 100x100+50x50)</td>
+                      </tr>
+                      <tr>
+                        <td>Grayscale Conversion</td>
+                        <td>Convert images to grayscale.</td>
+                        <td>-g</td>
+                      </tr>
+                      <tr>
+                        <td>Image Preview</td>
+                        <td>Preview images before processing.</td>
+                        <td>-v</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
-              <div class="content_sub">
-                <!--
-                <div class="picture-wrap">
-                  <picture>
-                        <source srcset="/img/sc/20140106.webp" type="image/webp">
-                        <img src="/img/sc/20140106.png" alt="2014-01-06" width="100%">
-                  </picture>
-                </div>
-                -->
-
-                <div class="text">
-                    <p>Converts the format of the image.</p>
-                    <p>Supports conversion to BMP, JPEG, PNG, and WebP.</p>
-                    <p>And more, Rusimg library can be added new formats as extension.</p>
-                </div>
             </div>
           </div>
 
+
+          <div class="column">
+            <div id="how-to-get"></div>
+            <div class="content_h1">
+              How to get ?
+            </div>
+            <div class="content_sub">
+              <div class="text">
+                <p>You can install Rusimg via cargo:</p>
+                <pre class="prettyprint sunburst">
+$ cargo install rusimg
+                </pre>
+                <p>This command will install the Rusimg binary crate, which includes the <code>app</code> features required to run the application. Once installed, you can use Rusimg from the command line to process images.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="column">
+            <div id="license"></div>
+            <div class="content_h1">
+              License
+            </div>
+            <div class="content_sub">
+              <div class="text">
+                <p>Rusimg is licensed under the MIT or Apache-2.0 license. You can choose either license to use, modify, and distribute the software. The full text of the licenses can be found in the <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a> and <a href="https://opensource.org/licenses/Apache-2.0" target="_blank">Apache-2.0 License</a>.</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <footer class="footer_class">
