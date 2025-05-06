@@ -1,5 +1,6 @@
 # rusimg
 
+![Crates.io Version](https://img.shields.io/crates/v/rusimg)
 [![Rust](https://github.com/yotiosoft/rusimg/actions/workflows/rust.yml/badge.svg)](https://github.com/yotiosoft/rusimg/actions/workflows/rust.yml)
 
 A tool to run DeepL translations on command line written by Rust.
