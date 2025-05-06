@@ -1084,6 +1084,62 @@ mod tests {
     }
 
     #[test]
+    fn test_convert_and_save() {
+        let input_path = PathBuf::from("test_image.png");
+        generate_test_image(input_path.to_str().unwrap(), 100, 100);
+        let output_path = PathBuf::from("test_image_converted.jpg");
+        let mut image = librusimg::RusImg::open(&input_path).unwrap();
+        image.convert(&librusimg::Extension::Jpg).unwrap();
+        image.save_image(Some(output_path.to_str().unwrap())).unwrap();
+        assert!(output_path.exists(), "Output image does not exist: {}", output_path.display());
+        fs::remove_file(&input_path).unwrap_or(());
+        fs::remove_file(&output_path).unwrap_or(());
+    }
+
+    #[test]
+    fn test_resize_and_save() {
+        let input_path = PathBuf::from("test_image.png");
+        generate_test_image(input_path.to_str().unwrap(), 100, 100);
+        let output_path = PathBuf::from("test_image_resized.jpg");
+        let mut image = librusimg::RusImg::open(&input_path).unwrap();
+        image.resize(50.0).unwrap();
+        image.save_image(Some(output_path.to_str().unwrap())).unwrap();
+        assert!(output_path.exists(), "Output image does not exist: {}", output_path.display());
+        assert!(image.get_image_size().unwrap().width == 50, "Image size is not resized: {}", image.get_image_size().unwrap().width);
+        assert!(image.get_image_size().unwrap().height == 50, "Image size is not resized: {}", image.get_image_size().unwrap().height);
+        fs::remove_file(&input_path).unwrap_or(());
+        fs::remove_file(&output_path).unwrap_or(());
+    }
+
+    #[test]
+    fn test_trim_and_save() {
+        let input_path = PathBuf::from("test_image.png");
+        generate_test_image(input_path.to_str().unwrap(), 100, 100);
+        let output_path = PathBuf::from("test_image_trimmed.jpg");
+        let mut image = librusimg::RusImg::open(&input_path).unwrap();
+        image.trim_rect(librusimg::Rect { x: 10, y: 10, w: 50, h: 50 }).unwrap();
+        image.save_image(Some(output_path.to_str().unwrap())).unwrap();
+        assert!(output_path.exists(), "Output image does not exist: {}", output_path.display());
+        assert!(image.get_image_size().unwrap().width == 50, "Image size is not trimmed: {}", image.get_image_size().unwrap().width);
+        assert!(image.get_image_size().unwrap().height == 50, "Image size is not trimmed: {}", image.get_image_size().unwrap().height);
+        fs::remove_file(&input_path).unwrap_or(());
+        fs::remove_file(&output_path).unwrap_or(());
+    }
+
+    #[test]
+    fn test_grayscale_and_save() {
+        let input_path = PathBuf::from("test_image.png");
+        generate_test_image(input_path.to_str().unwrap(), 100, 100);
+        let output_path = PathBuf::from("test_image_grayscale.jpg");
+        let mut image = librusimg::RusImg::open(&input_path).unwrap();
+        image.grayscale().unwrap();
+        image.save_image(Some(output_path.to_str().unwrap())).unwrap();
+        assert!(output_path.exists(), "Output image does not exist: {}", output_path.display());
+        fs::remove_file(&input_path).unwrap_or(());
+        fs::remove_file(&output_path).unwrap_or(());
+    }
+
+    #[test]
     #[ignore] // This test requires the machine to have the rusimg binary installed. Run with `cargo test -- --ignored`.
     fn run_test() {
         use std::process::Command;
