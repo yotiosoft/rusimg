@@ -68,9 +68,9 @@ pub struct Args {
     /// Source file path (file name or directory path).  
     /// If not specified, the current directory will be used.  
     /// This option can be used multiple times.
-    #[arg(short, long)]
+    #[arg(short, long, num_args(0..))]
     input: Option<Vec<PathBuf>>,
-
+    
     /// Recursively process all files in the directory.
     #[arg(long)]
     recursive: bool,
