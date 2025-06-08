@@ -1,13 +1,9 @@
 use std::path::{Path, PathBuf};
 use std::fs;
 use std::fmt;
-use std::io::{stdout, Write};
 use glob::glob;
 use image::DynamicImage;
 use colored::*;
-use std::sync::{Arc, Mutex};
-use tokio::sync::mpsc;
-use futures::stream::FuturesUnordered;
 
 use librusimg::{RusImg, RusimgError};
 pub mod parse;
@@ -63,68 +59,42 @@ pub enum ExistsCheckResult {
     NeedToAsk,
     NoProblem,
 }
-/// RusimgStatus is an enum that represents the status of the image processing result.
-/// - Success: The processing was successful.
-/// - Cancel: The processing was canceled.
-/// - NotNeeded: The processing was not needed. This is used when no processing is required.
-#[derive(Debug, Clone, PartialEq)]
-pub enum RusimgStatus {
-    Success,
-    Cancel,
-    NotNeeded,
-}
 
 /// ConvertResult is a structure that represents the result of converting an image.
 /// This structure will be used to display the result of the conversion.
 /// - before_extension: The extension of the image before conversion.
 /// - after_extension: The extension of the image after conversion.
 pub struct ConvertResult {
-    before_extension: librusimg::Extension,
-    after_extension: librusimg::Extension,
+    pub before_extension: librusimg::Extension,
+    pub after_extension: librusimg::Extension,
 }
 /// TrimResult is a structure that represents the result of trimming an image.
 /// This structure will be used to display the result of the trimming.
 /// - before_size: The size of the image before trimming.
 /// - after_size: The size of the image after trimming.
 pub struct TrimResult {
-    before_size: librusimg::ImgSize,
-    after_size: librusimg::ImgSize,
+    pub before_size: librusimg::ImgSize,
+    pub after_size: librusimg::ImgSize,
 }
 /// ResizeResult is a structure that represents the result of resizing an image.
 /// This structure will be used to display the result of the resizing.
 /// - before_size: The size of the image before resizing.
 /// - after_size: The size of the image after resizing.
 pub struct ResizeResult {
-    before_size: librusimg::ImgSize,
-    after_size: librusimg::ImgSize,
+    pub before_size: librusimg::ImgSize,
+    pub after_size: librusimg::ImgSize,
 }
 /// GrayscaleResult is a structure that represents the result of converting an image to grayscale.
 /// This structure will be used to display the result of the grayscale conversion.
 /// - status: The status of the grayscale conversion.
 pub struct GrayscaleResult {
-    status: bool,
+    pub status: bool,
 }
 /// CompressResult is a structure that represents the result of compressing an image.
 /// This structure will be used to display the result of the compression.
 /// - status: The status of the compression.
 pub struct CompressResult {
-    status: bool,
-}
-/// SaveResult is a structure that represents the result of saving an image.
-/// This structure will be used to display the result of the saving.
-/// - status: The status of the saving.
-/// - input_path: The path to the input image file.
-/// - output_path: The path to the output image file.
-/// - before_filesize: The size of the image before saving.
-/// - after_filesize: The size of the image after saving. If the image was not saved, this value will be None.
-/// - delete: Whether to delete the original file.
-pub struct SaveResult {
-    status: RusimgStatus,
-    input_path: PathBuf,
-    output_path: Option<PathBuf>,
-    before_filesize: u64,
-    after_filesize: Option<u64>,
-    delete: bool,
+    pub status: bool,
 }
 
 /// Get the list of files in the directory.

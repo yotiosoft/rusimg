@@ -1,15 +1,13 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::fs;
-use std::fmt;
 use std::io::{stdout, Write};
-use glob::glob;
 use image::DynamicImage;
 use colored::*;
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
 use futures::stream::FuturesUnordered;
 
-use librusimg::{RusImg, RusimgError};
+use librusimg::RusimgError;
 mod background;
 
 /// ThreadTask is a structure that represents the task to be executed by each thread.
@@ -18,7 +16,7 @@ mod background;
 /// - output_path: The path to the output image file.
 /// - extension: The extension of the output image file.
 /// - ask_result: The result of asking whether to overwrite the file.
-pub struct ThreadTask {
+struct ThreadTask {
     args: background::parse::ArgStruct,
     input_path: PathBuf,
     output_path: Option<PathBuf>,
@@ -30,10 +28,37 @@ pub struct ThreadTask {
 /// - Overwrite: Overwrite the file.
 /// - Skip: Skip the file.
 /// - NoProblem: No problem. This means that the file does not exist.
-pub enum AskResult {
+enum AskResult {
     Overwrite,
     Skip,
     NoProblem,
+}
+
+/// RusimgStatus is an enum that represents the status of the image processing result.
+/// - Success: The processing was successful.
+/// - Cancel: The processing was canceled.
+/// - NotNeeded: The processing was not needed. This is used when no processing is required.
+#[derive(Debug, Clone, PartialEq)]
+enum RusimgStatus {
+    Success,
+    Cancel,
+    NotNeeded,
+}
+/// SaveResult is a structure that represents the result of saving an image.
+/// This structure will be used to display the result of the saving.
+/// - status: The status of the saving.
+/// - input_path: The path to the input image file.
+/// - output_path: The path to the output image file.
+/// - before_filesize: The size of the image before saving.
+/// - after_filesize: The size of the image after saving. If the image was not saved, this value will be None.
+/// - delete: Whether to delete the original file.
+struct SaveResult {
+    status: RusimgStatus,
+    input_path: PathBuf,
+    output_path: Option<PathBuf>,
+    before_filesize: u64,
+    after_filesize: Option<u64>,
+    delete: bool,
 }
 
 /// ProcessResult is a structure that represents the result of processing an image.
@@ -45,7 +70,7 @@ struct ProcessResult {
     resize_result: Option<background::ResizeResult>,
     grayscale_result: Option<background::GrayscaleResult>,
     compress_result: Option<background::CompressResult>,
-    save_result: background::SaveResult,
+    save_result: SaveResult,
 }
 /// ThreadResult is a structure that represents the result of processing an image in a thread.
 /// This structure contains the processing result and a flag indicating whether the processing is complete.
@@ -273,7 +298,7 @@ async fn process(thread_task: ThreadTask, file_io_lock: Arc<Mutex<i32>>) -> Resu
 #[tokio::main]
 async fn main() -> Result<(), String> {
     // Parse the arguments.
-    let args = parse::parser().map_err(|e| e.to_string())?;
+    let args = background::parse::parser().map_err(|e| e.to_string())?;
 
     // Number of threads.
     let threads = args.threads;
@@ -283,13 +308,13 @@ async fn main() -> Result<(), String> {
     // -n, --no: Always skip
     // If neither is specified, ask every time.
     let file_overwrite_ask = if args.yes {
-        FileOverwriteAsk::YesToAll
+        background::FileOverwriteAsk::YesToAll
     }
     else if args.no {
-        FileOverwriteAsk::NoToAll
+        background::FileOverwriteAsk::NoToAll
     }
     else {
-        FileOverwriteAsk::AskEverytime
+        background::FileOverwriteAsk::AskEverytime
     };
 
     // Specify the source path.
@@ -298,35 +323,35 @@ async fn main() -> Result<(), String> {
     let mut thread_tasks = Vec::new();
     for source_path in source_paths {
         let image_files_list = if source_path.is_dir() {
-            get_files_in_dir(&source_path, args.recursive)?
+            background::get_files_in_dir(&source_path, args.recursive)?
         }
         else {
-            get_files_by_wildcard(&source_path)?
+            background::get_files_by_wildcard(&source_path)?
         };
         for image_filepath in image_files_list {
-            let thread_task = if is_save_required(&args) {
+            let thread_task = if background::is_save_required(&args) {
                 // Determine the output path.
                 let arg_dest_extension = if let Some(ext) = &args.destination_extension {
-                    Some(convert_str_to_extension(ext).map_err(|e| e.to_string())?)
+                    Some(background::convert_str_to_extension(ext).map_err(|e| e.to_string())?)
                 }
                 else {
                     None
                 };
-                let extension = get_destination_extension(&image_filepath, &arg_dest_extension);
-                let output_path = get_output_path(&image_filepath, &args.destination_path, args.double_extension, &args.destination_append_name, &extension);
+                let extension = background::get_destination_extension(&image_filepath, &arg_dest_extension);
+                let output_path = background::get_output_path(&image_filepath, &args.destination_path, args.double_extension, &args.destination_append_name, &extension);
 
                 // If the output file already exists, check if it should be overwritten.
-                let ask_result = match check_file_exists(&output_path, &file_overwrite_ask) {
+                let ask_result = match background::check_file_exists(&output_path, &file_overwrite_ask) {
                     // Print the result of checking if the file exists.
-                    ExistsCheckResult::AllOverwrite => {
+                    background::ExistsCheckResult::AllOverwrite => {
                         println!("{}", " => Overwrite (default: yes)".bold());
                         AskResult::Overwrite
                     },
-                    ExistsCheckResult::AllSkip => {
+                    background::ExistsCheckResult::AllSkip => {
                         println!("{}", " => Skip (default: no)".bold());
                         AskResult::Skip
                     },
-                    ExistsCheckResult::NeedToAsk => {
+                    background::ExistsCheckResult::NeedToAsk => {
                         // If the file exists, ask if it should be overwritten.
                         if ask_file_exists() {
                             AskResult::Overwrite
@@ -335,7 +360,7 @@ async fn main() -> Result<(), String> {
                             AskResult::Skip
                         }
                     },
-                    ExistsCheckResult::NoProblem => {
+                    background::ExistsCheckResult::NoProblem => {
                         AskResult::NoProblem
                     },
                 };
@@ -467,7 +492,7 @@ async fn main() -> Result<(), String> {
                     // Show the image in the terminal.
                     // Use viuer crate to display the image.
                     if let Some(viuer_image) = thread_results.viuer_image {
-                        view(&viuer_image).map_err(|e| e.to_string()).unwrap();
+                        background::view(&viuer_image).map_err(|e| e.to_string()).unwrap();
                     }
 
                     match thread_results.save_result.status {
@@ -489,20 +514,20 @@ async fn main() -> Result<(), String> {
                 Err(e) => {
                     error_count = error_count + 1;
                     match e {
-                        ProcessingError::RusimgError(e) => {
+                        background::ProcessingError::RusimgError(e) => {
                             let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, &e.filepath);
                             println!("{}", processing_str.red().bold());
                             println!("{}: {}", "Error".red(), e.error);
                         },
-                        ProcessingError::IOError(e) => {
+                        background::ProcessingError::IOError(e) => {
                             let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, &e.filepath);
                             println!("{}", processing_str.red().bold());
                             println!("{}: {}", "Error".red(), e.error);
                         },
-                        ProcessingError::FailedToViewImage(s) => {
+                        background::ProcessingError::FailedToViewImage(s) => {
                             println!("{}: {}", "Error".red(), s);
                         },
-                        ProcessingError::FailedToConvertExtension(e) => {
+                        background::ProcessingError::FailedToConvertExtension(e) => {
                             let processing_str = format!("[{}/{}] Failed: {}", count + error_count, total_image_count, &e.filepath);
                             println!("{}", processing_str.red().bold());
                             println!("{}: {}", "Error".red(), e.error);
@@ -554,181 +579,6 @@ mod tests {
         }
         let mut test_image = RusImg::new(&Extension::Png, DynamicImage::ImageRgb8(img.clone())).unwrap();
         test_image.save_image(Some(filename)).unwrap();
-    }
-
-    #[test]
-    fn test_get_files_in_dir() {
-        let dir_path = PathBuf::from("test_dir1");
-        fs::create_dir_all(&dir_path).unwrap();
-        generate_test_image("test_dir1/test_image1.png", 100, 100);
-        generate_test_image("test_dir1/test_image2.jpg", 200, 200);
-        generate_test_image("test_dir1/test_image3.bmp", 300, 300);
-
-        let files = get_files_in_dir(&dir_path, false).unwrap();
-        assert_eq!(files.len(), 3);
-        assert!(files.iter().any(|f| f.ends_with("test_image1.png")));
-        assert!(files.iter().any(|f| f.ends_with("test_image2.jpg")));
-        assert!(files.iter().any(|f| f.ends_with("test_image3.bmp")));
-
-        fs::remove_dir_all(&dir_path).unwrap();
-    }
-
-    #[test]
-    fn test_get_files_by_wildcard() {
-        let wildcard_path = PathBuf::from("test_dir2/*.png");
-        fs::create_dir_all("test_dir2").unwrap();
-        generate_test_image("test_dir2/test_image1.png", 100, 100);
-        generate_test_image("test_dir2/test_image2.jpg", 200, 200);
-        generate_test_image("test_dir2/test_image3.bmp", 300, 300);
-
-        let files = get_files_by_wildcard(&wildcard_path).unwrap();
-        assert_eq!(files.len(), 1);
-        assert!(files.iter().any(|f| f.ends_with("test_image1.png")));
-
-        fs::remove_dir_all("test_dir2").unwrap();
-    }
-
-    #[test]
-    fn test_get_extension() {
-        let path = PathBuf::from("test_image.png");
-        let ext = get_extension(&path).unwrap();
-        assert_eq!(ext, librusimg::Extension::Png);
-
-        let path = PathBuf::from("test_image.jpg");
-        let ext = get_extension(&path).unwrap();
-        assert_eq!(ext, librusimg::Extension::Jpg);
-
-        let path = PathBuf::from("test_image.bmp");
-        let ext = get_extension(&path).unwrap();
-        assert_eq!(ext, librusimg::Extension::Bmp);
-
-        let path = PathBuf::from("test_image.webp");
-        let ext = get_extension(&path).unwrap();
-        assert_eq!(ext, librusimg::Extension::Webp);
-    }
-
-    #[test]
-    fn test_convert_str_to_extension() {
-        let ext = convert_str_to_extension("jpg").unwrap();
-        assert_eq!(ext, librusimg::Extension::Jpg);
-
-        let ext = convert_str_to_extension("jpeg").unwrap();
-        assert_eq!(ext, librusimg::Extension::Jpeg);
-
-        let ext = convert_str_to_extension("png").unwrap();
-        assert_eq!(ext, librusimg::Extension::Png);
-
-        let ext = convert_str_to_extension("bmp").unwrap();
-        assert_eq!(ext, librusimg::Extension::Bmp);
-
-        let ext = convert_str_to_extension("webp").unwrap();
-        assert_eq!(ext, librusimg::Extension::Webp);
-    }
-
-    #[test]
-    fn test_get_destination_extension() {
-        let source_path = PathBuf::from("test_image.png");
-        let dest_extension = get_destination_extension(&source_path, &Some(librusimg::Extension::Jpg));
-        assert_eq!(dest_extension, librusimg::Extension::Jpg);
-
-        let dest_extension = get_destination_extension(&source_path, &None);
-        assert_eq!(dest_extension, librusimg::Extension::Png);
-    }
-
-    #[test]
-    fn test_get_output_path() {
-        let input_path = PathBuf::from("test_image.png");
-        let output_path = get_output_path(&input_path, &None, false, &None, &librusimg::Extension::Jpg);
-        assert_eq!(output_path.to_str().unwrap(), "test_image.jpg");
-
-        let output_path = get_output_path(&input_path, &Some(PathBuf::from("output_dir3")), false, &None, &librusimg::Extension::Jpg);
-        assert_eq!(output_path, PathBuf::from("output_dir3").join("test_image.jpg"));
-
-        let output_path = get_output_path(&input_path, &Some(PathBuf::from("output_dir3/test_image2.jpg")), false, &None, &librusimg::Extension::Jpg);
-        assert_eq!(output_path, PathBuf::from("output_dir3").join("test_image2.jpg"));
-
-        fs::remove_dir_all("output_dir3").unwrap_or(());
-    }
-
-    #[test]
-    fn test_check_file_exists() {
-        let path = PathBuf::from("test_image.png");
-        fs::write(&path, b"test").unwrap();
-        let result = check_file_exists(&path, &FileOverwriteAsk::NoToAll);
-        assert_eq!(result, ExistsCheckResult::AllSkip);
-        let result = check_file_exists(&path, &FileOverwriteAsk::YesToAll);
-        assert_eq!(result, ExistsCheckResult::AllOverwrite);
-        let result = check_file_exists(&path, &FileOverwriteAsk::AskEverytime);
-        assert_eq!(result, ExistsCheckResult::NeedToAsk);
-        let not_exists_result = check_file_exists(&PathBuf::from("not_exists.png"), &FileOverwriteAsk::NoToAll);
-        assert_eq!(not_exists_result, ExistsCheckResult::NoProblem);
-        fs::remove_file(&path).unwrap();
-    }
-
-    #[test]
-    fn test_parser_default() {
-        let args = parse::parser().unwrap();
-        assert_eq!(args.souce_path, None);
-        assert_eq!(args.destination_path, None);
-        assert_eq!(args.destination_append_name, None);
-        assert_eq!(args.destination_extension, None);
-        assert_eq!(args.resize, None);
-        assert_eq!(args.trim, None);
-        assert_eq!(args.grayscale, false);
-        assert_eq!(args.quality, None);
-        assert_eq!(args.double_extension, false);
-        assert_eq!(args.view, false);
-        assert_eq!(args.yes, false);
-        assert_eq!(args.no, false);
-        assert_eq!(args.delete, false);
-    }
-
-    #[test]
-    fn test_parser_error_cases() {
-        // trim area is invalid
-        match parse::check_trim_format("10x10+20x20") {
-            Ok(trim) => assert_eq!(trim, librusimg::Rect { x: 10, y: 10, w: 20, h: 20 }),
-            Err(_) => panic!("Trim area is invalid."),
-        }
-        match parse::check_trim_format("10") {
-            Ok(_) => panic!("Trim area is valid."),
-            Err(_) => {},
-        }
-        match parse::check_trim_format("10x10") {
-            Ok(_) => panic!("Trim area is valid."),
-            Err(_) => {},
-        }
-        match parse::check_trim_format("10+10+20+20") {
-            Ok(_) => panic!("Trim area is valid."),
-            Err(_) => {},
-        }
-        // resize range is invalid
-        match parse::check_resize_range(Some(-1.0)) {
-            true => panic!("Resize range is valid."),
-            false => {},
-        }
-        match parse::check_resize_range(Some(0.0)) {
-            true => panic!("Resize range is valid."),
-            false => {},
-        }
-        // quality range is invalid
-        match parse::check_quality_range(Some(110.0)) {
-            true => panic!("Quality range is valid."),
-            false => {},
-        }
-        match parse::check_quality_range(Some(-1.0)) {
-            true => panic!("Quality range is valid."),
-            false => {},
-        }
-        match parse::check_quality_range(Some(50.0)) {
-            true => {},
-            false => panic!("Quality range is invalid."),
-        }
-        // threads is invalid
-        match parse::check_threads_range(0) {
-            true => panic!("Threads range is valid."),
-            false => {},
-        }
     }
 
     #[test]
@@ -840,7 +690,7 @@ mod tests {
             let output_image = PathBuf::from("test_dir3/output_dir").join(image_file_output.file_name().unwrap());
             assert!(output_image.exists(), "Output image does not exist: {}", output_image.display());
             // Is the output image extension webp?
-            let output_extension = get_extension(&output_image).unwrap();
+            let output_extension = background::get_extension(&output_image).unwrap();
             assert_eq!(output_extension, librusimg::Extension::Webp, "Output image extension is not webp: {}", output_image.display());
             // Is the original image deleted?
             assert!(!image_file_input.exists(), "Original image is not deleted: {}", image_file_input.display());
